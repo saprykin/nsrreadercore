@@ -90,7 +90,7 @@ NSRRenderedPage::getSize () const
 	return QSize (_image.width (), _image.height ());
 }
 
-bb::ImageData
+NSR_CORE_IMAGE_DATATYPE
 NSRRenderedPage::getImage () const
 {
 	return _image;
@@ -123,14 +123,22 @@ NSRRenderedPage::isValid () const
 bool
 NSRRenderedPage::isImageValid () const
 {
+#ifdef Q_OS_BLACKBERRY
 	return _number > 0 && _image.isValid ();
+#else
+	return _number > 0 && !_image.isNull ();
+#endif
 }
 
 bool
 
 NSRRenderedPage::isEmpty () const
 {
+#ifdef Q_OS_BLACKBERRY
 	return _text.isEmpty () && !_image.isValid ();
+#else
+	return _text.isEmpty () && _image.isNull ();
+#endif
 }
 
 bool
@@ -167,7 +175,7 @@ NSRRenderedPage::setZoom (double zoom)
 }
 
 void
-NSRRenderedPage::setImage (bb::ImageData img)
+NSRRenderedPage::setImage (NSR_CORE_IMAGE_DATATYPE img)
 {
 	_image = img;
 }

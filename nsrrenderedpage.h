@@ -1,11 +1,11 @@
 #ifndef NSRRENDEREDPAGE_H_
 #define NSRRENDEREDPAGE_H_
 
+#include "nsrabstractdocument.h"
+
 #include <QObject>
 #include <QSize>
 #include <QPointF>
-
-#include <bb/ImageData>
 
 class NSRRenderedPage : public QObject
 {
@@ -33,7 +33,7 @@ public:
 	int getNumber () const;
 	double getZoom () const;
 	QSize getSize () const;
-	bb::ImageData getImage () const;
+	NSR_CORE_IMAGE_DATATYPE getImage () const;
 	QString getText () const;
 	QPointF getLastPosition () const;
 	QPointF getLastTextPosition () const;
@@ -46,7 +46,7 @@ public:
 	void setRenderReason (NSRRenderedPage::NSRRenderReason reason);
 	void setNumber (int number);
 	void setZoom (double zoom);
-	void setImage (bb::ImageData img);
+	void setImage (NSR_CORE_IMAGE_DATATYPE img);
 	void setText (const QString &text);
 	void setLastPosition (const QPointF& pos);
 	void setLastTextPosition (const QPointF& pos);
@@ -55,7 +55,7 @@ public:
 
 private:
 	NSRRenderReason		_reason;
-	bb::ImageData		_image;
+	NSR_CORE_IMAGE_DATATYPE	_image;
 	QString			_text;
 	QPointF			_lastPos;
 	QPointF			_lastTextPos;
