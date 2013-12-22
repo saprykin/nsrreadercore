@@ -1,8 +1,6 @@
 #ifndef NSRDJVUDOCUMENT_H
 #define NSRDJVUDOCUMENT_H
 
-#include <QObject>
-
 #include "nsrabstractdocument.h"
 
 #include <djvu/ddjvuapi.h>
@@ -23,16 +21,16 @@ class NSRDjVuDocument : public NSRAbstractDocument
 {
 	Q_OBJECT
 public:
-	NSRDjVuDocument(const QString& file, QObject *parent = 0);
-	virtual ~NSRDjVuDocument();
-	int getNumberOfPages() const;
-	void renderPage(int page);
-	bb::ImageData getCurrentPage ();
-	bool isValid() const;
-	double getMaxZoom();
-	double getMinZoom();
-	QString getText();
-	void setZoom(double zoom);
+	NSRDjVuDocument (const QString& file, QObject *parent = 0);
+	virtual ~NSRDjVuDocument ();
+	int getNumberOfPages () const;
+	void renderPage (int page);
+	NSR_CORE_IMAGE_DATATYPE getCurrentPage ();
+	bool isValid () const;
+	double getMaxZoom ();
+	double getMinZoom ();
+	QString getText ();
+	void setZoom (double zoom);
 	bool isDocumentStyleSupported (NSRAbstractDocument::NSRDocumentStyle style) const;
 	inline NSRAbstractDocument::NSRDocumentStyle getPrefferedDocumentStyle () const {
 		return NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC;
@@ -44,20 +42,20 @@ private:
 	void waitForMessage (ddjvu_context_t* context, ddjvu_message_tag_t message, NSRDjVuError *error);
 	QSize getPageSize (int page);
 
+	QSize			_cachedPageSize;
+	QSize			_imgSize;
+	QString			_text;
 	ddjvu_context_t		*_context;
 	ddjvu_document_t	*_doc;
 	ddjvu_page_t		*_page;
 	ddjvu_format_t		*_format;
 	ddjvu_render_mode_t	_renderMode;
-	bool			_readyForLoad;
-	QSize			_cachedPageSize;
 	double			_cachedMinZoom;
 	double			_cachedMaxZoom;
 	int			_cachedResolution;
 	int			_pageCount;
+	bool			_readyForLoad;
 	char			*_imgData;
-	QSize			_imgSize;
-	QString			_text;
 };
 
 #endif // NSRDJVUDOCUMENT_H

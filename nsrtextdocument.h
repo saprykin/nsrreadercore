@@ -9,12 +9,12 @@ class NSRTextDocument : public NSRAbstractDocument
 {
 	Q_OBJECT
 public:
-	NSRTextDocument(const QString& file, QObject *parent = 0);
-	virtual ~NSRTextDocument();
+	NSRTextDocument (const QString& file, QObject *parent = 0);
+	virtual ~NSRTextDocument ();
 
 	int getNumberOfPages () const;
 	void renderPage (int page);
-	bb::ImageData getCurrentPage ();
+	NSR_CORE_IMAGE_DATATYPE getCurrentPage ();
 	bool isValid ()	const;
 	double getMaxZoom ();
 	double getMinZoom ();

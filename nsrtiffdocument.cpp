@@ -1,14 +1,17 @@
 #include "nsrtiffdocument.h"
 #include "nsrpagecropper.h"
 
-#include <math.h>
+#include <qmath.h>
+
+#define NSR_CORE_TIFF_MIN_ZOOM	25.0
+#define NSR_CORE_TIFF_MAX_ZOOM	100.0
 
 NSRTIFFDocument::NSRTIFFDocument (const QString& file, QObject *parent) :
 	NSRAbstractDocument (file, parent),
 	_tiff (NULL),
-	_readyForLoad (false),
 	_pageCount (0),
-	_cachedPage (0)
+	_cachedPage (0),
+	_readyForLoad (false)
 {
 	if ((_tiff = TIFFOpen (file.toUtf8().data(), "r")) == NULL)
 		return;
@@ -78,7 +81,7 @@ NSRTIFFDocument::renderPage (int page)
 
 	_readyForLoad = false;
 
-	if (npixels * sizeof (uint32) > NSR_DOCUMENT_MAX_HEAP)
+	if (npixels * sizeof (uint32) > NSR_CORE_DOCUMENT_MAX_HEAP)
 		return;
 
 	if (!_image.isNull ())
@@ -168,7 +171,7 @@ NSRTIFFDocument::renderPage (int page)
 		} else
 			_pads = NSRCropPads ();
 
-		if (_origImage.byteCount () > NSR_DOCUMENT_MAX_HEAP / (2 + scale * scale)) {
+		if (_origImage.byteCount () > NSR_CORE_DOCUMENT_MAX_HEAP / (2 + scale * scale)) {
 			_image = img->transformed (trans);
 			_cachedPage = 0;
 
@@ -195,38 +198,40 @@ NSRTIFFDocument::getMaxZoom ()
 		return 0;
 
 	if (_cachedPageSize == QSize (0, 0))
-		return 100;
+		return NSR_CORE_TIFF_MAX_ZOOM;
 
 	/* Each pixel needs 4 bytes (RGBA) of memory */
 	double pageSize = _cachedPageSize.width () * _cachedPageSize.height () * 4;
 
-	return validateMaxZoom (_cachedPageSize, sqrt (NSR_DOCUMENT_MAX_HEAP / pageSize - 1) * 100 + 0.5);
+	return validateMaxZoom (_cachedPageSize, sqrt (NSR_CORE_DOCUMENT_MAX_HEAP / pageSize - 1) * 100 + 0.5);
 }
 
 double
 NSRTIFFDocument::getMinZoom ()
 {
 	if (_cachedPageSize == QSize (0, 0))
-		return 25;
+		return NSR_CORE_TIFF_MIN_ZOOM;
 
 	/* Each pixel needs 4 bytes (RGBA) of memory */
 	double pageSize = _cachedPageSize.width () * _cachedPageSize.height () * 4;
 
-	if (pageSize > NSR_DOCUMENT_MAX_HEAP)
+	if (pageSize > NSR_CORE_DOCUMENT_MAX_HEAP)
 		return getMaxZoom ();
 	else
-		return (getMaxZoom () / 10) > 25 ? 25 : getMaxZoom () / 10;
+		return (getMaxZoom () / 10) > NSR_CORE_TIFF_MIN_ZOOM ? NSR_CORE_TIFF_MIN_ZOOM
+								     : getMaxZoom () / 10;
 }
 
-bb::ImageData
+NSR_CORE_IMAGE_DATATYPE
 NSRTIFFDocument::getCurrentPage ()
 {
 	if (!_readyForLoad)
-		return bb::ImageData ();
+		return NSR_CORE_IMAGE_DATATYPE ();
 
-	if (_image.isNull())
-		return bb::ImageData ();
+	if (_image.isNull ())
+		return NSR_CORE_IMAGE_DATATYPE ();
 
+#ifdef Q_OS_BLACKBERRY
 	bb::ImageData imgData (bb::PixelFormat::RGBX,
 			       _image.width () - _pads.getLeft () - _pads.getRight (),
 			       _image.height () - _pads.getTop () - _pads.getBottom ());
@@ -257,6 +262,9 @@ NSRTIFFDocument::getCurrentPage ()
 	}
 
 	return imgData;
+#else
+	return NSR_CORE_IMAGE_DATATYPE ();
+#endif
 }
 
 void

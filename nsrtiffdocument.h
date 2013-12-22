@@ -3,20 +3,21 @@
 
 #include "nsrabstractdocument.h"
 #include "nsrcroppads.h"
+
 #include "tiff/tiffio.h"
 
 class NSRTIFFDocument : public NSRAbstractDocument
 {
 	Q_OBJECT
 public:
-	NSRTIFFDocument(const QString& file, QObject *parent = 0);
-	virtual ~NSRTIFFDocument();
-	int getNumberOfPages() const;
-	void renderPage(int page);
-	bb::ImageData getCurrentPage ();
-	bool isValid() const;
-	double getMaxZoom();
-	double getMinZoom();
+	NSRTIFFDocument (const QString& file, QObject *parent = 0);
+	virtual ~NSRTIFFDocument ();
+	int getNumberOfPages () const;
+	void renderPage (int page);
+	NSR_CORE_IMAGE_DATATYPE getCurrentPage ();
+	bool isValid () const;
+	double getMaxZoom ();
+	double getMinZoom ();
 	bool isDocumentStyleSupported (NSRAbstractDocument::NSRDocumentStyle style) const;
 	inline NSRAbstractDocument::NSRDocumentStyle getPrefferedDocumentStyle () const {
 		return NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC;
@@ -28,13 +29,13 @@ private:
 	void rotateRightMirrorVertical (QImage ** image, char **buf);
 
 	NSRCropPads		_pads;
-	TIFF			*_tiff;
-	bool			_readyForLoad;
-	QSize			_cachedPageSize;
-	int			_pageCount;
-	int			_cachedPage;
 	QImage			_origImage;
 	QImage			_image;
+	QSize			_cachedPageSize;
+	TIFF			*_tiff;
+	int			_pageCount;
+	int			_cachedPage;
+	bool			_readyForLoad;
 };
 
 #endif // NSRTIFFDOCUMENT_H
