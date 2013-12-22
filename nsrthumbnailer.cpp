@@ -6,11 +6,14 @@
 #include <QFile>
 #include <QFileInfo>
 
-#include <bb/utility/ImageConverter>
-
+#ifdef Q_OS_BLACKBERRY
+#  include <bb/utility/ImageConverter>
 using namespace bb::utility;
+#endif
 
-#define NSR_THUMBNAILS_DIR NSRSettings::getSettingsDirectory () + "/thumbnails"
+#define NSR_THUMBNAILS_DIR 		NSRSettings::getSettingsDirectory () + "/thumbnails"
+#define NSR_THUMBNAILS_MAX_TEXT_PRE	600
+#define NSR_THUMBNAILS_MAX_TEXT_OUT	500
 
 bool
 NSRThumbnailer::isThumbnailExists (const QString& path)
@@ -38,16 +41,20 @@ NSRThumbnailer::saveThumbnail (const QString&		path,
 	if (page.getImage().isValid ()) {
 		QString fileName = getThumbnailPathFromHash (hash);
 
+#ifdef Q_OS_BLACKBERRY
 		ImageConverter::encode (QUrl::fromLocalFile (fileName),
 					page.getImage (),
 					50);
+#else
+		page.getImage().save (fileName);
+#endif
 	}
 
-	QString pageText = page.getText().left (600);
+	QString pageText = page.getText().left (NSR_THUMBNAILS_MAX_TEXT_PRE);
 	int lastIndex = pageText.lastIndexOf (QRegExp ("\\S\\s"));
 
 	/* Do not truncate the whole string */
-	if (lastIndex > 500)
+	if (lastIndex > NSR_THUMBNAILS_MAX_TEXT_OUT)
 		pageText = pageText.left (lastIndex + 1) + "...";
 
 	settings.beginGroup (hash);

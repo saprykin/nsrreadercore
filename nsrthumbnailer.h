@@ -5,8 +5,6 @@
 
 #include <QString>
 
-#include <bb/ImageData>
-
 class NSRThumbnailer
 {
 public:
