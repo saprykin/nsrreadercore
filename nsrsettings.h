@@ -53,7 +53,7 @@ public:
 	static QString mapIndexToEncoding (int index);
 	static int mapEncodingToIndex (const QString& encoding);
 	static QString getSettingsDirectory ();
-#ifdef NSR_LITE_VERSION
+#ifdef NSR_CORE_LITE_VERSION
 	static int getMaxAllowedPages ();
 #endif
 

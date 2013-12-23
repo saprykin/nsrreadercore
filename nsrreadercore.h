@@ -63,7 +63,7 @@ Q_SIGNALS:
 	void needViewMode (NSRAbstractDocument::NSRDocumentStyle mode);
 	void documentOpened (const QString& file);
 	void documentClosed (const QString& file);
-#ifdef NSR_LITE_VERSION
+#ifdef NSR_CORE_LITE_VERSION
 	void liteVersionOverPage ();
 #endif
 

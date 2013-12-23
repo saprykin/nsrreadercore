@@ -4,7 +4,7 @@
 
 #define NSR_READER_VERSION "1.3.3"
 
-#ifdef NSR_LITE_VERSION
+#ifdef NSR_CORE_LITE_VERSION
 #  define NSR_CONFIG_DIR 	".nsrreaderlite"
 #  define NSR_LITE_MAX_PAGES	30
 #else
@@ -245,7 +245,7 @@ NSRSettings::saveTextEncoding (const QString &textEnc)
 QString
 NSRSettings::getVersion()
 {
-#ifdef NSR_LITE_VERSION
+#ifdef NSR_CORE_LITE_VERSION
 	return  QString ("Lite ") + QString (NSR_READER_VERSION);
 #else
 	return QString (NSR_READER_VERSION);
@@ -343,7 +343,7 @@ NSRSettings::getSettingsDirectory ()
 	return QDir::homePath () + "/"NSR_CONFIG_DIR;
 }
 
-#ifdef NSR_LITE_VERSION
+#ifdef NSR_CORE_LITE_VERSION
 int
 NSRSettings::getMaxAllowedPages ()
 {

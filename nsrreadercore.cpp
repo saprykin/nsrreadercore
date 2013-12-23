@@ -512,7 +512,7 @@ NSRReaderCore::loadPage (PageLoad		dir,
 	else if (pageToLoad > _doc->getNumberOfPages ())
 		pageToLoad = _doc->getNumberOfPages ();
 
-#ifdef NSR_LITE_VERSION
+#ifdef NSR_CORE_LITE_VERSION
 	if (pageToLoad > NSRSettings::getMaxAllowedPages ()) {
 		pageToLoad = NSRSettings::getMaxAllowedPages ();
 		emit liteVersionOverPage ();
