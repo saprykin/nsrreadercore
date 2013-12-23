@@ -243,13 +243,9 @@ NSRSettings::saveTextEncoding (const QString &textEnc)
 }
 
 QString
-NSRSettings::getVersion()
+NSRSettings::getVersion ()
 {
-#ifdef NSR_CORE_LITE_VERSION
-	return  QString ("Lite ") + QString (NSR_READER_VERSION);
-#else
-	return QString (NSR_READER_VERSION);
-#endif
+	return QString (NSR_CORE_VERSION);
 }
 
 QStringList
