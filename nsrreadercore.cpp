@@ -9,17 +9,14 @@
 
 #include <float.h>
 
-using namespace bb::system;
-
-NSRReaderCore::NSRReaderCore (bb::system::ApplicationStartupMode::Type startMode,
-			      QObject *parent) :
+NSRReaderCore::NSRReaderCore (bool isCardMode, QObject *parent) :
 	QObject (parent),
 	_doc (NULL),
 	_zoomDoc (NULL),
 	_thread (NULL),
 	_zoomThread (NULL),
 	_cache (NULL),
-	_startMode (startMode)
+	_isCardMode (isCardMode)
 {
 	_thread		= new NSRRenderThread (this);
 	_zoomThread	= new NSRRenderZoomThread (this);
@@ -35,7 +32,7 @@ NSRReaderCore::NSRReaderCore (bb::system::ApplicationStartupMode::Type startMode
 	ok = connect (_zoomThread, SIGNAL (finished ()), this, SLOT (onZoomThreadFinished ()));
 	Q_ASSERT (ok);
 
-	_thread->setThumbnailRender (_startMode != ApplicationStartupMode::InvokeCard);
+	_thread->setThumbnailRender (!_isCardMode);
 }
 
 NSRReaderCore::~NSRReaderCore ()
@@ -62,7 +59,7 @@ NSRReaderCore::openDocument (const QString &path,  const QString& password)
 
 	_doc->setPassword (password);
 
-	if (_startMode == ApplicationStartupMode::InvokeCard)
+	if (_isCardMode)
 		_doc->setInvertedColors (false);
 	else {
 		_doc->setInvertedColors (NSRSettings::instance()->isInvertedColors ());
@@ -77,8 +74,7 @@ NSRReaderCore::openDocument (const QString &path,  const QString& password)
 		return;
 	}
 
-	if (_startMode != ApplicationStartupMode::InvokeCard &&
-	    NSRSettings::instance()->isStarting ())
+	if (!_isCardMode && NSRSettings::instance()->isStarting ())
 		_doc->setTextOnly (NSRSettings::instance()->isWordWrap ());
 	else
 		_doc->setTextOnly (_doc->getPrefferedDocumentStyle () == NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT);
@@ -92,7 +88,7 @@ NSRReaderCore::openDocument (const QString &path,  const QString& password)
 		_zoomThread->setRenderContext (_zoomDoc);
 	}
 
-	if (_startMode != ApplicationStartupMode::InvokeCard)
+	if (!_isCardMode)
 		NSRSettings::instance()->addLastDocument (path);
 
 	emit documentOpened (path);
@@ -165,7 +161,7 @@ NSRReaderCore::getPagesCount () const
 void
 NSRReaderCore::reloadSettings ()
 {
-	if (_doc == NULL)
+	if (_doc == NULL || _isCardMode)
 		return;
 
 	bool	needReload = false;

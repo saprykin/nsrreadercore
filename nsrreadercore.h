@@ -11,8 +11,6 @@
 #include "nsrsession.h"
 #include "nsrsettings.h"
 
-#include <bb/system/ApplicationStartupMode>
-
 class NSRReaderCore: public QObject
 {
 	Q_OBJECT
@@ -24,8 +22,7 @@ public:
 		PAGE_LOAD_CUSTOM	= 2
 	};
 
-	NSRReaderCore (bb::system::ApplicationStartupMode::Type startMode,
-		       QObject *parent = 0);
+	NSRReaderCore (bool isCardMode, QObject *parent = 0);
 	virtual ~NSRReaderCore ();
 
 	void openDocument (const QString &path, const QString& password = QString ());
@@ -85,7 +82,7 @@ private:
 	NSRRenderZoomThread				*_zoomThread;
 	NSRPagesCache					*_cache;
 	NSRRenderedPage					_currentPage;
-	bb::system::ApplicationStartupMode::Type	_startMode;
+	bool						_isCardMode;
 };
 
 #endif /* NSRREADERCORE_H_ */
