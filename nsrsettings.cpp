@@ -72,7 +72,6 @@ NSRSettings::release ()
 	}
 }
 
-
 NSRSession
 NSRSettings::getLastSession()
 {

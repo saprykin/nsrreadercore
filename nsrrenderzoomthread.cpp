@@ -68,4 +68,3 @@ NSRRenderZoomThread::isDocumentChanged ()
 {
 	return (_documentChanged == 1);
 }
-

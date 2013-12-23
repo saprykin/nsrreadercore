@@ -10,7 +10,6 @@
 #include "nsrpagescache.h"
 #include "nsrsession.h"
 #include "nsrsettings.h"
-#include "nsrpageview.h"
 
 #include <bb/system/ApplicationStartupMode>
 
