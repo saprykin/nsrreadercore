@@ -2,7 +2,7 @@
 #include "nsrthumbnailer.h"
 #include "nsrbookmarksstorage.h"
 
-#define NSR_READER_VERSION "1.3.3"
+#define NSR_CORE_VERSION "1.3.3"
 
 #ifdef NSR_CORE_LITE_VERSION
 #  define NSR_CONFIG_DIR 	".nsrreaderlite"
@@ -35,7 +35,7 @@ NSRSettings::NSRSettings () :
 	_isInvertedColors = value("inverted-colors", false).toBool ();
 	_isAutoCrop = value("auto-crop", false).toBool ();
 	_lastOpenDir = value("last-open-dir", "C:").toString ();
-	_isNewsShown = (value("news-shown-version", "1.0.0").toString () == NSR_READER_VERSION);
+	_isNewsShown = (value("news-shown-version", "1.0.0").toString () == NSR_CORE_VERSION);
 	_fontFamily = value("font-family", "Sans Serif").toString ();
 	_textEncoding = value("text-encoding", "UTF-8").toString ();
 	_lastDocuments = value("last-documents", QStringList ()).toStringList ();
@@ -214,7 +214,7 @@ NSRSettings::saveNewsShown ()
 {
 	_isNewsShown = true;
 	beginGroup ("Global");
-	setValue ("news-shown-version", NSR_READER_VERSION);
+	setValue ("news-shown-version", NSR_CORE_VERSION);
 	endGroup ();
 
 	sync ();
@@ -253,7 +253,7 @@ NSRSettings::getVersion()
 }
 
 QStringList
-NSRSettings::getSupportedEncodings()
+NSRSettings::getSupportedEncodings ()
 {
 	QStringList codecs = QStringList ()
 	       << trUtf8 ("Unicode (UTF-8)") << trUtf8 ("Western European (ISO-8859-1)")
