@@ -2,6 +2,7 @@
 #define NSRSETTINGS_H
 
 #include <QSettings>
+#include <QStringList>
 
 #include "nsrsession.h"
 

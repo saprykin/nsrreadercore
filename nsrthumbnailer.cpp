@@ -5,15 +5,17 @@
 #include <QCryptographicHash>
 #include <QFile>
 #include <QFileInfo>
+#include <QDir>
+#include <QDateTime>
 
 #ifdef Q_OS_BLACKBERRY
 #  include <bb/utility/ImageConverter>
 using namespace bb::utility;
 #endif
 
-#define NSR_THUMBNAILS_DIR 		NSRSettings::getSettingsDirectory () + "/thumbnails"
-#define NSR_THUMBNAILS_MAX_TEXT_PRE	600
-#define NSR_THUMBNAILS_MAX_TEXT_OUT	500
+#define NSR_CORE_THUMBNAILS_DIR 		NSRSettings::getSettingsDirectory () + "/thumbnails"
+#define NSR_CORE_THUMBNAILS_MAX_TEXT_PRE	600
+#define NSR_CORE_THUMBNAILS_MAX_TEXT_OUT	500
 
 bool
 NSRThumbnailer::isThumbnailExists (const QString& path)
@@ -27,10 +29,10 @@ NSRThumbnailer::saveThumbnail (const QString&		path,
 {
 	QDir dir;
 
-	if (!dir.exists (NSR_THUMBNAILS_DIR))
-		dir.mkpath (NSR_THUMBNAILS_DIR);
+	if (!dir.exists (NSR_CORE_THUMBNAILS_DIR))
+		dir.mkpath (NSR_CORE_THUMBNAILS_DIR);
 
-	QSettings settings (NSR_THUMBNAILS_DIR + "/thumbnails.ini",
+	QSettings settings (NSR_CORE_THUMBNAILS_DIR + "/thumbnails.ini",
 			    QSettings::IniFormat);
 
 	if (!QFile::exists (path))
@@ -50,11 +52,11 @@ NSRThumbnailer::saveThumbnail (const QString&		path,
 #endif
 	}
 
-	QString pageText = page.getText().left (NSR_THUMBNAILS_MAX_TEXT_PRE);
+	QString pageText = page.getText().left (NSR_CORE_THUMBNAILS_MAX_TEXT_PRE);
 	int lastIndex = pageText.lastIndexOf (QRegExp ("\\S\\s"));
 
 	/* Do not truncate the whole string */
-	if (lastIndex > NSR_THUMBNAILS_MAX_TEXT_OUT)
+	if (lastIndex > NSR_CORE_THUMBNAILS_MAX_TEXT_OUT)
 		pageText = pageText.left (lastIndex + 1) + "...";
 
 	settings.beginGroup (hash);
@@ -71,10 +73,10 @@ NSRThumbnailer::saveThumbnailEncrypted (const QString&	path)
 {
 	QDir dir;
 
-	if (!dir.exists (NSR_THUMBNAILS_DIR))
-		dir.mkpath (NSR_THUMBNAILS_DIR);
+	if (!dir.exists (NSR_CORE_THUMBNAILS_DIR))
+		dir.mkpath (NSR_CORE_THUMBNAILS_DIR);
 
-	QSettings settings (NSR_THUMBNAILS_DIR + "/thumbnails.ini",
+	QSettings settings (NSR_CORE_THUMBNAILS_DIR + "/thumbnails.ini",
 			    QSettings::IniFormat);
 
 	if (!QFile::exists (path))
@@ -102,7 +104,7 @@ NSRThumbnailer::getThumnailPath (const QString& path)
 void
 NSRThumbnailer::cleanOldFiles ()
 {
-	QSettings settings (NSR_THUMBNAILS_DIR + "/thumbnails.ini",
+	QSettings settings (NSR_CORE_THUMBNAILS_DIR + "/thumbnails.ini",
 			    QSettings::IniFormat);
 
 	QStringList files = settings.childGroups ();
@@ -131,7 +133,7 @@ NSRThumbnailer::cleanOldFiles ()
 QString
 NSRThumbnailer::getThumbnailText (const QString& path)
 {
-	QSettings settings (NSR_THUMBNAILS_DIR + "/thumbnails.ini",
+	QSettings settings (NSR_CORE_THUMBNAILS_DIR + "/thumbnails.ini",
 			    QSettings::IniFormat);
 
 	return settings.value(filePathToHash (path) + "/text", "").toString ();
@@ -140,7 +142,7 @@ NSRThumbnailer::getThumbnailText (const QString& path)
 bool
 NSRThumbnailer::isThumbnailEncrypted (const QString& path)
 {
-	QSettings settings (NSR_THUMBNAILS_DIR + "/thumbnails.ini",
+	QSettings settings (NSR_CORE_THUMBNAILS_DIR + "/thumbnails.ini",
 			    QSettings::IniFormat);
 
 	return settings.value(filePathToHash (path) + "/encrypted", false).toBool ();
@@ -149,7 +151,7 @@ NSRThumbnailer::isThumbnailEncrypted (const QString& path)
 void
 NSRThumbnailer::removeThumbnail (const QString& path)
 {
-	QSettings settings (NSR_THUMBNAILS_DIR + "/thumbnails.ini",
+	QSettings settings (NSR_CORE_THUMBNAILS_DIR + "/thumbnails.ini",
 			    QSettings::IniFormat);
 	QString hash = filePathToHash (path);
 
@@ -163,7 +165,7 @@ NSRThumbnailer::isThumbnailOutdated (const QString& path)
 	if (!QFile::exists (path))
 		return false;
 
-	QSettings	settings (NSR_THUMBNAILS_DIR + "/thumbnails.ini",
+	QSettings	settings (NSR_CORE_THUMBNAILS_DIR + "/thumbnails.ini",
 			    	  QSettings::IniFormat);
 	QFileInfo	fileInfo (path);
 	QString		hash = filePathToHash (path);
@@ -189,5 +191,5 @@ NSRThumbnailer::filePathToHash (const QString& path)
 QString
 NSRThumbnailer::getThumbnailPathFromHash (const QString& hash)
 {
-	return NSR_THUMBNAILS_DIR + "/" + hash + ".png";
+	return NSR_CORE_THUMBNAILS_DIR + "/" + hash + ".png";
 }

@@ -1,7 +1,7 @@
 #include "nsrpagescache.h"
 
 /* Maximum cache size in bytes (~100 MB by default) */
-#define NSR_PAGES_CACHE_MAX_STORAGE 104857600
+#define NSR_CORE_PAGES_CACHE_MAX_STORAGE 104857600
 
 NSRPagesCache::NSRPagesCache (QObject *parent) :
 		QObject (parent),
@@ -40,13 +40,13 @@ NSRPagesCache::addPage (const NSRRenderedPage& page)
 	newSize = page.getSize().width () * page.getSize().height () * 4 +
 		  page.getText().size () * 2;
 
-	if (newSize > NSR_PAGES_CACHE_MAX_STORAGE)
+	if (newSize > NSR_CORE_PAGES_CACHE_MAX_STORAGE)
 		return;
 
 	_hash.take (page.getNumber ());
 	_pages.removeAll (page.getNumber ());
 
-	while (_usedMemory + newSize > NSR_PAGES_CACHE_MAX_STORAGE &&
+	while (_usedMemory + newSize > NSR_CORE_PAGES_CACHE_MAX_STORAGE &&
 	       !_pages.isEmpty ()) {
 		if (qAbs (page.getNumber () - _pages.first ()) <
 		    qAbs (page.getNumber () - _pages.last ()))

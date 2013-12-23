@@ -83,6 +83,3 @@ NSRAbstractRenderThread::completeRequest (const NSRRenderedPage& page)
 	_renderedPages.append (page);
 	_renderedMutex.unlock ();
 }
-
-
-

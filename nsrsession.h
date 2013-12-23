@@ -1,7 +1,8 @@
 #ifndef NSRSESSION_H
 #define NSRSESSION_H
 
-#include <QtCore>
+#include <QString>
+#include <QPointF>
 
 class NSRSession
 {

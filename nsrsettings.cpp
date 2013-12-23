@@ -2,13 +2,16 @@
 #include "nsrthumbnailer.h"
 #include "nsrbookmarksstorage.h"
 
+#include <QDir>
+#include <QDateTime>
+
 #define NSR_CORE_VERSION "1.3.3"
 
 #ifdef NSR_CORE_LITE_VERSION
-#  define NSR_CONFIG_DIR 	".nsrreaderlite"
+#  define NSR_CORE_CONFIG_DIR 	".nsrreaderlite"
 #  define NSR_LITE_MAX_PAGES	30
 #else
-#  define NSR_CONFIG_DIR 	".nsrreader"
+#  define NSR_CORE_CONFIG_DIR 	".nsrreader"
 #endif
 
 NSRSettings * NSRSettings::_instance = NULL;
@@ -24,8 +27,8 @@ NSRSettings::NSRSettings () :
 	defPath = QDir::homePath ();
 	defFont = QString ("Sans Serif");
 
-	if (!dir.exists (QDir::homePath () + "/"NSR_CONFIG_DIR))
-		dir.mkpath (QDir::homePath () + "/"NSR_CONFIG_DIR);
+	if (!dir.exists (QDir::homePath () + "/"NSR_CORE_CONFIG_DIR))
+		dir.mkpath (QDir::homePath () + "/"NSR_CORE_CONFIG_DIR);
 
 	beginGroup ("Global");
 
@@ -336,7 +339,7 @@ NSRSettings::mapEncodingToIndex (const QString& encoding)
 QString
 NSRSettings::getSettingsDirectory ()
 {
-	return QDir::homePath () + "/"NSR_CONFIG_DIR;
+	return QDir::homePath () + "/"NSR_CORE_CONFIG_DIR;
 }
 
 #ifdef NSR_CORE_LITE_VERSION

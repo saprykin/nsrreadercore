@@ -2,6 +2,7 @@
 #include "nsrsettings.h"
 
 #include <QCryptographicHash>
+#include <QFile>
 
 NSRBookmarksStorage * NSRBookmarksStorage::_instance = NULL;
 

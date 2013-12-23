@@ -1,7 +1,7 @@
 #include "nsrsession.h"
 
 NSRSession::NSRSession () :
-	_file (QString()),
+	_file (QString ()),
 	_pos (QPointF (0, 0)),
 	_textPos (QPointF (0, 0)),
 	_zoomGraphic (100.0),
@@ -11,7 +11,6 @@ NSRSession::NSRSession () :
 	_zoomScreenWidth (720),
 	_isFitToWidth (false)
 {
-
 }
 
 NSRSession::NSRSession (const QString& file,

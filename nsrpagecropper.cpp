@@ -2,9 +2,9 @@
 
 #include <qmath.h>
 
-#define NSR_CROP_PIXEL_THRESHOLD	2
-#define NSR_CROP_MAX_PAD_PERCENT	0.15
-#define NSR_CROP_AGGRESSIVE_VALUE	0.15
+#define NSR_CORE_CROP_PIXEL_THRESHOLD	2
+#define NSR_CORE_CROP_MAX_PAD_PERCENT	0.15
+#define NSR_CORE_CROP_AGGRESSIVE_VALUE	0.15
 
 NSRPageCropper::NSRPageCropper ()
 {
@@ -23,8 +23,8 @@ NSRPageCropper::findCropPads (unsigned char *data, NSRPixelOrder order, int widt
 	if (data == NULL || stride < width * 3 || width < 3 || height < 3)
 		return pads;
 
-	int maxWCrop = (int) (width * NSR_CROP_MAX_PAD_PERCENT);
-	int maxHCrop = (int) (height * NSR_CROP_MAX_PAD_PERCENT);
+	int maxWCrop = (int) (width * NSR_CORE_CROP_MAX_PAD_PERCENT);
+	int maxHCrop = (int) (height * NSR_CORE_CROP_MAX_PAD_PERCENT);
 
 	switch (order) {
 	case NSR_PIXEL_ORDER_RGB:
@@ -70,13 +70,13 @@ NSRPageCropper::findCropPads (unsigned char *data, NSRPixelOrder order, int widt
 			gDelta = (green - dataPtr[col * px + pxShift + 1]) / green;
 			bDelta = (blue - dataPtr[col * px + pxShift + 2]) / blue;
 
-			if (fabs (rDelta) > NSR_CROP_AGGRESSIVE_VALUE ||
-			    fabs (gDelta > NSR_CROP_AGGRESSIVE_VALUE) ||
-			    fabs (bDelta > NSR_CROP_AGGRESSIVE_VALUE))
+			if (fabs (rDelta) > NSR_CORE_CROP_AGGRESSIVE_VALUE ||
+			    fabs (gDelta > NSR_CORE_CROP_AGGRESSIVE_VALUE) ||
+			    fabs (bDelta > NSR_CORE_CROP_AGGRESSIVE_VALUE))
 				++badCount;
 		}
 
-		if (badCount > NSR_CROP_PIXEL_THRESHOLD) {
+		if (badCount > NSR_CORE_CROP_PIXEL_THRESHOLD) {
 			pads.setTop (row + 1);
 			break;
 		} else if (row == maxHCrop - 1)
@@ -96,13 +96,13 @@ NSRPageCropper::findCropPads (unsigned char *data, NSRPixelOrder order, int widt
 			gDelta = (green - dataPtr[col * px + pxShift + 1]) / green;
 			bDelta = (blue - dataPtr[col * px + pxShift + 2]) / blue;
 
-			if (fabs (rDelta) > NSR_CROP_AGGRESSIVE_VALUE ||
-			    fabs (gDelta > NSR_CROP_AGGRESSIVE_VALUE) ||
-			    fabs (bDelta > NSR_CROP_AGGRESSIVE_VALUE))
+			if (fabs (rDelta) > NSR_CORE_CROP_AGGRESSIVE_VALUE ||
+			    fabs (gDelta > NSR_CORE_CROP_AGGRESSIVE_VALUE) ||
+			    fabs (bDelta > NSR_CORE_CROP_AGGRESSIVE_VALUE))
 				++badCount;
 		}
 
-		if (badCount > NSR_CROP_PIXEL_THRESHOLD) {
+		if (badCount > NSR_CORE_CROP_PIXEL_THRESHOLD) {
 			pads.setBottom (height - row - 1);
 			break;
 		} else if (row == height - maxHCrop)
@@ -122,12 +122,12 @@ NSRPageCropper::findCropPads (unsigned char *data, NSRPixelOrder order, int widt
 			gDelta = (green - dataPtr[row * stride + col * px + pxShift + 1]) / green;
 			bDelta = (blue - dataPtr[row * stride + col * px + pxShift + 2]) / blue;
 
-			if (fabs (rDelta) > NSR_CROP_AGGRESSIVE_VALUE ||
-			    fabs (gDelta > NSR_CROP_AGGRESSIVE_VALUE) ||
-			    fabs (bDelta > NSR_CROP_AGGRESSIVE_VALUE))
+			if (fabs (rDelta) > NSR_CORE_CROP_AGGRESSIVE_VALUE ||
+			    fabs (gDelta > NSR_CORE_CROP_AGGRESSIVE_VALUE) ||
+			    fabs (bDelta > NSR_CORE_CROP_AGGRESSIVE_VALUE))
 				++badCount;		}
 
-		if (badCount > NSR_CROP_PIXEL_THRESHOLD) {
+		if (badCount > NSR_CORE_CROP_PIXEL_THRESHOLD) {
 			pads.setLeft (col + 1);
 			break;
 		} else if (col == maxWCrop - 1)
@@ -145,13 +145,13 @@ NSRPageCropper::findCropPads (unsigned char *data, NSRPixelOrder order, int widt
 			gDelta = (green - dataPtr[row * stride + col * px + pxShift + 1]) / green;
 			bDelta = (blue - dataPtr[row * stride + col * px + pxShift + 2]) / blue;
 
-			if (fabs (rDelta) > NSR_CROP_AGGRESSIVE_VALUE ||
-			    fabs (gDelta > NSR_CROP_AGGRESSIVE_VALUE) ||
-			    fabs (bDelta > NSR_CROP_AGGRESSIVE_VALUE))
+			if (fabs (rDelta) > NSR_CORE_CROP_AGGRESSIVE_VALUE ||
+			    fabs (gDelta > NSR_CORE_CROP_AGGRESSIVE_VALUE) ||
+			    fabs (bDelta > NSR_CORE_CROP_AGGRESSIVE_VALUE))
 				++badCount;
 		}
 
-		if (badCount > NSR_CROP_PIXEL_THRESHOLD) {
+		if (badCount > NSR_CORE_CROP_PIXEL_THRESHOLD) {
 			pads.setRight (width - col - 1);
 			break;
 		} else if (col == width - maxWCrop)
