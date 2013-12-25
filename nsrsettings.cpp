@@ -37,6 +37,7 @@ NSRSettings::NSRSettings () :
 	_isTextModeNoted = value("text-mode-noted", false).toBool ();
 	_isInvertedColors = value("inverted-colors", false).toBool ();
 	_isAutoCrop = value("auto-crop", false).toBool ();
+	_isPreventScreenLock = value("prevent-screen-lock", true).toBool ();
 	_lastOpenDir = value("last-open-dir", "C:").toString ();
 	_isNewsShown = (value("news-shown-version", "1.0.0").toString () == NSR_CORE_VERSION);
 	_fontFamily = value("font-family", "Sans Serif").toString ();
@@ -207,6 +208,17 @@ NSRSettings::saveAutoCrop (bool crop)
 	_isAutoCrop = crop;
 	beginGroup ("Global");
 	setValue ("auto-crop", _isAutoCrop);
+	endGroup ();
+
+	sync ();
+}
+
+void
+NSRSettings::savePreventScreenLock (bool preventScreenLock)
+{
+	_isPreventScreenLock = preventScreenLock;
+	beginGroup ("Global");
+	setValue ("prevent-screen-lock", _isPreventScreenLock);
 	endGroup ();
 
 	sync ();

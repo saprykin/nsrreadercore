@@ -88,4 +88,3 @@ NSRBookmarksStorage::filePathToHash (const QString& path)
 {
 	return QCryptographicHash::hash(path.toAscii (), QCryptographicHash::Md5).toHex ();
 }
-
