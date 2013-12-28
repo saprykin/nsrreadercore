@@ -20,18 +20,22 @@ NSRRenderZoomThread::run ()
 
 	do {
 		/* Does we have new pages to render? */
-		if (isDocumentChanged ())
+		if (isDocumentChanged ()) {
+			cancelRequests ();
 			return;
+		}
 
 		NSRRenderedPage page = getRequest ();
+
+		/* Last page is only one that is actual, so clear
+		 * all other */
+		cancelRequests ();
 
 		if (page.getNumber () < 1 ||
 		    page.getNumber () > doc->getNumberOfPages ())
 			return;
 
-		/* Last page is only one that is actual, so clear
-		 * all other */
-		cancelRequests ();
+		setCurrentRequest (page);
 
 		/* Render image only if we are in graphic mode */
 		if (!doc->isTextOnly ()) {
@@ -40,8 +44,10 @@ NSRRenderZoomThread::run ()
 			page.setZoom (doc->getZoom ());
 		}
 
-		if (isDocumentChanged ())
+		if (isDocumentChanged ()) {
+			setCurrentRequest (NSRRenderedPage ());
 			return;
+		}
 
 		hasPage = hasRequests ();
 
@@ -52,6 +58,8 @@ NSRRenderZoomThread::run ()
 			completeRequest (page);
 			emit renderDone ();
 		}
+
+		setCurrentRequest (NSRRenderedPage ());
 	} while (hasPage);
 }
 
