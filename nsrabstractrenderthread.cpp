@@ -20,6 +20,9 @@ NSRAbstractRenderThread::~NSRAbstractRenderThread ()
 void
 NSRAbstractRenderThread::setRenderContext (NSRAbstractDocument* doc)
 {
+	if (isRunning ())
+		return;
+
 	_doc = doc;
 }
 
@@ -76,9 +79,23 @@ NSRAbstractRenderThread::getRenderedPage ()
 	return page;
 }
 
+NSRRenderedPage
+NSRAbstractRenderThread::getCurrentRequest () const
+{
+	QMutexLocker locker (&_requestedMutex);
+	return _currentRequest;
+}
+
 void
 NSRAbstractRenderThread::completeRequest (const NSRRenderedPage& page)
 {
 	QMutexLocker locker (&_renderedMutex);
 	_renderedPages.append (page);
+}
+
+void
+NSRAbstractRenderThread::setCurrentRequest (const NSRRenderedPage& page)
+{
+	QMutexLocker locker (&_requestedMutex);
+	_currentRequest = page;
 }

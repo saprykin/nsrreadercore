@@ -19,18 +19,23 @@ public:
 	void addRequest (const NSRRenderedPage &page);
 	void cancelRequests ();
 	bool hasRequests ();
-	NSRRenderedPage getRequest ();
 	NSRRenderedPage getRenderedPage ();
-	void completeRequest (const NSRRenderedPage& page);
+	NSRRenderedPage getCurrentRequest () const;
 
 	virtual void run () = 0;
 
+protected:
+	NSRRenderedPage getRequest ();
+	void completeRequest (const NSRRenderedPage& page);
+	void setCurrentRequest (const NSRRenderedPage& page);
+
 private:
 	NSRAbstractDocument		*_doc;
+	NSRRenderedPage			_currentRequest;
 	QList<NSRRenderedPage>		_requestedPages;
 	QList<NSRRenderedPage>		_renderedPages;
-	QMutex				_requestedMutex;
-	QMutex				_renderedMutex;
+	mutable QMutex			_requestedMutex;
+	mutable QMutex			_renderedMutex;
 };
 
 #endif /* NSRABSTRACTRENDERTHREAD_H_ */
