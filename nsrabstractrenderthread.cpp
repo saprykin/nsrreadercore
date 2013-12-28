@@ -79,7 +79,6 @@ NSRAbstractRenderThread::getRenderedPage ()
 void
 NSRAbstractRenderThread::completeRequest (const NSRRenderedPage& page)
 {
-	_renderedMutex.lock ();
+	QMutexLocker locker (&_renderedMutex);
 	_renderedPages.append (page);
-	_renderedMutex.unlock ();
 }
