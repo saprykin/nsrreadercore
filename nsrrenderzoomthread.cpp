@@ -1,7 +1,5 @@
 #include "nsrrenderzoomthread.h"
 
-#include <QMutexLocker>
-
 NSRRenderZoomThread::NSRRenderZoomThread (QObject *parent) :
 	NSRAbstractRenderThread (parent)
 {
