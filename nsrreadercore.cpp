@@ -127,7 +127,7 @@ NSRReaderCore::closeDocument ()
 		}
 	}
 
-	_currentPage = NSRRenderedPage ();
+	_currentPage = NSRRenderRequest ();
 	_cache->clearStorage ();
 
 	if (!path.isEmpty ())
@@ -143,7 +143,7 @@ NSRReaderCore::getDocumentPath () const
 		return _doc->getDocumentPath ();
 }
 
-NSRRenderedPage
+NSRRenderRequest
 NSRReaderCore::getCurrentPage () const
 {
 	return _currentPage;
@@ -191,8 +191,8 @@ NSRReaderCore::reloadSettings ()
 
 	if (needReload)
 		loadPage (PAGE_LOAD_CUSTOM,
-			  NSRRenderedPage (_currentPage.getNumber (),
-					   NSRRenderedPage::NSR_RENDER_REASON_SETTINGS));
+			  NSRRenderRequest (_currentPage.getNumber (),
+					   NSRRenderRequest::NSR_RENDER_REASON_SETTINGS));
 }
 
 void
@@ -217,8 +217,8 @@ NSRReaderCore::loadSession (const NSRSession *session)
 				_doc->zoomToWidth (session->getZoomScreenWidth ());
 
 			loadPage (PAGE_LOAD_CUSTOM,
-				  NSRRenderedPage (session->getPage (),
-						   NSRRenderedPage::NSR_RENDER_REASON_NAVIGATION));
+				  NSRRenderRequest (session->getPage (),
+						   NSRRenderRequest::NSR_RENDER_REASON_NAVIGATION));
 		}
 	}
 }
@@ -227,8 +227,8 @@ void
 NSRReaderCore::navigateToPage (PageLoad dir, int pageNumber)
 {
 	loadPage (dir,
-		  NSRRenderedPage (pageNumber,
-				   NSRRenderedPage::NSR_RENDER_REASON_NAVIGATION));
+		  NSRRenderRequest (pageNumber,
+				   NSRRenderRequest::NSR_RENDER_REASON_NAVIGATION));
 }
 
 bool
@@ -289,13 +289,13 @@ NSRReaderCore::getMaxZoom () const
 }
 
 void
-NSRReaderCore::setZoom (double zoom, NSRRenderedPage::NSRRenderReason reason)
+NSRReaderCore::setZoom (double zoom, NSRRenderRequest::NSRRenderReason reason)
 {
 	if (zoom <= 0)
 		return;
 
-	bool toWidth = (reason == NSRRenderedPage::NSR_RENDER_REASON_ZOOM_TO_WIDTH ||
-			reason == NSRRenderedPage::NSR_RENDER_REASON_CROP_TO_WIDTH);
+	bool toWidth = (reason == NSRRenderRequest::NSR_RENDER_REASON_ZOOM_TO_WIDTH ||
+			reason == NSRRenderRequest::NSR_RENDER_REASON_CROP_TO_WIDTH);
 
 	if (!toWidth && _doc->getZoom () == zoom)
 		return;
@@ -303,12 +303,12 @@ NSRReaderCore::setZoom (double zoom, NSRRenderedPage::NSRRenderReason reason)
 	if (_doc->isTextOnly ())
 		return;
 
-	NSRRenderedPage cachedPage = _cache->getPage (_currentPage.getNumber ());
-	NSRRenderedPage request (_currentPage.getNumber (), reason);
+	NSRRenderRequest cachedPage = _cache->getPage (_currentPage.getNumber ());
+	NSRRenderRequest request (_currentPage.getNumber (), reason);
 	request.setText (cachedPage.getText ());
 	request.setLastTextPosition (cachedPage.getLastTextPosition ());
 
-	if (reason == NSRRenderedPage::NSR_RENDER_REASON_CROP_TO_WIDTH)
+	if (reason == NSRRenderRequest::NSR_RENDER_REASON_CROP_TO_WIDTH)
 		_cache->removePage (_currentPage.getNumber ());
 	else
 		_cache->clearStorage ();
@@ -346,8 +346,8 @@ NSRReaderCore::rotate (double rot)
 	_cache->clearStorage ();
 
 	loadPage (PAGE_LOAD_CUSTOM,
-		  NSRRenderedPage (_currentPage.getNumber (),
-				   NSRRenderedPage::NSR_RENDER_REASON_ROTATION));
+		  NSRRenderRequest (_currentPage.getNumber (),
+				   NSRRenderRequest::NSR_RENDER_REASON_ROTATION));
 }
 
 double
@@ -410,8 +410,8 @@ NSRReaderCore::switchTextReflow ()
 
 	if (needReload)
 		loadPage (PAGE_LOAD_CUSTOM,
-			  NSRRenderedPage (_currentPage.getNumber (),
-					   NSRRenderedPage::NSR_RENDER_REASON_SETTINGS));
+			  NSRRenderRequest (_currentPage.getNumber (),
+					   NSRRenderRequest::NSR_RENDER_REASON_SETTINGS));
 }
 
 void
@@ -431,7 +431,7 @@ NSRReaderCore::onRenderDone ()
 void
 NSRReaderCore::onZoomRenderDone ()
 {
-	NSRRenderedPage page = _zoomThread->getRenderedPage ();
+	NSRRenderRequest page = _zoomThread->getRenderedPage ();
 
 	if (!page.isImageValid ())
 		return;
@@ -481,7 +481,7 @@ NSRReaderCore::onZoomThreadFinished ()
 
 void
 NSRReaderCore::loadPage (PageLoad		dir,
-			 const NSRRenderedPage&	request)
+			 const NSRRenderRequest&	request)
 {
 	if (_doc == NULL || _thread->isRunning ())
 		return;
@@ -515,7 +515,7 @@ NSRReaderCore::loadPage (PageLoad		dir,
 	}
 #endif
 
-	NSRRenderedPage req (request);
+	NSRRenderRequest req (request);
 	req.setNumber (pageToLoad);
 
 	if (_cache->isPageExists (pageToLoad)) {
@@ -529,11 +529,11 @@ NSRReaderCore::loadPage (PageLoad		dir,
 		return;
 	}
 
-	NSRRenderedPage::NSRRenderReason reason = req.getRenderReason ();
+	NSRRenderRequest::NSRRenderReason reason = req.getRenderReason ();
 
-	if (reason == NSRRenderedPage::NSR_RENDER_REASON_ZOOM ||
-	    reason == NSRRenderedPage::NSR_RENDER_REASON_ZOOM_TO_WIDTH ||
-	    reason == NSRRenderedPage::NSR_RENDER_REASON_CROP_TO_WIDTH) {
+	if (reason == NSRRenderRequest::NSR_RENDER_REASON_ZOOM ||
+	    reason == NSRRenderRequest::NSR_RENDER_REASON_ZOOM_TO_WIDTH ||
+	    reason == NSRRenderRequest::NSR_RENDER_REASON_CROP_TO_WIDTH) {
 		_zoomThread->addRequest (req);
 
 		if (!_zoomThread->isRunning ())
@@ -636,8 +636,8 @@ NSRReaderCore::invertColors ()
 
 	if (needReload)
 		loadPage (PAGE_LOAD_CUSTOM,
-			  NSRRenderedPage (_currentPage.getNumber (),
-					   NSRRenderedPage::NSR_RENDER_REASON_SETTINGS));
+			  NSRRenderRequest (_currentPage.getNumber (),
+					   NSRRenderRequest::NSR_RENDER_REASON_SETTINGS));
 }
 
 bool

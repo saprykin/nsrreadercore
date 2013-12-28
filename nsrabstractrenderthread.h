@@ -1,7 +1,7 @@
 #ifndef NSRABSTRACTRENDERTHREAD_H_
 #define NSRABSTRACTRENDERTHREAD_H_
 
-#include "nsrrenderedpage.h"
+#include "nsrrenderrequest.h"
 #include "nsrabstractdocument.h"
 
 #include <QThread>
@@ -16,24 +16,24 @@ public:
 
 	void setRenderContext (NSRAbstractDocument *doc);
 	NSRAbstractDocument * getRenderContext ();
-	void addRequest (const NSRRenderedPage &page);
+	void addRequest (const NSRRenderRequest &page);
 	void cancelRequests ();
 	bool hasRequests ();
-	NSRRenderedPage getRenderedPage ();
-	NSRRenderedPage getCurrentRequest () const;
+	NSRRenderRequest getRenderedPage ();
+	NSRRenderRequest getCurrentRequest () const;
 
 	virtual void run () = 0;
 
 protected:
-	NSRRenderedPage getRequest ();
-	void completeRequest (const NSRRenderedPage& page);
-	void setCurrentRequest (const NSRRenderedPage& page);
+	NSRRenderRequest getRequest ();
+	void completeRequest (const NSRRenderRequest& page);
+	void setCurrentRequest (const NSRRenderRequest& page);
 
 private:
 	NSRAbstractDocument		*_doc;
-	NSRRenderedPage			_currentRequest;
-	QList<NSRRenderedPage>		_requestedPages;
-	QList<NSRRenderedPage>		_renderedPages;
+	NSRRenderRequest		_currentRequest;
+	QList<NSRRenderRequest>		_requestedPages;
+	QList<NSRRenderRequest>		_renderedPages;
 	mutable QMutex			_requestedMutex;
 	mutable QMutex			_renderedMutex;
 };

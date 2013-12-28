@@ -33,7 +33,7 @@ NSRAbstractRenderThread::getRenderContext ()
 }
 
 void
-NSRAbstractRenderThread::addRequest (const NSRRenderedPage& page)
+NSRAbstractRenderThread::addRequest (const NSRRenderRequest& page)
 {
 	QMutexLocker locker (&_requestedMutex);
 	_requestedPages.append (page);
@@ -53,23 +53,23 @@ NSRAbstractRenderThread::hasRequests ()
 	return !_requestedPages.isEmpty ();
 }
 
-NSRRenderedPage
+NSRRenderRequest
 NSRAbstractRenderThread::getRequest ()
 {
 	QMutexLocker locker (&_requestedMutex);
 
 	if (_requestedPages.isEmpty ())
-		return NSRRenderedPage ();
+		return NSRRenderRequest ();
 	else
 		return _requestedPages.takeLast ();
 }
 
-NSRRenderedPage
+NSRRenderRequest
 NSRAbstractRenderThread::getRenderedPage ()
 {
 	QMutexLocker locker (&_renderedMutex);
 
-	NSRRenderedPage page;
+	NSRRenderRequest page;
 
 	if (!_renderedPages.isEmpty ()) {
 		page = _renderedPages.takeFirst ();
@@ -79,7 +79,7 @@ NSRAbstractRenderThread::getRenderedPage ()
 	return page;
 }
 
-NSRRenderedPage
+NSRRenderRequest
 NSRAbstractRenderThread::getCurrentRequest () const
 {
 	QMutexLocker locker (&_requestedMutex);
@@ -87,14 +87,14 @@ NSRAbstractRenderThread::getCurrentRequest () const
 }
 
 void
-NSRAbstractRenderThread::completeRequest (const NSRRenderedPage& page)
+NSRAbstractRenderThread::completeRequest (const NSRRenderRequest& page)
 {
 	QMutexLocker locker (&_renderedMutex);
 	_renderedPages.append (page);
 }
 
 void
-NSRAbstractRenderThread::setCurrentRequest (const NSRRenderedPage& page)
+NSRAbstractRenderThread::setCurrentRequest (const NSRRenderRequest& page)
 {
 	QMutexLocker locker (&_requestedMutex);
 	_currentRequest = page;

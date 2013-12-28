@@ -1,6 +1,6 @@
-#include "nsrrenderedpage.h"
+#include "nsrrenderrequest.h"
 
-NSRRenderedPage::NSRRenderedPage (QObject *parent) :
+NSRRenderRequest::NSRRenderRequest (QObject *parent) :
 	QObject (parent),
 	_reason (NSR_RENDER_REASON_NONE),
 	_zoom (0),
@@ -10,7 +10,7 @@ NSRRenderedPage::NSRRenderedPage (QObject *parent) :
 {
 }
 
-NSRRenderedPage::NSRRenderedPage (int number, QObject *parent) :
+NSRRenderRequest::NSRRenderRequest (int number, QObject *parent) :
 	QObject (parent),
 	_reason (NSR_RENDER_REASON_NONE),
 	_zoom (0),
@@ -20,7 +20,7 @@ NSRRenderedPage::NSRRenderedPage (int number, QObject *parent) :
 {
 }
 
-NSRRenderedPage::NSRRenderedPage (int number, NSRRenderReason reason, QObject *parent) :
+NSRRenderRequest::NSRRenderRequest (int number, NSRRenderReason reason, QObject *parent) :
 		QObject (parent),
 		_reason (reason),
 		_zoom (0),
@@ -30,7 +30,7 @@ NSRRenderedPage::NSRRenderedPage (int number, NSRRenderReason reason, QObject *p
 {
 }
 
-NSRRenderedPage::NSRRenderedPage (const NSRRenderedPage& page) :
+NSRRenderRequest::NSRRenderRequest (const NSRRenderRequest& page) :
 	QObject (page.parent ())
 {
 	_reason		= page._reason;
@@ -44,12 +44,12 @@ NSRRenderedPage::NSRRenderedPage (const NSRRenderedPage& page) :
 	_cached		= page._cached;
 }
 
-NSRRenderedPage::~NSRRenderedPage ()
+NSRRenderRequest::~NSRRenderRequest ()
 {
 }
 
-NSRRenderedPage&
-NSRRenderedPage::operator = (const NSRRenderedPage& page)
+NSRRenderRequest&
+NSRRenderRequest::operator = (const NSRRenderRequest& page)
 {
 	if (this != &page) {
 		_reason		= page._reason;
@@ -66,62 +66,62 @@ NSRRenderedPage::operator = (const NSRRenderedPage& page)
 	return *this;
 }
 
-NSRRenderedPage::NSRRenderReason
-NSRRenderedPage::getRenderReason () const
+NSRRenderRequest::NSRRenderReason
+NSRRenderRequest::getRenderReason () const
 {
 	return _reason;
 }
 
 int
-NSRRenderedPage::getNumber () const
+NSRRenderRequest::getNumber () const
 {
 	return _number;
 }
 
 double
-NSRRenderedPage::getZoom () const
+NSRRenderRequest::getZoom () const
 {
 	return _zoom;
 }
 
 QSize
-NSRRenderedPage::getSize () const
+NSRRenderRequest::getSize () const
 {
 	return QSize (_image.width (), _image.height ());
 }
 
 NSR_CORE_IMAGE_DATATYPE
-NSRRenderedPage::getImage () const
+NSRRenderRequest::getImage () const
 {
 	return _image;
 }
 
 QString
-NSRRenderedPage::getText () const
+NSRRenderRequest::getText () const
 {
 	return _text;
 }
 
 QPointF
-NSRRenderedPage::getLastPosition () const
+NSRRenderRequest::getLastPosition () const
 {
 	return _lastPos;
 }
 
 QPointF
-NSRRenderedPage::getLastTextPosition () const
+NSRRenderRequest::getLastTextPosition () const
 {
 	return _lastTextPos;
 }
 
 bool
-NSRRenderedPage::isValid () const
+NSRRenderRequest::isValid () const
 {
 	return _number > 0;
 }
 
 bool
-NSRRenderedPage::isImageValid () const
+NSRRenderRequest::isImageValid () const
 {
 #ifdef Q_OS_BLACKBERRY
 	return _number > 0 && _image.isValid ();
@@ -132,7 +132,7 @@ NSRRenderedPage::isImageValid () const
 
 bool
 
-NSRRenderedPage::isEmpty () const
+NSRRenderRequest::isEmpty () const
 {
 #ifdef Q_OS_BLACKBERRY
 	return _text.isEmpty () && !_image.isValid ();
@@ -142,31 +142,31 @@ NSRRenderedPage::isEmpty () const
 }
 
 bool
-NSRRenderedPage::isCropped () const
+NSRRenderRequest::isCropped () const
 {
 	return _cropped;
 }
 
 bool
-NSRRenderedPage::isCached () const
+NSRRenderRequest::isCached () const
 {
 	return _cached;
 }
 
 void
-NSRRenderedPage::setRenderReason (NSRRenderedPage::NSRRenderReason reason)
+NSRRenderRequest::setRenderReason (NSRRenderRequest::NSRRenderReason reason)
 {
 	_reason = reason;
 }
 
 void
-NSRRenderedPage::setNumber (int number)
+NSRRenderRequest::setNumber (int number)
 {
 	_number = number;
 }
 
 void
-NSRRenderedPage::setZoom (double zoom)
+NSRRenderRequest::setZoom (double zoom)
 {
 	if (zoom < 0)
 		zoom = 0;
@@ -175,37 +175,37 @@ NSRRenderedPage::setZoom (double zoom)
 }
 
 void
-NSRRenderedPage::setImage (NSR_CORE_IMAGE_DATATYPE img)
+NSRRenderRequest::setImage (NSR_CORE_IMAGE_DATATYPE img)
 {
 	_image = img;
 }
 
 void
-NSRRenderedPage::setText (const QString& text)
+NSRRenderRequest::setText (const QString& text)
 {
 	_text = text;
 }
 
 void
-NSRRenderedPage::setLastPosition (const QPointF& pos)
+NSRRenderRequest::setLastPosition (const QPointF& pos)
 {
 	_lastPos = pos;
 }
 
 void
-NSRRenderedPage::setLastTextPosition (const QPointF& pos)
+NSRRenderRequest::setLastTextPosition (const QPointF& pos)
 {
 	_lastTextPos = pos;
 }
 
 void
-NSRRenderedPage::setCropped (bool cropped)
+NSRRenderRequest::setCropped (bool cropped)
 {
 	_cropped = cropped;
 }
 
 void
-NSRRenderedPage::setCached (bool cached)
+NSRRenderRequest::setCached (bool cached)
 {
 	_cached = cached;
 }

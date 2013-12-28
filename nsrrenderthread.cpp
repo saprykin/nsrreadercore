@@ -36,7 +36,7 @@ NSRRenderThread::run ()
 	}
 
 	/* Does we have new pages to render? */
-	NSRRenderedPage page = getRequest ();
+	NSRRenderRequest page = getRequest ();
 
 	if (page.getNumber () < 1 ||
 	    page.getNumber () > doc->getNumberOfPages ()) {
@@ -65,7 +65,7 @@ NSRRenderThread::run ()
 	if (!doc->getPassword().isEmpty ())
 		NSRThumbnailer::saveThumbnailEncrypted (doc->getDocumentPath ());
 	else if (NSRThumbnailer::isThumbnailOutdated (doc->getDocumentPath ())) {
-		NSRRenderedPage	thumbPage;
+		NSRRenderRequest	thumbPage;
 		int		wasZoom = doc->getZoom ();
 		int		wasZoomWidth = doc->getScreenWidth ();
 		bool		wasZoomToWidth = doc->isZoomToWidth ();

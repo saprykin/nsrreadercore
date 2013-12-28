@@ -1,7 +1,7 @@
 #ifndef NSRPAGESCACHE_H_
 #define NSRPAGESCACHE_H_
 
-#include "nsrrenderedpage.h"
+#include "nsrrenderrequest.h"
 
 #include <QObject>
 #include <QHash>
@@ -15,8 +15,8 @@ public:
 	virtual ~NSRPagesCache ();
 
 	bool isPageExists (int number) const;
-	NSRRenderedPage getPage (int number) const;
-	void addPage (const NSRRenderedPage &page);
+	NSRRenderRequest getPage (int number) const;
+	void addPage (const NSRRenderRequest &page);
 	void removePage (int number);
 	void clearStorage ();
 	void updatePagePositions (int			number,
@@ -26,7 +26,7 @@ public:
 	void removePagesWithImages ();
 
 private:
-	QHash<int, NSRRenderedPage>	_hash;
+	QHash<int, NSRRenderRequest>	_hash;
 	QList<int>			_pages;
 	qint64				_usedMemory;
 };

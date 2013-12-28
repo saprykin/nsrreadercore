@@ -25,7 +25,7 @@ NSRRenderZoomThread::run ()
 			return;
 		}
 
-		NSRRenderedPage page = getRequest ();
+		NSRRenderRequest page = getRequest ();
 
 		/* Last page is only one that is actual, so clear
 		 * all other */
@@ -45,7 +45,7 @@ NSRRenderZoomThread::run ()
 		}
 
 		if (isDocumentChanged ()) {
-			setCurrentRequest (NSRRenderedPage ());
+			setCurrentRequest (NSRRenderRequest ());
 			return;
 		}
 
@@ -59,7 +59,7 @@ NSRRenderZoomThread::run ()
 			emit renderDone ();
 		}
 
-		setCurrentRequest (NSRRenderedPage ());
+		setCurrentRequest (NSRRenderRequest ());
 	} while (hasPage);
 }
 

@@ -1,5 +1,5 @@
-#ifndef NSRRENDEREDPAGE_H_
-#define NSRRENDEREDPAGE_H_
+#ifndef NSRRENDERREQUEST_H_
+#define NSRRENDERREQUEST_H_
 
 #include "nsrabstractdocument.h"
 
@@ -7,7 +7,7 @@
 #include <QSize>
 #include <QPointF>
 
-class NSRRenderedPage : public QObject
+class NSRRenderRequest : public QObject
 {
 	Q_OBJECT
 	Q_ENUMS (NSRRenderReason)
@@ -22,14 +22,14 @@ public:
 		NSR_RENDER_REASON_CROP_TO_WIDTH	= 6
 	};
 
-	NSRRenderedPage (QObject *parent = 0);
-	NSRRenderedPage (int number, QObject *parent = 0);
-	NSRRenderedPage (int number, NSRRenderReason reason, QObject *parent = 0);
-	NSRRenderedPage (const NSRRenderedPage& page);
-	virtual ~NSRRenderedPage ();
-	NSRRenderedPage& operator= (const NSRRenderedPage& page);
+	NSRRenderRequest (QObject *parent = 0);
+	NSRRenderRequest (int number, QObject *parent = 0);
+	NSRRenderRequest (int number, NSRRenderReason reason, QObject *parent = 0);
+	NSRRenderRequest (const NSRRenderRequest& page);
+	virtual ~NSRRenderRequest ();
+	NSRRenderRequest& operator= (const NSRRenderRequest& page);
 
-	NSRRenderedPage::NSRRenderReason getRenderReason () const;
+	NSRRenderRequest::NSRRenderReason getRenderReason () const;
 	int getNumber () const;
 	double getZoom () const;
 	QSize getSize () const;
@@ -43,7 +43,7 @@ public:
 	bool isCropped () const;
 	bool isCached () const;
 
-	void setRenderReason (NSRRenderedPage::NSRRenderReason reason);
+	void setRenderReason (NSRRenderRequest::NSRRenderReason reason);
 	void setNumber (int number);
 	void setZoom (double zoom);
 	void setImage (NSR_CORE_IMAGE_DATATYPE img);
@@ -65,4 +65,4 @@ private:
 	bool			_cached;
 };
 
-#endif /* NSRRENDEREDPAGE_H_ */
+#endif /* NSRRENDERREQUEST_H_ */

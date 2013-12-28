@@ -6,7 +6,7 @@
 #include "nsrabstractdocument.h"
 #include "nsrrenderthread.h"
 #include "nsrrenderzoomthread.h"
-#include "nsrrenderedpage.h"
+#include "nsrrenderrequest.h"
 #include "nsrpagescache.h"
 #include "nsrsession.h"
 #include "nsrsettings.h"
@@ -30,7 +30,7 @@ public:
 	void closeDocument ();
 	QString getDocumentPath () const;
 
-	NSRRenderedPage getCurrentPage () const;
+	NSRRenderRequest getCurrentPage () const;
 	int getPagesCount () const;
 	void reloadSettings ();
 	void loadSession (const NSRSession *session);
@@ -41,7 +41,7 @@ public:
 	double getZoom () const;
 	double getMinZoom () const;
 	double getMaxZoom () const;
-	void setZoom (double zoom, NSRRenderedPage::NSRRenderReason reason);
+	void setZoom (double zoom, NSRRenderRequest::NSRRenderReason reason);
 	void rotate (double rot);
 	double getRotation () const;
 	void saveCurrentPagePositions (const QPointF& pos,
@@ -71,7 +71,7 @@ private Q_SLOTS:
 
 private:
 	void loadPage (PageLoad			dir,
-		       const NSRRenderedPage&	request = NSRRenderedPage (0, NULL));
+		       const NSRRenderRequest&	request = NSRRenderRequest (0, NULL));
 	NSRAbstractDocument * copyDocument (const NSRAbstractDocument *doc);
 	NSRAbstractDocument * documentByPath (const QString& path) const;
 	double normalizeAngle (double angle) const;
@@ -81,7 +81,7 @@ private:
 	NSRRenderThread					*_thread;
 	NSRRenderZoomThread				*_zoomThread;
 	NSRPagesCache					*_cache;
-	NSRRenderedPage					_currentPage;
+	NSRRenderRequest				_currentPage;
 	bool						_isCardMode;
 };
 

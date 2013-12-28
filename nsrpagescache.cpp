@@ -22,14 +22,14 @@ NSRPagesCache::isPageExists (int number) const
 	return _hash.contains (number);
 }
 
-NSRRenderedPage
+NSRRenderRequest
 NSRPagesCache::getPage (int number) const
 {
 	return _hash.value (number);
 }
 
 void
-NSRPagesCache::addPage (const NSRRenderedPage& page)
+NSRPagesCache::addPage (const NSRRenderRequest& page)
 {
 	qint64		newSize;
 	int		deqPage;
@@ -54,14 +54,14 @@ NSRPagesCache::addPage (const NSRRenderedPage& page)
 		else
 			deqPage = _pages.takeFirst ();
 
-		NSRRenderedPage rpage = _hash.take (deqPage);
+		NSRRenderRequest rpage = _hash.take (deqPage);
 
 		_usedMemory -= (rpage.getSize().width () * rpage.getSize().height () * 4 +
 				rpage.getText().size () * 2);
 	}
 
-	NSRRenderedPage newPage = page;
-	newPage.setRenderReason (NSRRenderedPage::NSR_RENDER_REASON_NAVIGATION);
+	NSRRenderRequest newPage = page;
+	newPage.setRenderReason (NSRRenderRequest::NSR_RENDER_REASON_NAVIGATION);
 	newPage.setCached (true);
 
 	_pages.append (newPage.getNumber ());
@@ -77,7 +77,7 @@ NSRPagesCache::removePage (int number)
 	if (number <= 0)
 		return;
 
-	NSRRenderedPage page = _hash.take (number);
+	NSRRenderRequest page = _hash.take (number);
 
 	_pages.removeAll (number);
 
@@ -100,7 +100,7 @@ NSRPagesCache::updatePagePositions (int number,
 				    const QPointF& pos,
 				    const QPointF& textPos)
 {
-	NSRRenderedPage page = _hash.value (number);
+	NSRRenderRequest page = _hash.value (number);
 
 	if (!page.isValid ())
 		return;
