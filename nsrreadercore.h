@@ -5,7 +5,6 @@
 
 #include "nsrabstractdocument.h"
 #include "nsrrenderthread.h"
-#include "nsrrenderzoomthread.h"
 #include "nsrrenderrequest.h"
 #include "nsrpagescache.h"
 #include "nsrsession.h"
@@ -80,7 +79,7 @@ private:
 	NSRAbstractDocument				*_doc;
 	NSRAbstractDocument				*_zoomDoc;
 	NSRRenderThread					*_thread;
-	NSRRenderZoomThread				*_zoomThread;
+	NSRRenderThread					*_zoomThread;
 	NSRPagesCache					*_cache;
 	NSRRenderedPage					_currentPage;
 	NSRRenderRequest				_renderRequest;

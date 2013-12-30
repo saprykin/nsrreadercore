@@ -19,7 +19,7 @@ NSRReaderCore::NSRReaderCore (bool isCardMode, QObject *parent) :
 	_isCardMode (isCardMode)
 {
 	_thread		= new NSRRenderThread (this);
-	_zoomThread	= new NSRRenderZoomThread (this);
+	_zoomThread	= new NSRRenderThread (this);
 	_cache		= new NSRPagesCache (this);
 
 	bool ok = connect (_thread, SIGNAL (renderDone ()), this, SLOT (onRenderDone ()));
@@ -121,7 +121,7 @@ NSRReaderCore::closeDocument ()
 			_zoomDoc = NULL;
 			_zoomThread->setRenderContext (NULL);
 		} else {
-			_zoomThread->setDocumentChanged (true);
+			_zoomThread->setRenderCanceled (true);
 			_zoomThread->cancelRequests ();
 		}
 	}
@@ -415,7 +415,7 @@ NSRReaderCore::onZoomRenderDone ()
 
 	/* We do not need to reset document changed flag because it would be
 	 * done almost immediately in onZoomThreadFinished() slot */
-	if (_zoomThread->isDocumentChanged ())
+	if (_zoomThread->isRenderCanceled ())
 		return;
 
 	bool relevant = _renderRequest.isAutoCrop () == page.isAutoCrop () &&
@@ -444,12 +444,12 @@ NSRReaderCore::onZoomRenderDone ()
 void
 NSRReaderCore::onZoomThreadFinished ()
 {
-	if (_zoomThread->isDocumentChanged ()) {
-		/* All requests must be cancelled on document opening */
+	if (_zoomThread->isRenderCanceled ()) {
+		/* All requests must be canceled on document opening */
 		delete _zoomDoc;
 		_zoomDoc = copyDocument (_doc);
 		_zoomThread->setRenderContext (_zoomDoc);
-		_zoomThread->setDocumentChanged (false);
+		_zoomThread->setRenderCanceled (false);
 	}
 
 	if (_zoomThread->hasRequests ())
@@ -512,6 +512,7 @@ NSRReaderCore::loadPage (PageLoad				dir,
 	if (reason == NSRRenderRequest::NSR_RENDER_REASON_ZOOM ||
 	    reason == NSRRenderRequest::NSR_RENDER_REASON_ZOOM_TO_WIDTH ||
 	    reason == NSRRenderRequest::NSR_RENDER_REASON_CROP_TO_WIDTH) {
+		_zoomThread->cancelRequests ();
 		_zoomThread->addRequest (req);
 
 		if (!_zoomThread->isRunning ())
@@ -519,6 +520,7 @@ NSRReaderCore::loadPage (PageLoad				dir,
 	} else {
 		emit needIndicator (true);
 
+		_zoomThread->cancelRequests ();
 		_thread->addRequest (req);
 		_thread->start ();
 	}
