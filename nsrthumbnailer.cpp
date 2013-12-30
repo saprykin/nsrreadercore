@@ -25,7 +25,7 @@ NSRThumbnailer::isThumbnailExists (const QString& path)
 
 void
 NSRThumbnailer::saveThumbnail (const QString&		path,
-			       const NSRRenderRequest&	page)
+			       const NSRRenderedPage&	page)
 {
 	QDir dir;
 

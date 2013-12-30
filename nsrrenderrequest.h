@@ -1,11 +1,10 @@
 #ifndef NSRRENDERREQUEST_H_
 #define NSRRENDERREQUEST_H_
 
-#include "nsrabstractdocument.h"
-
 #include <QObject>
-#include <QSize>
-#include <QPointF>
+#include <QString>
+
+#include <qmath.h>
 
 class NSRRenderRequest : public QObject
 {
@@ -25,44 +24,108 @@ public:
 	NSRRenderRequest (QObject *parent = 0);
 	NSRRenderRequest (int number, QObject *parent = 0);
 	NSRRenderRequest (int number, NSRRenderReason reason, QObject *parent = 0);
-	NSRRenderRequest (const NSRRenderRequest& page);
+	NSRRenderRequest (const NSRRenderRequest& req);
 	virtual ~NSRRenderRequest ();
-	NSRRenderRequest& operator= (const NSRRenderRequest& page);
 
-	NSRRenderRequest::NSRRenderReason getRenderReason () const;
-	int getNumber () const;
-	double getZoom () const;
-	QSize getSize () const;
-	NSR_CORE_IMAGE_DATATYPE getImage () const;
-	QString getText () const;
-	QPointF getLastPosition () const;
-	QPointF getLastTextPosition () const;
-	bool isValid () const;
-	bool isImageValid () const;
-	bool isEmpty () const;
-	bool isCropped () const;
-	bool isCached () const;
+	virtual NSRRenderRequest& operator= (const NSRRenderRequest& req);
 
-	void setRenderReason (NSRRenderRequest::NSRRenderReason reason);
-	void setNumber (int number);
-	void setZoom (double zoom);
-	void setImage (NSR_CORE_IMAGE_DATATYPE img);
-	void setText (const QString &text);
-	void setLastPosition (const QPointF& pos);
-	void setLastTextPosition (const QPointF& pos);
-	void setCropped (bool cropped);
-	void setCached (bool cached);
+	inline QString getEncoding () const {
+		return _encoding;
+	}
+
+	inline NSRRenderRequest::NSRRenderReason getRenderReason () const {
+		return _reason;
+	}
+
+	inline int getNumber () const {
+		return _number;
+	}
+
+	inline double getZoom () const {
+		return _zoom;
+	}
+
+	inline double getRotation () const {
+		return _rotation;
+	}
+
+	inline double getScreenWidth () const {
+		return _screenWidth;
+	}
+
+	inline bool isValid () const {
+		return _number > 0;
+	}
+
+	inline bool isAutoCrop () const {
+		return _autoCrop;
+	}
+
+	inline bool isInvertColors () const {
+		return _invertColors;
+	}
+
+	inline bool isTextOnly () const {
+		return _textOnly;
+	}
+
+	inline bool isZoomToWidth () const {
+		return _zoomToWidth;
+	}
+
+	inline void setEncoding (const QString& encoding) {
+		_encoding = encoding;
+	}
+
+	inline void setRenderReason (NSRRenderRequest::NSRRenderReason reason) {
+		_reason = reason;
+	}
+
+	inline void setNumber (int number) {
+		_number = number;
+	}
+
+	inline void setZoom (double zoom) {
+		_zoom = qBound (0.0, zoom, zoom);
+	}
+
+	inline void setRotation (double rotation) {
+		_rotation = rotation;
+	}
+
+	inline void setScreenWidth (double screenWidth) {
+		_screenWidth = screenWidth;
+	}
+
+	inline void setAutoCrop (bool autoCrop) {
+		_autoCrop = autoCrop;
+	}
+
+	inline void setInvertColors (bool invertColors) {
+		_invertColors = invertColors;
+	}
+
+	inline void setTextOnly (bool textOnly) {
+		_textOnly = textOnly;
+	}
+
+	inline void setZoomToWidth (bool zoomToWidth) {
+		_zoomToWidth = zoomToWidth;
+	}
 
 private:
+	void copyProperties (const QObject& obj);
+
+	QString			_encoding;
 	NSRRenderReason		_reason;
-	NSR_CORE_IMAGE_DATATYPE	_image;
-	QString			_text;
-	QPointF			_lastPos;
-	QPointF			_lastTextPos;
 	double			_zoom;
+	double			_rotation;
+	double			_screenWidth;
 	int			_number;
-	bool			_cropped;
-	bool			_cached;
+	bool			_autoCrop;
+	bool			_invertColors;
+	bool			_textOnly;
+	bool			_zoomToWidth;
 };
 
 #endif /* NSRRENDERREQUEST_H_ */

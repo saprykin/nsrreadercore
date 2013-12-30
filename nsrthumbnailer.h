@@ -1,7 +1,7 @@
 #ifndef NSRTHUMBNAILER_H_
 #define NSRTHUMBNAILER_H_
 
-#include "nsrrenderrequest.h"
+#include "nsrrenderedpage.h"
 
 #include <QString>
 
@@ -10,7 +10,7 @@ class NSRThumbnailer
 public:
 	static bool isThumbnailExists (const QString& path);
 	static void saveThumbnail (const QString&		path,
-				   const NSRRenderRequest&	page);
+				   const NSRRenderedPage&	page);
 	static void saveThumbnailEncrypted (const QString&	path);
 	static QString getThumbnailText (const QString& path);
 	static QString getThumnailPath (const QString& path);

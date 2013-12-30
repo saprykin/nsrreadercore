@@ -30,7 +30,7 @@ public:
 	void closeDocument ();
 	QString getDocumentPath () const;
 
-	NSRRenderRequest getCurrentPage () const;
+	NSRRenderedPage getCurrentPage () const;
 	int getPagesCount () const;
 	void reloadSettings ();
 	void loadSession (const NSRSession *session);
@@ -70,8 +70,9 @@ private Q_SLOTS:
 	void onZoomThreadFinished ();
 
 private:
-	void loadPage (PageLoad			dir,
-		       const NSRRenderRequest&	request = NSRRenderRequest (0, NULL));
+	void loadPage (PageLoad					dir,
+		       NSRRenderRequest::NSRRenderReason	reason,
+		       int page					= 0);
 	NSRAbstractDocument * copyDocument (const NSRAbstractDocument *doc);
 	NSRAbstractDocument * documentByPath (const QString& path) const;
 	double normalizeAngle (double angle) const;
@@ -81,7 +82,8 @@ private:
 	NSRRenderThread					*_thread;
 	NSRRenderZoomThread				*_zoomThread;
 	NSRPagesCache					*_cache;
-	NSRRenderRequest				_currentPage;
+	NSRRenderedPage					_currentPage;
+	NSRRenderRequest				_renderRequest;
 	bool						_isCardMode;
 };
 

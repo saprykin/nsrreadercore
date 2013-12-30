@@ -58,14 +58,7 @@ NSRReaderCore::openDocument (const QString &path,  const QString& password)
 		return;
 
 	_doc->setPassword (password);
-
-	if (_isCardMode)
-		_doc->setInvertedColors (false);
-	else {
-		_doc->setInvertedColors (NSRSettings::instance()->isInvertedColors ());
-		_doc->setAutoCrop (NSRSettings::instance()->isAutoCrop ());
-		_doc->setEncoding (NSRSettings::instance()->getTextEncoding ());
-	}
+	_renderRequest = NSRRenderRequest ();
 
 	if (!_doc->isValid ()) {
 		emit errorWhileOpening (_doc->getLastError ());
@@ -74,17 +67,23 @@ NSRReaderCore::openDocument (const QString &path,  const QString& password)
 		return;
 	}
 
+	if (_isCardMode)
+		_renderRequest.setInvertColors (false);
+	else {
+		_renderRequest.setInvertColors (NSRSettings::instance()->isInvertedColors ());
+		_renderRequest.setAutoCrop (NSRSettings::instance()->isAutoCrop ());
+		_renderRequest.setEncoding (NSRSettings::instance()->getTextEncoding ());
+	}
+
 	if (!_isCardMode && NSRSettings::instance()->isStarting ())
-		_doc->setTextOnly (NSRSettings::instance()->isWordWrap ());
+		_renderRequest.setTextOnly (NSRSettings::instance()->isWordWrap ());
 	else
-		_doc->setTextOnly (_doc->getPrefferedDocumentStyle () == NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT);
+		_renderRequest.setTextOnly (_doc->getPrefferedDocumentStyle () == NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT);
 
 	_thread->setRenderContext (_doc);
 
-	/* We need only graphic mode to render page on zooming */
 	if (_zoomDoc == NULL) {
 		_zoomDoc = copyDocument (_doc);
-		_zoomDoc->setTextOnly (false);
 		_zoomThread->setRenderContext (_zoomDoc);
 	}
 
@@ -127,7 +126,8 @@ NSRReaderCore::closeDocument ()
 		}
 	}
 
-	_currentPage = NSRRenderRequest ();
+	_renderRequest = NSRRenderRequest ();
+	_currentPage = NSRRenderedPage ();
 	_cache->clearStorage ();
 
 	if (!path.isEmpty ())
@@ -143,7 +143,7 @@ NSRReaderCore::getDocumentPath () const
 		return _doc->getDocumentPath ();
 }
 
-NSRRenderRequest
+NSRRenderedPage
 NSRReaderCore::getCurrentPage () const
 {
 	return _currentPage;
@@ -165,18 +165,15 @@ NSRReaderCore::reloadSettings ()
 		return;
 
 	bool	needReload = false;
-	bool	wasCropped = _doc->isAutoCrop ();
-	QString	wasEncoding = _doc->getEncoding ();
+	bool	wasCropped = _renderRequest.isAutoCrop ();
+	QString	wasEncoding = _renderRequest.getEncoding ();
 
-	_doc->setAutoCrop (NSRSettings::instance()->isAutoCrop ());
-	_doc->setEncoding (NSRSettings::instance()->getTextEncoding ());
+	_renderRequest.setAutoCrop (NSRSettings::instance()->isAutoCrop ());
+	_renderRequest.setEncoding (NSRSettings::instance()->getTextEncoding ());
 
-	if (_zoomDoc != NULL)
-		_zoomDoc->setAutoCrop (NSRSettings::instance()->isAutoCrop ());
-
-	if (wasCropped != _doc->isAutoCrop ()) {
+	if (wasCropped != _renderRequest.isAutoCrop ()) {
 		/* Do not clear text from cache if text mode is remained */
-		if (_doc->isTextOnly ())
+		if (_renderRequest.isTextOnly ())
 			_cache->removePagesWithImages ();
 		else {
 			_cache->clearStorage ();
@@ -184,15 +181,13 @@ NSRReaderCore::reloadSettings ()
 		}
 	}
 
-	if (wasEncoding != _doc->getEncoding () && _doc->isEncodingUsed ()) {
+	if (wasEncoding != _renderRequest.getEncoding () && _doc->isEncodingUsed ()) {
 		_cache->clearStorage ();
 		needReload = true;
 	}
 
 	if (needReload)
-		loadPage (PAGE_LOAD_CUSTOM,
-			  NSRRenderRequest (_currentPage.getNumber (),
-					   NSRRenderRequest::NSR_RENDER_REASON_SETTINGS));
+		loadPage (PAGE_LOAD_CUSTOM, NSRRenderRequest::NSR_RENDER_REASON_SETTINGS, _renderRequest.getNumber ());
 }
 
 void
@@ -207,18 +202,14 @@ NSRReaderCore::loadSession (const NSRSession *session)
 		openDocument (file, session->getPassword ());
 
 		if (isDocumentOpened ()) {
-			_doc->setRotation (session->getRotation ());
-			_doc->setZoom (session->getZoomGraphic ());
+			_renderRequest.setRotation (session->getRotation ());
+			_renderRequest.setZoom (session->getZoomGraphic ());
+			_renderRequest.setZoomToWidth (session->isFitToWidth ());
 
-			if (_zoomDoc != NULL)
-				_zoomDoc->setRotation (session->getRotation ());
+			if (_renderRequest.isZoomToWidth ())
+				_renderRequest.setScreenWidth (session->getZoomScreenWidth ());
 
-			if (session->isFitToWidth ())
-				_doc->zoomToWidth (session->getZoomScreenWidth ());
-
-			loadPage (PAGE_LOAD_CUSTOM,
-				  NSRRenderRequest (session->getPage (),
-						   NSRRenderRequest::NSR_RENDER_REASON_NAVIGATION));
+			loadPage (PAGE_LOAD_CUSTOM, NSRRenderRequest::NSR_RENDER_REASON_NAVIGATION, session->getPage ());
 		}
 	}
 }
@@ -226,9 +217,7 @@ NSRReaderCore::loadSession (const NSRSession *session)
 void
 NSRReaderCore::navigateToPage (PageLoad dir, int pageNumber)
 {
-	loadPage (dir,
-		  NSRRenderRequest (pageNumber,
-				   NSRRenderRequest::NSR_RENDER_REASON_NAVIGATION));
+	loadPage (dir, NSRRenderRequest::NSR_RENDER_REASON_NAVIGATION, pageNumber);
 }
 
 bool
@@ -246,10 +235,7 @@ NSRReaderCore::setScreenWidth (int width)
 	if (_doc == NULL || !_doc->isValid ())
 		return;
 
-	if (_doc->isZoomToWidth () && _doc->getScreenWidth () == width)
-		return;
-
-	_doc->zoomToWidth (width);
+	_renderRequest.setScreenWidth (width);
 }
 
 bool
@@ -258,7 +244,7 @@ NSRReaderCore::isFitToWidth () const
 	if (_doc == NULL || !_doc->isValid ())
 		return false;
 
-	return _doc->isZoomToWidth ();
+	return _renderRequest.isZoomToWidth ();
 }
 
 double
@@ -267,7 +253,7 @@ NSRReaderCore::getZoom () const
 	if (_doc == NULL || !_doc->isValid ())
 		return 0;
 
-	return _doc->getZoom ();
+	return _renderRequest.getZoom ();
 }
 
 double
@@ -291,34 +277,35 @@ NSRReaderCore::getMaxZoom () const
 void
 NSRReaderCore::setZoom (double zoom, NSRRenderRequest::NSRRenderReason reason)
 {
+	if (_doc == NULL || !_doc->isValid ())
+		return;
+
 	if (zoom <= 0)
 		return;
 
 	bool toWidth = (reason == NSRRenderRequest::NSR_RENDER_REASON_ZOOM_TO_WIDTH ||
 			reason == NSRRenderRequest::NSR_RENDER_REASON_CROP_TO_WIDTH);
 
-	if (!toWidth && _doc->getZoom () == zoom)
+	if (!toWidth && qAbs (_renderRequest.getZoom () - zoom) <= DBL_EPSILON)
 		return;
 
-	if (_doc->isTextOnly ())
+	if (_renderRequest.isTextOnly ())
 		return;
 
-	NSRRenderRequest cachedPage = _cache->getPage (_currentPage.getNumber ());
-	NSRRenderRequest request (_currentPage.getNumber (), reason);
-	request.setText (cachedPage.getText ());
-	request.setLastTextPosition (cachedPage.getLastTextPosition ());
+	NSRRenderedPage cachedPage = _cache->getPage (_renderRequest.getNumber ());
+
+	_renderRequest.setProperty ("nsr-cache-text", cachedPage.getText ());
+	_renderRequest.setProperty ("nsr-cache-last-text-position", cachedPage.getLastTextPosition ());
 
 	if (reason == NSRRenderRequest::NSR_RENDER_REASON_CROP_TO_WIDTH)
-		_cache->removePage (_currentPage.getNumber ());
+		_cache->removePage (_renderRequest.getNumber ());
 	else
 		_cache->clearStorage ();
 
-	if (!toWidth)
-		_doc->setZoom (zoom);
+	_renderRequest.setZoomToWidth (toWidth);
+	_renderRequest.setZoom (zoom);
 
-	_zoomDoc->setZoom (zoom);
-
-	loadPage (PAGE_LOAD_CUSTOM, request);
+	loadPage (PAGE_LOAD_CUSTOM, reason, _renderRequest.getNumber ());
 }
 
 void
@@ -327,27 +314,15 @@ NSRReaderCore::rotate (double rot)
 	if (_doc == NULL || !_doc->isValid ())
 		return;
 
-	int newRot = (int) normalizeAngle (_doc->getRotation () + rot);
+	int newRot = (int) normalizeAngle (_renderRequest.getRotation () + rot);
 
-	if (newRot == _doc->getRotation ())
+	if (newRot == (int) (_renderRequest.getRotation () + 0.5))
 		return;
 
-	_doc->setRotation (newRot);
-
-	if (_zoomDoc != NULL) {
-		_zoomDoc->setRotation (_doc->getRotation ());
-
-		if (_zoomThread != NULL && _zoomThread->isRunning ()) {
-			_zoomThread->setDocumentChanged (true);
-			_zoomThread->cancelRequests ();
-		}
-	}
-
+	_renderRequest.setRotation (newRot);
 	_cache->clearStorage ();
 
-	loadPage (PAGE_LOAD_CUSTOM,
-		  NSRRenderRequest (_currentPage.getNumber (),
-				   NSRRenderRequest::NSR_RENDER_REASON_ROTATION));
+	loadPage (PAGE_LOAD_CUSTOM, NSRRenderRequest::NSR_RENDER_REASON_ROTATION, _renderRequest.getNumber ());
 }
 
 double
@@ -356,7 +331,7 @@ NSRReaderCore::getRotation () const
 	if (_doc == NULL || !_doc->isValid ())
 		return 0;
 
-	return _doc->getRotation ();
+	return _renderRequest.getRotation ();
 }
 
 void
@@ -375,7 +350,7 @@ NSRReaderCore::isTextReflow () const
 	if (!isDocumentOpened ())
 		return false;
 
-	return _doc->isTextOnly ();
+	return _renderRequest.isTextOnly ();
 }
 
 bool
@@ -397,21 +372,19 @@ NSRReaderCore::switchTextReflow ()
 	bool needReload = false;
 
 	/* Check whether we need to re-render the page */
-	if (_doc->isTextOnly ()) {
+	if (_renderRequest.isTextOnly ()) {
 		_cache->removePagesWithoutImages ();
 		needReload = true;
 	}
 
-	_doc->setTextOnly (!_doc->isTextOnly ());
+	_renderRequest.setTextOnly (!_renderRequest.isTextOnly ());
 
 	if (!needReload)
-		emit needViewMode (_doc->isTextOnly () ? NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT
-						       : NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC);
+		emit needViewMode (_renderRequest.isTextOnly () ? NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT
+								: NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC);
 
 	if (needReload)
-		loadPage (PAGE_LOAD_CUSTOM,
-			  NSRRenderRequest (_currentPage.getNumber (),
-					   NSRRenderRequest::NSR_RENDER_REASON_SETTINGS));
+		loadPage (PAGE_LOAD_CUSTOM, NSRRenderRequest::NSR_RENDER_REASON_SETTINGS, _renderRequest.getNumber ());
 }
 
 void
@@ -419,19 +392,23 @@ NSRReaderCore::onRenderDone ()
 {
 	_currentPage = _thread->getRenderedPage ();
 
-	if (!_cache->isPageExists (_currentPage.getNumber ()))
+	/* In case of fit to width zoom the overall page zoom can be changed */
+	if (_renderRequest.isZoomToWidth ())
+		_renderRequest.setZoom (_currentPage.getZoom ());
+
+	if (!_cache->isPageExists (_renderRequest.getNumber ()))
 		_cache->addPage (_currentPage);
 
 	emit needIndicator (false);
-	emit pageRendered (_currentPage.getNumber ());
-	emit needViewMode (_doc->isTextOnly () ? NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT
-					       : NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC);
+	emit pageRendered (_renderRequest.getNumber ());
+	emit needViewMode (_renderRequest.isTextOnly () ? NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT
+						        : NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC);
 }
 
 void
 NSRReaderCore::onZoomRenderDone ()
 {
-	NSRRenderRequest page = _zoomThread->getRenderedPage ();
+	NSRRenderedPage page = _zoomThread->getRenderedPage ();
 
 	if (!page.isImageValid ())
 		return;
@@ -441,26 +418,27 @@ NSRReaderCore::onZoomRenderDone ()
 	if (_zoomThread->isDocumentChanged ())
 		return;
 
-	/* Check if the zoomed page is still relevant */
-	if (_currentPage.getNumber () != page.getNumber () &&
-	    qAbs (_zoomDoc->getZoom () - page.getZoom ()) <= DBL_EPSILON) {
-		/* Anyway document hasn't changed, so we can save it in cache */
-		_cache->addPage (page);
-		return;
-	}
+	bool relevant = _renderRequest.isAutoCrop () == page.isAutoCrop () &&
+			_renderRequest.isTextOnly () == page.isTextOnly () &&
+			_renderRequest.isInvertColors () == page.isInvertColors () &&
+			_renderRequest.isZoomToWidth () == page.isZoomToWidth ();
 
-	/* It seems that another page is rendering already */
-	if (_thread->isRunning ()) {
+	if (!relevant)
 		_zoomThread->cancelRequests ();
-		return;
+
+	if (relevant && _renderRequest.isZoomToWidth ())
+		_renderRequest.setZoom (page.getZoom ());
+
+	if (!_renderRequest.isZoomToWidth ())
+		relevant = relevant && qAbs (_renderRequest.getZoom () - page.getZoom ()) <= DBL_EPSILON;
+
+	if (relevant)
+		_cache->addPage (page);
+
+	if (relevant && _renderRequest.getNumber () == page.getNumber ()) {
+		_currentPage = page;
+		emit pageRendered (_renderRequest.getNumber ());
 	}
-
-	_currentPage = page;
-
-	if (!_cache->isPageExists (_currentPage.getNumber ()))
-		_cache->addPage (_currentPage);
-
-	emit pageRendered (_currentPage.getNumber ());
 }
 
 void
@@ -470,7 +448,6 @@ NSRReaderCore::onZoomThreadFinished ()
 		/* All requests must be cancelled on document opening */
 		delete _zoomDoc;
 		_zoomDoc = copyDocument (_doc);
-		_zoomDoc->setTextOnly (false);
 		_zoomThread->setRenderContext (_zoomDoc);
 		_zoomThread->setDocumentChanged (false);
 	}
@@ -480,13 +457,14 @@ NSRReaderCore::onZoomThreadFinished ()
 }
 
 void
-NSRReaderCore::loadPage (PageLoad		dir,
-			 const NSRRenderRequest&	request)
+NSRReaderCore::loadPage (PageLoad				dir,
+			 NSRRenderRequest::NSRRenderReason	reason,
+			 int					page)
 {
 	if (_doc == NULL || _thread->isRunning ())
 		return;
 
-	int pageToLoad = _currentPage.getNumber ();
+	int pageToLoad = _renderRequest.getNumber ();
 
 	switch (dir) {
 	case PAGE_LOAD_PREV:
@@ -496,10 +474,9 @@ NSRReaderCore::loadPage (PageLoad		dir,
 		pageToLoad += 1;
 		break;
 	case PAGE_LOAD_CUSTOM:
-		pageToLoad = request.getNumber ();
+		pageToLoad = page;
 		break;
 	default:
-		pageToLoad = _currentPage.getNumber ();
 		break;
 	}
 
@@ -515,8 +492,9 @@ NSRReaderCore::loadPage (PageLoad		dir,
 	}
 #endif
 
-	NSRRenderRequest req (request);
-	req.setNumber (pageToLoad);
+	_renderRequest.setNumber (pageToLoad);
+	NSRRenderRequest req (_renderRequest);
+	req.setRenderReason (reason);
 
 	if (_cache->isPageExists (pageToLoad)) {
 		QString suffix = QFileInfo(_doc->getDocumentPath ()).suffix().toLower ();
@@ -524,8 +502,8 @@ NSRReaderCore::loadPage (PageLoad		dir,
 		_currentPage = _cache->getPage (pageToLoad);
 
 		emit pageRendered (pageToLoad);
-		emit needViewMode (_doc->isTextOnly () ? NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT
-						       : NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC);
+		emit needViewMode (_renderRequest.isTextOnly () ? NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT
+								: NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC);
 		return;
 	}
 
@@ -559,12 +537,7 @@ NSRReaderCore::copyDocument (const NSRAbstractDocument* doc)
 	if (res == NULL)
 		return NULL;
 
-	res->setTextOnly (doc->isTextOnly ());
-	res->setInvertedColors (doc->isInvertedColors ());
-	res->setEncoding (doc->getEncoding ());
 	res->setPassword (doc->getPassword ());
-	res->setRotation (doc->getRotation ());
-	res->setAutoCrop (doc->isAutoCrop ());
 
 	if (!res->isValid ()) {
 		delete res;
@@ -619,15 +592,12 @@ NSRReaderCore::invertColors ()
 	if (!isDocumentOpened ())
 		return;
 
-	bool	needReload = false;
+	bool needReload = false;
 
-	_doc->setInvertedColors (!_doc->isInvertedColors ());
-
-	if (_zoomDoc != NULL)
-		_zoomDoc->setInvertedColors (_doc->isInvertedColors ());
+	_renderRequest.setInvertColors (!_renderRequest.isInvertColors ());
 
 	/* Do not clear text from cache if text mode is remained */
-	if (_doc->isTextOnly ())
+	if (_renderRequest.isTextOnly ())
 		_cache->removePagesWithImages ();
 	else {
 		_cache->clearStorage ();
@@ -635,9 +605,7 @@ NSRReaderCore::invertColors ()
 	}
 
 	if (needReload)
-		loadPage (PAGE_LOAD_CUSTOM,
-			  NSRRenderRequest (_currentPage.getNumber (),
-					   NSRRenderRequest::NSR_RENDER_REASON_SETTINGS));
+		loadPage (PAGE_LOAD_CUSTOM, NSRRenderRequest::NSR_RENDER_REASON_SETTINGS, _renderRequest.getNumber ());
 }
 
 bool
@@ -646,7 +614,7 @@ NSRReaderCore::isInvertedColors () const
 	if (!isDocumentOpened ())
 		return false;
 
-	return _doc->isInvertedColors ();
+	return _renderRequest.isInvertColors ();
 }
 
 double
@@ -662,4 +630,3 @@ NSRReaderCore::normalizeAngle (double angle) const
 
 	return angle;
 }
-

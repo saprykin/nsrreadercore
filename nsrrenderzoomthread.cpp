@@ -25,7 +25,7 @@ NSRRenderZoomThread::run ()
 			return;
 		}
 
-		NSRRenderRequest page = getRequest ();
+		NSRRenderedPage page (getRequest ());
 
 		/* Last page is only one that is actual, so clear
 		 * all other */
@@ -36,6 +36,7 @@ NSRRenderZoomThread::run ()
 			return;
 
 		setCurrentRequest (page);
+		prepareRenderContext (page);
 
 		/* Render image only if we are in graphic mode */
 		if (!doc->isTextOnly ()) {

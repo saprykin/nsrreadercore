@@ -33,10 +33,10 @@ NSRAbstractRenderThread::getRenderContext ()
 }
 
 void
-NSRAbstractRenderThread::addRequest (const NSRRenderRequest& page)
+NSRAbstractRenderThread::addRequest (const NSRRenderRequest& req)
 {
 	QMutexLocker locker (&_requestedMutex);
-	_requestedPages.append (page);
+	_requestedPages.append (req);
 }
 
 void
@@ -64,17 +64,15 @@ NSRAbstractRenderThread::getRequest ()
 		return _requestedPages.takeLast ();
 }
 
-NSRRenderRequest
+NSRRenderedPage
 NSRAbstractRenderThread::getRenderedPage ()
 {
 	QMutexLocker locker (&_renderedMutex);
 
-	NSRRenderRequest page;
+	NSRRenderedPage page;
 
-	if (!_renderedPages.isEmpty ()) {
+	if (!_renderedPages.isEmpty ())
 		page = _renderedPages.takeFirst ();
-		page.setCropped (_doc->isAutoCrop ());
-	}
 
 	return page;
 }
@@ -87,15 +85,33 @@ NSRAbstractRenderThread::getCurrentRequest () const
 }
 
 void
-NSRAbstractRenderThread::completeRequest (const NSRRenderRequest& page)
+NSRAbstractRenderThread::completeRequest (const NSRRenderedPage& page)
 {
 	QMutexLocker locker (&_renderedMutex);
 	_renderedPages.append (page);
 }
 
 void
-NSRAbstractRenderThread::setCurrentRequest (const NSRRenderRequest& page)
+NSRAbstractRenderThread::setCurrentRequest (const NSRRenderRequest& req)
 {
 	QMutexLocker locker (&_requestedMutex);
-	_currentRequest = page;
+	_currentRequest = req;
+}
+
+void
+NSRAbstractRenderThread::prepareRenderContext (const NSRRenderRequest& req)
+{
+	if (_doc == NULL)
+		return;
+
+	if (req.isZoomToWidth () && req.getRenderReason () != NSRRenderRequest::NSR_RENDER_REASON_CROP_TO_WIDTH)
+		_doc->zoomToWidth (req.getScreenWidth ());
+	else
+		_doc->setZoom (req.getZoom ());
+
+	_doc->setTextOnly (req.isTextOnly ());
+	_doc->setInvertedColors (req.isInvertColors ());
+	_doc->setAutoCrop (req.isAutoCrop ());
+	_doc->setRotation (req.getRotation ());
+	_doc->setEncoding (req.getEncoding ());
 }
