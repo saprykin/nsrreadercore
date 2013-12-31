@@ -486,7 +486,6 @@ NSRReaderCore::loadPage (PageLoad				dir,
 		QString suffix = QFileInfo(_doc->getDocumentPath ()).suffix().toLower ();
 
 		_currentPage = _cache->getPage (pageToLoad);
-		_currentPage.setTextOnly (_renderRequest.isTextOnly ());
 
 		emit pageRendered (pageToLoad);
 
