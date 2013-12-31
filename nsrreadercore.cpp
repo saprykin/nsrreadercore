@@ -385,19 +385,23 @@ NSRReaderCore::onRenderDone ()
 {
 	NSRRenderedPage page = _thread->getRenderedPage ();
 
+	if (_thread->isRenderCanceled ())
+		return;
+
 	if (!isPageRelevant (page))
 		return;
 
-	_currentPage = page;
-
-	/* In case of fit to width zoom the overall page zoom can be changed */
-	if (_renderRequest.isZoomToWidth ())
-		_renderRequest.setZoom (_currentPage.getZoom ());
-
 	_cache->addPage (_currentPage);
 
-	emit needIndicator (false);
-	emit pageRendered (_renderRequest.getNumber ());
+	if (_renderRequest.getNumber () == page.getNumber ()) {
+		if (_renderRequest.isZoomToWidth ())
+			_renderRequest.setZoom (page.getZoom ());
+
+		_currentPage = page;
+
+		emit needIndicator (false);
+		emit pageRendered (_renderRequest.getNumber ());
+	}
 }
 
 void
@@ -416,12 +420,12 @@ NSRReaderCore::onZoomRenderDone ()
 	if (!isPageRelevant (page))
 		return;
 
-	if (_renderRequest.isZoomToWidth ())
-		_renderRequest.setZoom (page.getZoom ());
-
 	_cache->addPage (page);
 
 	if (_renderRequest.getNumber () == page.getNumber ()) {
+		if (_renderRequest.isZoomToWidth ())
+			_renderRequest.setZoom (page.getZoom ());
+
 		_currentPage = page;
 		emit pageRendered (_renderRequest.getNumber ());
 	}
