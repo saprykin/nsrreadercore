@@ -67,8 +67,6 @@ public:
 	}
 
 private:
-	void loadFromProperties (const QObject& obj);
-
 	NSR_CORE_IMAGE_DATATYPE	_image;
 	QString			_text;
 	QPointF			_lastPos;

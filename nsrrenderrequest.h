@@ -114,7 +114,6 @@ public:
 	}
 
 private:
-	void copyProperties (const QObject& obj);
 
 	QString			_encoding;
 	NSRRenderReason		_reason;

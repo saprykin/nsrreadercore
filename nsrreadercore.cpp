@@ -294,9 +294,6 @@ NSRReaderCore::setZoom (double zoom, NSRRenderRequest::NSRRenderReason reason)
 
 	NSRRenderedPage cachedPage = _cache->getPage (_renderRequest.getNumber ());
 
-	_renderRequest.setProperty ("nsr-cache-text", cachedPage.getText ());
-	_renderRequest.setProperty ("nsr-cache-last-text-position", cachedPage.getLastTextPosition ());
-
 	if (reason == NSRRenderRequest::NSR_RENDER_REASON_CROP_TO_WIDTH)
 		_cache->removePage (_renderRequest.getNumber ());
 	else

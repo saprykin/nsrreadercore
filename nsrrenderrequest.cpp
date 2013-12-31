@@ -60,8 +60,6 @@ NSRRenderRequest::NSRRenderRequest (const NSRRenderRequest& req) :
 	_invertColors	= req._invertColors;
 	_textOnly	= req._textOnly;
 	_zoomToWidth	= req._zoomToWidth;
-
-	copyProperties (req);
 }
 
 NSRRenderRequest::~NSRRenderRequest ()
@@ -80,24 +78,9 @@ NSRRenderRequest::operator = (const NSRRenderRequest& req)
 		_number		= req._number;
 		_autoCrop	= req._autoCrop;
 		_invertColors	= req._invertColors;
-		_textOnly	= req._invertColors;
+		_textOnly	= req._textOnly;
 		_zoomToWidth	= req._zoomToWidth;
 	}
 
-	copyProperties (req);
-
 	return *this;
-}
-
-void
-NSRRenderRequest::copyProperties (const QObject& obj)
-{
-	QList<QByteArray> props = obj.dynamicPropertyNames ();
-
-	if (props.contains ("nsr-cache-text"))
-		setProperty ("nsr-cache-text", obj.property ("nsr-cache-text"));
-
-	if (props.contains ("nsr-cache-last-text-position"))
-		setProperty ("nsr-cache-last-text-position", obj.property ("nsr-cache-last-text-position"));
-
 }

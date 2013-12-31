@@ -22,7 +22,6 @@ NSRRenderedPage::NSRRenderedPage (const NSRRenderRequest& req) :
 	NSRRenderRequest (req),
 	_cached (false)
 {
-	loadFromProperties (req);
 }
 
 NSRRenderedPage::~NSRRenderedPage ()
@@ -40,8 +39,6 @@ NSRRenderedPage::operator = (const NSRRenderedPage& page)
 		_lastTextPos	= page._lastTextPos;
 		_cached		= page._cached;
 	}
-
-	loadFromProperties (page);
 
 	return *this;
 }
@@ -64,16 +61,4 @@ NSRRenderedPage::isEmpty () const
 #else
 	return _text.isEmpty () && _image.isNull ();
 #endif
-}
-
-void
-NSRRenderedPage::loadFromProperties (const QObject& obj)
-{
-	QList<QByteArray> props = obj.dynamicPropertyNames ();
-
-	if (props.contains ("nsr-cache-text"))
-		_text = obj.property("nsr-cache-text").toString ();
-
-	if (props.contains ("nsr-cache-last-text-position"))
-		_lastTextPos = obj.property("nsr-cache-last-text-position").toPointF ();
 }

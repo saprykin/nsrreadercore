@@ -179,11 +179,9 @@ NSRRenderThread::run ()
 			return;
 		}
 
-		if (page.getText().isEmpty ()) {
-			_doc->setTextOnly (true);
-			_doc->renderPage (page.getNumber ());
-			page.setText (_doc->getText ());
-		}
+		_doc->setTextOnly (true);
+		_doc->renderPage (page.getNumber ());
+		page.setText (_doc->getText ());
 
 		if (_renderThumbnail)
 			updateThumbnail ();
