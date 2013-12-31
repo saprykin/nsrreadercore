@@ -401,8 +401,7 @@ NSRReaderCore::onRenderDone ()
 	if (_renderRequest.isZoomToWidth ())
 		_renderRequest.setZoom (_currentPage.getZoom ());
 
-	if (!_cache->isPageExists (_renderRequest.getNumber ()))
-		_cache->addPage (_currentPage);
+	_cache->addPage (_currentPage);
 
 	emit needIndicator (false);
 	emit pageRendered (_renderRequest.getNumber ());
