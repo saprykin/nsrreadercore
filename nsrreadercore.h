@@ -56,7 +56,6 @@ Q_SIGNALS:
 	void pageRendered (int number);
 	void needIndicator (bool enabled);
 	void errorWhileOpening (NSRAbstractDocument::NSRDocumentError error);
-	void needViewMode (NSRAbstractDocument::NSRDocumentStyle mode);
 	void documentOpened (const QString& file);
 	void documentClosed (const QString& file);
 #ifdef NSR_CORE_LITE_VERSION

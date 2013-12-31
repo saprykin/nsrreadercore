@@ -376,10 +376,6 @@ NSRReaderCore::switchTextReflow ()
 
 	_renderRequest.setTextOnly (!_renderRequest.isTextOnly ());
 
-	if (!needReload)
-		emit needViewMode (_renderRequest.isTextOnly () ? NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT
-								: NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC);
-
 	if (needReload)
 		loadPage (PAGE_LOAD_CUSTOM, NSRRenderRequest::NSR_RENDER_REASON_SETTINGS, _renderRequest.getNumber ());
 }
@@ -402,8 +398,6 @@ NSRReaderCore::onRenderDone ()
 
 	emit needIndicator (false);
 	emit pageRendered (_renderRequest.getNumber ());
-	emit needViewMode (_renderRequest.isTextOnly () ? NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT
-						        : NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC);
 }
 
 void
@@ -492,10 +486,10 @@ NSRReaderCore::loadPage (PageLoad				dir,
 		QString suffix = QFileInfo(_doc->getDocumentPath ()).suffix().toLower ();
 
 		_currentPage = _cache->getPage (pageToLoad);
+		_currentPage.setTextOnly (_renderRequest.isTextOnly ());
 
 		emit pageRendered (pageToLoad);
-		emit needViewMode (_renderRequest.isTextOnly () ? NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT
-								: NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC);
+
 		return;
 	}
 
@@ -515,7 +509,9 @@ NSRReaderCore::loadPage (PageLoad				dir,
 		_zoomThread->cancelRequests ();
 		_thread->cancelRequests ();
 		_thread->addRequest (req);
-		_thread->start ();
+
+		if (!_thread->isRunning ())
+			_thread->start ();
 	}
 }
 
