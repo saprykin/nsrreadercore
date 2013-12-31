@@ -390,7 +390,12 @@ NSRReaderCore::switchTextReflow ()
 void
 NSRReaderCore::onRenderDone ()
 {
-	_currentPage = _thread->getRenderedPage ();
+	NSRRenderedPage page = _thread->getRenderedPage ();
+
+	if (!isPageRelevant (page))
+		return;
+
+	_currentPage = page;
 
 	/* In case of fit to width zoom the overall page zoom can be changed */
 	if (_renderRequest.isZoomToWidth ())
@@ -418,24 +423,15 @@ NSRReaderCore::onZoomRenderDone ()
 	if (_zoomThread->isRenderCanceled ())
 		return;
 
-	bool relevant = _renderRequest.isAutoCrop () == page.isAutoCrop () &&
-			_renderRequest.isTextOnly () == page.isTextOnly () &&
-			_renderRequest.isInvertColors () == page.isInvertColors () &&
-			_renderRequest.isZoomToWidth () == page.isZoomToWidth ();
+	if (!isPageRelevant (page))
+		return;
 
-	if (!relevant)
-		_zoomThread->cancelRequests ();
-
-	if (relevant && _renderRequest.isZoomToWidth ())
+	if (_renderRequest.isZoomToWidth ())
 		_renderRequest.setZoom (page.getZoom ());
 
-	if (!_renderRequest.isZoomToWidth ())
-		relevant = relevant && qAbs (_renderRequest.getZoom () - page.getZoom ()) <= DBL_EPSILON;
+	_cache->addPage (page);
 
-	if (relevant)
-		_cache->addPage (page);
-
-	if (relevant && _renderRequest.getNumber () == page.getNumber ()) {
+	if (_renderRequest.getNumber () == page.getNumber ()) {
 		_currentPage = page;
 		emit pageRendered (_renderRequest.getNumber ());
 	}
@@ -521,6 +517,7 @@ NSRReaderCore::loadPage (PageLoad				dir,
 		emit needIndicator (true);
 
 		_zoomThread->cancelRequests ();
+		_thread->cancelRequests ();
 		_thread->addRequest (req);
 		_thread->start ();
 	}
@@ -631,4 +628,18 @@ NSRReaderCore::normalizeAngle (double angle) const
 		angle = 0.0;
 
 	return angle;
+}
+
+bool
+NSRReaderCore::isPageRelevant (const NSRRenderedPage& page) const
+{
+	bool relevant = _renderRequest.isAutoCrop () == page.isAutoCrop () &&
+			_renderRequest.isTextOnly () == page.isTextOnly () &&
+			_renderRequest.isInvertColors () == page.isInvertColors () &&
+			_renderRequest.isZoomToWidth () == page.isZoomToWidth ();
+
+	if (!_renderRequest.isZoomToWidth ())
+		relevant = relevant && qAbs (_renderRequest.getZoom () - page.getZoom ()) <= DBL_EPSILON;
+
+	return relevant;
 }

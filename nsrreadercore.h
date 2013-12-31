@@ -75,6 +75,7 @@ private:
 	NSRAbstractDocument * copyDocument (const NSRAbstractDocument *doc);
 	NSRAbstractDocument * documentByPath (const QString& path) const;
 	double normalizeAngle (double angle) const;
+	bool isPageRelevant (const NSRRenderedPage& page) const;
 
 	NSRAbstractDocument				*_doc;
 	NSRAbstractDocument				*_zoomDoc;
