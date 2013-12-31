@@ -37,6 +37,9 @@ NSRReaderCore::NSRReaderCore (bool isCardMode, QObject *parent) :
 
 NSRReaderCore::~NSRReaderCore ()
 {
+	if (_thread->isRunning ())
+		_thread->terminate ();
+
 	if (_doc != NULL)
 		closeDocument ();
 
@@ -50,6 +53,9 @@ NSRReaderCore::~NSRReaderCore ()
 void
 NSRReaderCore::openDocument (const QString &path,  const QString& password)
 {
+	if (_thread->isRunning ())
+		return;
+
 	closeDocument ();
 
 	_doc = documentByPath (path);
@@ -105,6 +111,9 @@ NSRReaderCore::isDocumentOpened () const
 void
 NSRReaderCore::closeDocument ()
 {
+	if (_thread->isRunning ())
+		return;
+
 	QString path;
 
 	if (_doc != NULL) {
@@ -161,7 +170,7 @@ NSRReaderCore::getPagesCount () const
 void
 NSRReaderCore::reloadSettings ()
 {
-	if (_doc == NULL || _isCardMode)
+	if (_doc == NULL || _thread->isRunning () || _isCardMode)
 		return;
 
 	bool	needReload = false;
@@ -193,6 +202,9 @@ NSRReaderCore::reloadSettings ()
 void
 NSRReaderCore::loadSession (const NSRSession *session)
 {
+	if (_thread->isRunning ())
+		return;
+
 	if (session == NULL)
 		return;
 
@@ -277,7 +289,7 @@ NSRReaderCore::getMaxZoom () const
 void
 NSRReaderCore::setZoom (double zoom, NSRRenderRequest::NSRRenderReason reason)
 {
-	if (_doc == NULL || !_doc->isValid ())
+	if (_doc == NULL || !_doc->isValid () || _thread->isRunning ())
 		return;
 
 	if (zoom <= 0)
@@ -308,7 +320,7 @@ NSRReaderCore::setZoom (double zoom, NSRRenderRequest::NSRRenderReason reason)
 void
 NSRReaderCore::rotate (double rot)
 {
-	if (_doc == NULL || !_doc->isValid ())
+	if (_doc == NULL || !_doc->isValid () || _thread->isRunning ())
 		return;
 
 	int newRot = (int) normalizeAngle (_renderRequest.getRotation () + rot);
@@ -363,7 +375,7 @@ NSRReaderCore::isTextReflowSwitchSupported () const
 void
 NSRReaderCore::switchTextReflow ()
 {
-	if (!isTextReflowSwitchSupported ())
+	if (!isTextReflowSwitchSupported () || _thread->isRunning ())
 		return;
 
 	bool needReload = false;
@@ -583,7 +595,7 @@ NSRReaderCore::isPasswordProtected (const QString& file) const
 void
 NSRReaderCore::invertColors ()
 {
-	if (!isDocumentOpened ())
+	if (!isDocumentOpened () || _thread->isRunning ())
 		return;
 
 	bool needReload = false;
