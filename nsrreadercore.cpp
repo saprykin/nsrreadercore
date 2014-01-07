@@ -68,7 +68,7 @@ NSRReaderCore::~NSRReaderCore ()
 void
 NSRReaderCore::openDocument (const QString &path,  const QString& password)
 {
-	if (_thread->isRunning ())
+	if (isPageRendering ())
 		return;
 
 	closeDocument ();
@@ -131,7 +131,7 @@ NSRReaderCore::isDocumentOpened () const
 void
 NSRReaderCore::closeDocument ()
 {
-	if (_thread->isRunning ())
+	if (isPageRendering ())
 		return;
 
 	QString path;
@@ -202,7 +202,7 @@ NSRReaderCore::getPagesCount () const
 void
 NSRReaderCore::reloadSettings ()
 {
-	if (_doc == NULL || _thread->isRunning () || _isCardMode)
+	if (_doc == NULL || isPageRendering () || _isCardMode)
 		return;
 
 	bool	needReload = false;
@@ -234,7 +234,7 @@ NSRReaderCore::reloadSettings ()
 void
 NSRReaderCore::loadSession (const NSRSession *session)
 {
-	if (_thread->isRunning ())
+	if (isPageRendering ())
 		return;
 
 	if (session == NULL)
@@ -267,7 +267,8 @@ NSRReaderCore::navigateToPage (PageLoad dir, int pageNumber)
 bool
 NSRReaderCore::isPageRendering () const
 {
-	return _thread->isRunning ();
+	return _thread->isRunning () ||
+	       (_zoomThread->isRunning () && _zoomThread->property("nsr-main-render").toBool ());
 }
 
 void
@@ -276,34 +277,25 @@ NSRReaderCore::setScreenWidth (int width)
 	if (width <= 0)
 		return;
 
-	if (_doc == NULL || !_doc->isValid ())
-		return;
-
 	_renderRequest.setScreenWidth (width);
 }
 
 bool
 NSRReaderCore::isFitToWidth () const
 {
-	if (_doc == NULL || !_doc->isValid ())
-		return false;
-
 	return _renderRequest.isZoomToWidth ();
 }
 
 double
 NSRReaderCore::getZoom () const
 {
-	if (_doc == NULL || !_doc->isValid ())
-		return 0;
-
 	return _renderRequest.getZoom ();
 }
 
 double
 NSRReaderCore::getMinZoom () const
 {
-	if (_doc == NULL || !_doc->isValid ())
+	if (!isDocumentOpened ())
 		return 0;
 
 	return _doc->getMinZoom ();
@@ -312,7 +304,7 @@ NSRReaderCore::getMinZoom () const
 double
 NSRReaderCore::getMaxZoom () const
 {
-	if (_doc == NULL || !_doc->isValid ())
+	if (!isDocumentOpened ())
 		return 0;
 
 	return _doc->getMaxZoom ();
@@ -321,10 +313,7 @@ NSRReaderCore::getMaxZoom () const
 void
 NSRReaderCore::setZoom (double zoom, NSRRenderRequest::NSRRenderReason reason)
 {
-	if (_doc == NULL || !_doc->isValid () || _thread->isRunning ())
-		return;
-
-	if (zoom <= 0)
+	if (isPageRendering () || zoom <= DBL_EPSILON)
 		return;
 
 	bool toWidth = (reason == NSRRenderRequest::NSR_RENDER_REASON_ZOOM_TO_WIDTH ||
@@ -352,7 +341,7 @@ NSRReaderCore::setZoom (double zoom, NSRRenderRequest::NSRRenderReason reason)
 void
 NSRReaderCore::rotate (double rot)
 {
-	if (_doc == NULL || !_doc->isValid () || _thread->isRunning ())
+	if (isPageRendering ())
 		return;
 
 	int newRot = (int) normalizeAngle (_renderRequest.getRotation () + rot);
@@ -369,9 +358,6 @@ NSRReaderCore::rotate (double rot)
 double
 NSRReaderCore::getRotation () const
 {
-	if (_doc == NULL || !_doc->isValid ())
-		return 0;
-
 	return _renderRequest.getRotation ();
 }
 
@@ -379,9 +365,6 @@ void
 NSRReaderCore::saveCurrentPagePositions (const QPointF& pos,
 					 const QPointF& textPos)
 {
-	if (_doc == NULL || !_doc->isValid ())
-		return;
-
 	_cache->updatePagePositions (_currentPage.getNumber (), pos, textPos);
 }
 
@@ -407,7 +390,7 @@ NSRReaderCore::isTextReflowSwitchSupported () const
 void
 NSRReaderCore::switchTextReflow ()
 {
-	if (!isTextReflowSwitchSupported () || _thread->isRunning ())
+	if (!isTextReflowSwitchSupported () || isPageRendering ())
 		return;
 
 	bool needReload = false;
@@ -547,7 +530,7 @@ NSRReaderCore::loadPage (PageLoad				dir,
 			 NSRRenderRequest::NSRRenderReason	reason,
 			 int					page)
 {
-	if (_doc == NULL || (_thread->isRunning () && reason != NSRRenderRequest::NSR_RENDER_REASON_PRELOAD))
+	if (!isDocumentOpened () || (isPageRendering () && reason != NSRRenderRequest::NSR_RENDER_REASON_PRELOAD))
 		return;
 
 	int pageToLoad = _renderRequest.getNumber ();
@@ -652,7 +635,7 @@ NSRReaderCore::copyDocument (const NSRAbstractDocument* doc)
 {
 	NSRAbstractDocument *res;
 
-	if (doc == NULL || !doc->isValid ())
+	if (!isDocumentOpened ())
 		return NULL;
 
 	res = documentByPath (doc->getDocumentPath ());
@@ -712,7 +695,7 @@ NSRReaderCore::isPasswordProtected (const QString& file) const
 void
 NSRReaderCore::invertColors ()
 {
-	if (!isDocumentOpened () || _thread->isRunning ())
+	if (!isDocumentOpened () || isPageRendering ())
 		return;
 
 	bool needReload = false;
@@ -771,7 +754,7 @@ NSRReaderCore::isPageRelevant (const NSRRenderedPage& page) const
 void
 NSRReaderCore::preloadPage ()
 {
-	if (!_doc->isValid ())
+	if (!isDocumentOpened ())
 		return;
 
 	int pageToLoadNext = qMin (_doc->getNumberOfPages (), _renderRequest.getNumber () + 1);
