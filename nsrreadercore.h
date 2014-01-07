@@ -65,7 +65,9 @@ Q_SIGNALS:
 private Q_SLOTS:
 	void onRenderDone ();
 	void onZoomRenderDone ();
+	void onPreloadRenderDone ();
 	void onZoomThreadFinished ();
+	void onPreloadThreadFinished ();
 
 private:
 	void loadPage (PageLoad					dir,
@@ -75,11 +77,14 @@ private:
 	NSRAbstractDocument * documentByPath (const QString& path) const;
 	double normalizeAngle (double angle) const;
 	bool isPageRelevant (const NSRRenderedPage& page) const;
+	void preloadPage ();
 
 	NSRAbstractDocument				*_doc;
 	NSRAbstractDocument				*_zoomDoc;
+	NSRAbstractDocument				*_preloadDoc;
 	NSRRenderThread					*_thread;
 	NSRRenderThread					*_zoomThread;
+	NSRRenderThread					*_preloadThread;
 	NSRPagesCache					*_cache;
 	NSRRenderedPage					_currentPage;
 	NSRRenderRequest				_renderRequest;

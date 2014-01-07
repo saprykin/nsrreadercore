@@ -13,13 +13,16 @@ NSRReaderCore::NSRReaderCore (bool isCardMode, QObject *parent) :
 	QObject (parent),
 	_doc (NULL),
 	_zoomDoc (NULL),
+	_preloadDoc (NULL),
 	_thread (NULL),
 	_zoomThread (NULL),
+	_preloadThread (NULL),
 	_cache (NULL),
 	_isCardMode (isCardMode)
 {
 	_thread		= new NSRRenderThread (this);
 	_zoomThread	= new NSRRenderThread (this);
+	_preloadThread	= new NSRRenderThread (this);
 	_cache		= new NSRPagesCache (this);
 
 	bool ok = connect (_thread, SIGNAL (renderDone ()), this, SLOT (onRenderDone ()));
@@ -30,6 +33,12 @@ NSRReaderCore::NSRReaderCore (bool isCardMode, QObject *parent) :
 	Q_ASSERT (ok);
 
 	ok = connect (_zoomThread, SIGNAL (finished ()), this, SLOT (onZoomThreadFinished ()));
+	Q_ASSERT (ok);
+
+	ok = connect (_preloadThread, SIGNAL (renderDone ()), this, SLOT (onPreloadRenderDone ()));
+	Q_ASSERT (ok);
+
+	ok = connect (_preloadThread, SIGNAL (finished ()), this, SLOT (onPreloadThreadFinished ()));
 	Q_ASSERT (ok);
 
 	_thread->setThumbnailRender (!_isCardMode);
@@ -47,6 +56,12 @@ NSRReaderCore::~NSRReaderCore ()
 	if (_zoomDoc != NULL && _zoomThread->isRunning ()) {
 		_zoomThread->terminate ();
 		delete _zoomDoc;
+	}
+
+	/* Force preload thread termination */
+	if (_preloadDoc != NULL && _preloadThread->isRunning ()) {
+		_preloadThread->terminate ();
+		delete _preloadDoc;
 	}
 }
 
@@ -93,6 +108,11 @@ NSRReaderCore::openDocument (const QString &path,  const QString& password)
 		_zoomThread->setRenderContext (_zoomDoc);
 	}
 
+	if (_preloadDoc == NULL) {
+		_preloadDoc = copyDocument (_doc);
+		_preloadThread->setRenderContext (_preloadDoc);
+	}
+
 	if (!_isCardMode)
 		NSRSettings::instance()->addLastDocument (path);
 
@@ -132,6 +152,18 @@ NSRReaderCore::closeDocument ()
 		} else {
 			_zoomThread->setRenderCanceled (true);
 			_zoomThread->cancelRequests ();
+		}
+	}
+
+	/* Check whether we can delete preload document */
+	if (_preloadDoc != NULL) {
+		if (!_preloadThread->isRunning ()) {
+			delete _preloadDoc;
+			_preloadDoc = NULL;
+			_preloadThread->setRenderContext (NULL);
+		} else {
+			_preloadThread->setRenderCanceled (true);
+			_preloadThread->cancelRequests ();
 		}
 	}
 
@@ -414,6 +446,8 @@ NSRReaderCore::onRenderDone ()
 		emit needIndicator (false);
 		emit pageRendered (_renderRequest.getNumber ());
 	}
+
+	preloadPage ();
 }
 
 void
@@ -444,6 +478,35 @@ NSRReaderCore::onZoomRenderDone ()
 }
 
 void
+NSRReaderCore::onPreloadRenderDone ()
+{
+	NSRRenderedPage page = _preloadThread->getRenderedPage ();
+
+	if (!page.isImageValid ())
+		return;
+
+	/* We do not need to reset document changed flag because it would be
+	 * done almost immediately in onpreloadThreadFinished() slot */
+	if (_preloadThread->isRenderCanceled ())
+		return;
+
+	if (!isPageRelevant (page))
+		return;
+
+	_cache->addPage (page);
+
+	if (_renderRequest.getNumber () == page.getNumber ()) {
+		if (_renderRequest.isZoomToWidth ())
+			_renderRequest.setZoom (page.getZoom ());
+
+		_currentPage = page;
+
+		emit needIndicator (false);
+		emit pageRendered (_renderRequest.getNumber ());
+	}
+}
+
+void
 NSRReaderCore::onZoomThreadFinished ()
 {
 	if (_zoomThread->isRenderCanceled ()) {
@@ -455,7 +518,22 @@ NSRReaderCore::onZoomThreadFinished ()
 	}
 
 	if (_zoomThread->hasRequests ())
-		_zoomThread->start ();
+		_zoomThread->start (QThread::LowestPriority);
+}
+
+void
+NSRReaderCore::onPreloadThreadFinished ()
+{
+	if (_preloadThread->isRenderCanceled ()) {
+		/* All requests must be canceled on document opening */
+		delete _preloadDoc;
+		_preloadDoc = copyDocument (_doc);
+		_preloadThread->setRenderContext (_preloadDoc);
+		_preloadThread->setRenderCanceled (false);
+	}
+
+	if (_preloadThread->hasRequests ())
+		_preloadThread->start (QThread::LowestPriority);
 }
 
 void
@@ -463,7 +541,7 @@ NSRReaderCore::loadPage (PageLoad				dir,
 			 NSRRenderRequest::NSRRenderReason	reason,
 			 int					page)
 {
-	if (_doc == NULL || _thread->isRunning ())
+	if (_doc == NULL || (_thread->isRunning () && reason != NSRRenderRequest::NSR_RENDER_REASON_PRELOAD))
 		return;
 
 	int pageToLoad = _renderRequest.getNumber ();
@@ -494,16 +572,21 @@ NSRReaderCore::loadPage (PageLoad				dir,
 	}
 #endif
 
-	_renderRequest.setNumber (pageToLoad);
+	if (reason != NSRRenderRequest::NSR_RENDER_REASON_PRELOAD)
+		_renderRequest.setNumber (pageToLoad);
+
 	NSRRenderRequest req (_renderRequest);
 	req.setRenderReason (reason);
 
-	if (_cache->isPageExists (pageToLoad)) {
+	if (reason == NSRRenderRequest::NSR_RENDER_REASON_PRELOAD)
+		req.setNumber (pageToLoad);
+
+	if (_cache->isPageExists (pageToLoad) && reason != NSRRenderRequest::NSR_RENDER_REASON_PRELOAD) {
 		QString suffix = QFileInfo(_doc->getDocumentPath ()).suffix().toLower ();
 
 		_currentPage = _cache->getPage (pageToLoad);
-
 		emit pageRendered (pageToLoad);
+		preloadPage ();
 
 		return;
 	}
@@ -513,20 +596,39 @@ NSRReaderCore::loadPage (PageLoad				dir,
 	if (reason == NSRRenderRequest::NSR_RENDER_REASON_ZOOM ||
 	    reason == NSRRenderRequest::NSR_RENDER_REASON_ZOOM_TO_WIDTH ||
 	    reason == NSRRenderRequest::NSR_RENDER_REASON_CROP_TO_WIDTH) {
+		_preloadThread->cancelRequests ();
 		_zoomThread->cancelRequests ();
 		_zoomThread->addRequest (req);
 
 		if (!_zoomThread->isRunning ())
-			_zoomThread->start ();
+			_zoomThread->start (QThread::LowestPriority);
+	} else if (reason == NSRRenderRequest::NSR_RENDER_REASON_PRELOAD) {
+		req.setRenderReason (NSRRenderRequest::NSR_RENDER_REASON_NAVIGATION);
+
+		_preloadThread->cancelRequests ();
+		_preloadThread->addRequest (req);
+
+		if (!_preloadThread->isRunning ())
+			_preloadThread->start (QThread::LowestPriority);
 	} else {
 		emit needIndicator (true);
 
 		_zoomThread->cancelRequests ();
 		_thread->cancelRequests ();
+
+		/* OK, we are already preloading required page */
+		if (_preloadThread->isRunning ()) {
+			NSRRenderRequest preloadReq = _preloadThread->getCurrentRequest ();
+
+			if (isPageRelevant (preloadReq) && preloadReq.getNumber () == req.getNumber ())
+				return;
+		}
+
+		_preloadThread->cancelRequests ();
 		_thread->addRequest (req);
 
 		if (!_thread->isRunning ())
-			_thread->start ();
+			_thread->start (QThread::NormalPriority);
 	}
 }
 
@@ -649,4 +751,25 @@ NSRReaderCore::isPageRelevant (const NSRRenderedPage& page) const
 		relevant = relevant && qAbs (_renderRequest.getZoom () - page.getZoom ()) <= DBL_EPSILON;
 
 	return relevant;
+}
+
+void
+NSRReaderCore::preloadPage ()
+{
+	if (!_doc->isValid ())
+		return;
+
+	int pageToLoad = qMin (_doc->getNumberOfPages (), _renderRequest.getNumber () + 1);
+
+	if (_cache->isPageExists (pageToLoad))
+		return;
+
+	if (_preloadThread->isRunning ()) {
+		NSRRenderRequest preloadReq = _preloadThread->getCurrentRequest ();
+
+		if (isPageRelevant (preloadReq) && preloadReq.getNumber () == pageToLoad)
+			return;
+	}
+
+	loadPage (PAGE_LOAD_CUSTOM, NSRRenderRequest::NSR_RENDER_REASON_PRELOAD, pageToLoad);
 }
