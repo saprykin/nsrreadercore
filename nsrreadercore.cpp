@@ -605,7 +605,7 @@ NSRReaderCore::loadPage (PageLoad				dir,
 	} else if (reason == NSRRenderRequest::NSR_RENDER_REASON_PRELOAD) {
 		req.setRenderReason (NSRRenderRequest::NSR_RENDER_REASON_NAVIGATION);
 
-		_preloadThread->cancelRequests ();
+		/* Do not cancel preload requests because we can add several requests at once */
 		_preloadThread->addRequest (req);
 
 		if (!_preloadThread->isRunning ())
@@ -759,17 +759,30 @@ NSRReaderCore::preloadPage ()
 	if (!_doc->isValid ())
 		return;
 
-	int pageToLoad = qMin (_doc->getNumberOfPages (), _renderRequest.getNumber () + 1);
+	int pageToLoadNext = qMin (_doc->getNumberOfPages (), _renderRequest.getNumber () + 1);
+	int pageToLoadPrev = qMax (1, _renderRequest.getNumber () - 1);
 
-	if (_cache->isPageExists (pageToLoad))
+	bool needNext = !_cache->isPageExists (pageToLoadNext) && pageToLoadNext != _renderRequest.getNumber ();
+	bool needPrev = !_cache->isPageExists (pageToLoadPrev) && pageToLoadPrev != _renderRequest.getNumber ();
+
+	if (!needNext && !needPrev)
 		return;
+	else
+		_preloadThread->cancelRequests ();
 
 	if (_preloadThread->isRunning ()) {
 		NSRRenderRequest preloadReq = _preloadThread->getCurrentRequest ();
 
-		if (isPageRelevant (preloadReq) && preloadReq.getNumber () == pageToLoad)
-			return;
+		if (needNext && isPageRelevant (preloadReq) && preloadReq.getNumber () == pageToLoadNext)
+			needNext = false;
+
+		if (needPrev && isPageRelevant (preloadReq) && preloadReq.getNumber () == pageToLoadPrev)
+			needPrev = false;
 	}
 
-	loadPage (PAGE_LOAD_CUSTOM, NSRRenderRequest::NSR_RENDER_REASON_PRELOAD, pageToLoad);
+	if (needNext)
+		loadPage (PAGE_LOAD_CUSTOM, NSRRenderRequest::NSR_RENDER_REASON_PRELOAD, pageToLoadNext);
+
+	if (needPrev)
+		loadPage (PAGE_LOAD_CUSTOM, NSRRenderRequest::NSR_RENDER_REASON_PRELOAD, pageToLoadPrev);
 }
