@@ -405,12 +405,13 @@ NSRDjVuDocument::getCurrentPage ()
 	for (int i = pads.getTop (); i < _imgSize.height() - pads.getBottom (); ++i)
 		for (int j = pads.getLeft (); j < _imgSize.width() - pads.getRight (); ++j) {
 			if (isInvertedColors()) {
-				*(image + rowSize * (i - pads.getTop ()) + (j - pads.getLeft ()) * 4) =
-						255 - *(_imgData + i * _imgSize.width() * 3 + j * 3 + 2);
-				*(image + rowSize * (i - pads.getTop ()) + (j - pads.getLeft ()) * 4 + 1) =
-						255 - *(_imgData + i * _imgSize.width() * 3 + j * 3 + 1);
-				*(image + rowSize * (i - pads.getTop ()) + (j - pads.getLeft ()) * 4 + 2) =
-						255 - *(_imgData + i * _imgSize.width() * 3 + j * 3);
+				unsigned char meanVal = (unsigned char) (((unsigned int) 255 * 3 - *(_imgData + i * _imgSize.width() * 3 + j * 3 + 2) -
+												   *(_imgData + i * _imgSize.width() * 3 + j * 3 + 2) -
+												   *(_imgData + i * _imgSize.width() * 3 + j * 3)) / 3);
+
+				*(image + rowSize * (i - pads.getTop ()) + (j - pads.getLeft ()) * 4) = meanVal;
+				*(image + rowSize * (i - pads.getTop ()) + (j - pads.getLeft ()) * 4 + 1) = meanVal;
+				*(image + rowSize * (i - pads.getTop ()) + (j - pads.getLeft ()) * 4 + 2) = meanVal;
 			} else {
 				*(image + rowSize * (i - pads.getTop ()) + (j - pads.getLeft ()) * 4) =
 						*(_imgData + i * _imgSize.width() * 3 + j * 3 + 2);

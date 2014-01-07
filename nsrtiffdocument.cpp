@@ -248,9 +248,13 @@ NSRTIFFDocument::getCurrentPage ()
 
 		for (int j = _pads.getLeft (); j < bw - _pads.getRight (); ++j) {
 			if (isInvertedColors ()) {
-				addr[(j - _pads.getLeft ()) * 4 + 0] = 255 - inAddr[j * 4 + 2];
-				addr[(j - _pads.getLeft ()) * 4 + 1] = 255 - inAddr[j * 4 + 1];
-				addr[(j - _pads.getLeft ()) * 4 + 2] = 255 - inAddr[j * 4 + 0];
+				unsigned char meanVal = (unsigned char) (((unsigned int) 255 * 3 - inAddr[j * 4 + 2] -
+												   inAddr[j * 4 + 1] -
+												   inAddr[j * 4 + 0]) / 3);
+
+				addr[(j - _pads.getLeft ()) * 4 + 0] = meanVal;
+				addr[(j - _pads.getLeft ()) * 4 + 1] = meanVal;
+				addr[(j - _pads.getLeft ()) * 4 + 2] = meanVal;
 			} else {
 				addr[(j - _pads.getLeft ()) * 4 + 0] = inAddr[j * 4 + 2];
 				addr[(j - _pads.getLeft ()) * 4 + 1] = inAddr[j * 4 + 1];

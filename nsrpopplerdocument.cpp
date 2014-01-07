@@ -206,9 +206,13 @@ NSRPopplerDocument::getCurrentPage ()
 
 		for (int j = pads.getLeft (); j < bw - pads.getRight (); ++j) {
 			if (isInvertedColors ()) {
-				addr[(j - pads.getLeft ()) * 4 + 0] = 255 - inAddr[j * 3 + 0];
-				addr[(j - pads.getLeft ()) * 4 + 1] = 255 - inAddr[j * 3 + 1];
-				addr[(j - pads.getLeft ()) * 4 + 2] = 255 - inAddr[j * 3 + 2];
+				unsigned char meanVal = (unsigned char) (((unsigned int) 255 * 3 - inAddr[j * 3 + 0] -
+												   inAddr[j * 3 + 1] -
+												   inAddr[j * 3 + 2]) / 3);
+
+				addr[(j - pads.getLeft ()) * 4 + 0] = meanVal;
+				addr[(j - pads.getLeft ()) * 4 + 1] = meanVal;
+				addr[(j - pads.getLeft ()) * 4 + 2] = meanVal;
 			} else {
 				addr[(j - pads.getLeft ()) * 4 + 0] = inAddr[j * 3 + 0];
 				addr[(j - pads.getLeft ()) * 4 + 1] = inAddr[j * 3 + 1];
