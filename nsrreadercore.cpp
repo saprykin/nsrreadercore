@@ -48,23 +48,6 @@ NSRReaderCore::NSRReaderCore (bool isCardMode, QObject *parent) :
 
 NSRReaderCore::~NSRReaderCore ()
 {
-	if (_thread->isRunning ())
-		_thread->terminate ();
-
-	if (_doc != NULL)
-		closeDocument ();
-
-	/* Force zoom thread termination */
-	if (_zoomDoc != NULL && _zoomThread->isRunning ()) {
-		_zoomThread->terminate ();
-		delete _zoomDoc;
-	}
-
-	/* Force preload thread termination */
-	if (_preloadDoc != NULL && _preloadThread->isRunning ()) {
-		_preloadThread->terminate ();
-		delete _preloadDoc;
-	}
 }
 
 void
@@ -80,6 +63,7 @@ NSRReaderCore::openDocument (const QString &path,  const QString& password)
 	if (_doc == NULL)
 		return;
 
+	_doc->setParent (_thread);
 	_doc->setPassword (password);
 	_renderRequest = NSRRenderRequest ();
 
@@ -107,11 +91,13 @@ NSRReaderCore::openDocument (const QString &path,  const QString& password)
 
 	if (_zoomDoc == NULL) {
 		_zoomDoc = copyDocument (_doc);
+		_zoomDoc->setParent (_zoomThread);
 		_zoomThread->setRenderContext (_zoomDoc);
 	}
 
 	if (_preloadDoc == NULL) {
 		_preloadDoc = copyDocument (_doc);
+		_preloadDoc->setParent (_preloadThread);
 		_preloadThread->setRenderContext (_preloadDoc);
 	}
 
@@ -504,6 +490,7 @@ NSRReaderCore::onZoomThreadFinished ()
 		/* All requests must be canceled on document opening */
 		delete _zoomDoc;
 		_zoomDoc = copyDocument (_doc);
+		_zoomDoc->setParent (_zoomThread);
 		_zoomThread->setRenderContext (_zoomDoc);
 		_zoomThread->setRenderCanceled (false);
 	}
@@ -519,6 +506,7 @@ NSRReaderCore::onPreloadThreadFinished ()
 		/* All requests must be canceled on document opening */
 		delete _preloadDoc;
 		_preloadDoc = copyDocument (_doc);
+		_preloadDoc->setParent (_preloadThread);
 		_preloadThread->setRenderContext (_preloadDoc);
 		_preloadThread->setRenderCanceled (false);
 	}
