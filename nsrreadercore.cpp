@@ -9,6 +9,8 @@
 
 #include <float.h>
 
+#define NSR_CORE_MAIN_RENDER_PROP	"nsr-main-render"
+
 NSRReaderCore::NSRReaderCore (bool isCardMode, QObject *parent) :
 	QObject (parent),
 	_doc (NULL),
@@ -268,7 +270,7 @@ bool
 NSRReaderCore::isPageRendering () const
 {
 	return _thread->isRunning () ||
-	       (_zoomThread->isRunning () && _zoomThread->property("nsr-main-render").toBool ());
+	       (_zoomThread->isRunning () && _zoomThread->property(NSR_CORE_MAIN_RENDER_PROP).toBool ());
 }
 
 void
@@ -457,8 +459,8 @@ NSRReaderCore::onZoomRenderDone ()
 
 		_currentPage = page;
 
-		if (_zoomThread->property("nsr-main-render").toBool ()) {
-			_zoomThread->setProperty ("nsr-main-render", false);
+		if (_zoomThread->property(NSR_CORE_MAIN_RENDER_PROP).toBool ()) {
+			_zoomThread->setProperty (NSR_CORE_MAIN_RENDER_PROP, false);
 			emit needIndicator (false);
 		}
 
@@ -617,7 +619,7 @@ NSRReaderCore::loadPage (PageLoad				dir,
 			NSRRenderRequest zoomReq = _zoomThread->getCurrentRequest ();
 
 			if (isPageRelevant (zoomReq) && zoomReq.getNumber () == req.getNumber ()) {
-				_zoomThread->setProperty ("nsr-main-render", true);
+				_zoomThread->setProperty (NSR_CORE_MAIN_RENDER_PROP, true);
 				return;
 			}
 		}
