@@ -403,7 +403,7 @@ NSRReaderCore::onRenderDone ()
 	if (!isPageRelevant (page))
 		return;
 
-	_cache->addPage (_currentPage);
+	_cache->addPage (page);
 
 	if (_renderRequest.getNumber () == page.getNumber ()) {
 		if (_renderRequest.isZoomToWidth ())
