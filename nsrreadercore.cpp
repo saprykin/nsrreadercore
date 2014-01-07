@@ -473,6 +473,12 @@ NSRReaderCore::onZoomRenderDone ()
 			_renderRequest.setZoom (page.getZoom ());
 
 		_currentPage = page;
+
+		if (_zoomThread->property("nsr-main-render").toBool ()) {
+			_zoomThread->setProperty ("nsr-main-render", false);
+			emit needIndicator (false);
+		}
+
 		emit pageRendered (_renderRequest.getNumber ());
 	}
 }
@@ -622,6 +628,15 @@ NSRReaderCore::loadPage (PageLoad				dir,
 
 			if (isPageRelevant (preloadReq) && preloadReq.getNumber () == req.getNumber ())
 				return;
+		}
+
+		if (_zoomThread->isRunning ()) {
+			NSRRenderRequest zoomReq = _zoomThread->getCurrentRequest ();
+
+			if (isPageRelevant (zoomReq) && zoomReq.getNumber () == req.getNumber ()) {
+				_zoomThread->setProperty ("nsr-main-render", true);
+				return;
+			}
 		}
 
 		_preloadThread->cancelRequests ();
