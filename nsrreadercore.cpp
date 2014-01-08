@@ -315,9 +315,7 @@ NSRReaderCore::setZoom (double zoom, NSRRenderRequest::NSRRenderReason reason)
 
 	NSRRenderedPage cachedPage = _cache->getPage (_renderRequest.getNumber ());
 
-	if (reason == NSRRenderRequest::NSR_RENDER_REASON_CROP_TO_WIDTH)
-		_cache->removePage (_renderRequest.getNumber ());
-	else
+	if (reason != NSRRenderRequest::NSR_RENDER_REASON_CROP_TO_WIDTH)
 		_cache->clearStorage ();
 
 	_renderRequest.setZoomToWidth (toWidth);
@@ -560,7 +558,9 @@ NSRReaderCore::loadPage (PageLoad				dir,
 	if (reason == NSRRenderRequest::NSR_RENDER_REASON_PRELOAD)
 		req.setNumber (pageToLoad);
 
-	if (_cache->isPageExists (pageToLoad) && reason != NSRRenderRequest::NSR_RENDER_REASON_PRELOAD) {
+	if (reason != NSRRenderRequest::NSR_RENDER_REASON_PRELOAD &&
+	    reason != NSRRenderRequest::NSR_RENDER_REASON_CROP_TO_WIDTH &&
+	    _cache->isPageExists (pageToLoad)) {
 		QString suffix = QFileInfo(_doc->getDocumentPath ()).suffix().toLower ();
 
 		_currentPage = _cache->getPage (pageToLoad);
@@ -577,10 +577,18 @@ NSRReaderCore::loadPage (PageLoad				dir,
 	    reason == NSRRenderRequest::NSR_RENDER_REASON_CROP_TO_WIDTH) {
 		_preloadThread->cancelRequests ();
 		_zoomThread->cancelRequests ();
-		_zoomThread->addRequest (req);
 
-		if (!_zoomThread->isRunning ())
+		if (_zoomThread->isRunning ()) {
+			NSRRenderRequest zoomReq = _zoomThread->getCurrentRequest ();
+
+			if (isPageRelevant (zoomReq) && zoomReq.getNumber () == req.getNumber ())
+				return;
+			else
+				_zoomThread->addRequest (req);
+		} else {
+			_zoomThread->addRequest (req);
 			_zoomThread->start (QThread::LowestPriority);
+		}
 	} else if (reason == NSRRenderRequest::NSR_RENDER_REASON_PRELOAD) {
 		req.setRenderReason (NSRRenderRequest::NSR_RENDER_REASON_NAVIGATION);
 
