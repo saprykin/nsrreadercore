@@ -256,7 +256,8 @@ bool
 NSRReaderCore::isPageRendering () const
 {
 	return _thread->isRunning () ||
-	       (_zoomThread->isRunning () && _zoomThread->property(NSR_CORE_MAIN_RENDER_PROP).toBool ());
+	       (_zoomThread->isRunning () && !_zoomThread->isRenderCanceled () &&
+		_zoomThread->property(NSR_CORE_MAIN_RENDER_PROP).toBool ());
 }
 
 void
@@ -581,7 +582,8 @@ NSRReaderCore::loadPage (PageLoad				dir,
 		if (_zoomThread->isRunning ()) {
 			NSRRenderRequest zoomReq = _zoomThread->getCurrentRequest ();
 
-			if (isPageRelevant (zoomReq) && zoomReq.getNumber () == req.getNumber ())
+			if (!_zoomThread->isRenderCanceled() && isPageRelevant (zoomReq) &&
+			    zoomReq.getNumber () == req.getNumber ())
 				return;
 			else
 				_zoomThread->addRequest (req);
@@ -607,14 +609,16 @@ NSRReaderCore::loadPage (PageLoad				dir,
 		if (_preloadThread->isRunning ()) {
 			NSRRenderRequest preloadReq = _preloadThread->getCurrentRequest ();
 
-			if (isPageRelevant (preloadReq) && preloadReq.getNumber () == req.getNumber ())
+			if (!_preloadThread->isRenderCanceled() && isPageRelevant (preloadReq) &&
+			    preloadReq.getNumber () == req.getNumber ())
 				return;
 		}
 
 		if (_zoomThread->isRunning ()) {
 			NSRRenderRequest zoomReq = _zoomThread->getCurrentRequest ();
 
-			if (isPageRelevant (zoomReq) && zoomReq.getNumber () == req.getNumber ()) {
+			if (!_zoomThread->isRenderCanceled() && isPageRelevant (zoomReq) &&
+			    zoomReq.getNumber () == req.getNumber ()) {
 				_zoomThread->setProperty (NSR_CORE_MAIN_RENDER_PROP, true);
 				return;
 			}
@@ -766,7 +770,7 @@ NSRReaderCore::preloadPage ()
 	else
 		_preloadThread->cancelRequests ();
 
-	if (_preloadThread->isRunning ()) {
+	if (_preloadThread->isRunning () && !_preloadThread->isRenderCanceled ()) {
 		NSRRenderRequest preloadReq = _preloadThread->getCurrentRequest ();
 
 		if (needNext && isPageRelevant (preloadReq) && preloadReq.getNumber () == pageToLoadNext)
