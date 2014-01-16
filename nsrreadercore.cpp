@@ -257,7 +257,9 @@ NSRReaderCore::isPageRendering () const
 {
 	return _thread->isRunning () ||
 	       (_zoomThread->isRunning () && !_zoomThread->isRenderCanceled () &&
-		_zoomThread->property(NSR_CORE_MAIN_RENDER_PROP).toBool ());
+		_zoomThread->property(NSR_CORE_MAIN_RENDER_PROP).toBool ()) ||
+	       (_preloadThread->isRunning () && !_preloadThread->isRenderCanceled () &&
+	        _preloadThread->property(NSR_CORE_MAIN_RENDER_PROP).toBool ());
 }
 
 void
@@ -477,7 +479,11 @@ NSRReaderCore::onPreloadRenderDone ()
 
 		_currentPage = page;
 
-		emit needIndicator (false);
+		if (_preloadThread->property(NSR_CORE_MAIN_RENDER_PROP).toBool ()) {
+			_preloadThread->setProperty (NSR_CORE_MAIN_RENDER_PROP, false);
+			emit needIndicator (false);
+		}
+
 		emit pageRendered (_renderRequest.getNumber ());
 	}
 }
@@ -610,8 +616,10 @@ NSRReaderCore::loadPage (PageLoad				dir,
 			NSRRenderRequest preloadReq = _preloadThread->getCurrentRequest ();
 
 			if (!_preloadThread->isRenderCanceled() && isPageRelevant (preloadReq) &&
-			    preloadReq.getNumber () == req.getNumber ())
+			    preloadReq.getNumber () == req.getNumber ()) {
+				_preloadThread->setProperty (NSR_CORE_MAIN_RENDER_PROP, true);
 				return;
+			}
 		}
 
 		if (_zoomThread->isRunning ()) {
