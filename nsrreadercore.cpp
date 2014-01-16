@@ -458,7 +458,7 @@ NSRReaderCore::onPreloadRenderDone ()
 {
 	NSRRenderedPage page = _preloadThread->getRenderedPage ();
 
-	if (!page.isImageValid ())
+	if (!page.isValid ())
 		return;
 
 	/* We do not need to reset document changed flag because it would be
