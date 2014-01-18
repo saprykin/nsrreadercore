@@ -449,6 +449,7 @@ NSRReaderCore::onZoomRenderDone ()
 		if (_zoomThread->property(NSR_CORE_MAIN_RENDER_PROP).toBool ()) {
 			_zoomThread->setProperty (NSR_CORE_MAIN_RENDER_PROP, false);
 			emit needIndicator (false);
+			preloadPage ();
 		}
 
 		emit pageRendered (_renderRequest.getNumber ());
@@ -482,6 +483,7 @@ NSRReaderCore::onPreloadRenderDone ()
 		if (_preloadThread->property(NSR_CORE_MAIN_RENDER_PROP).toBool ()) {
 			_preloadThread->setProperty (NSR_CORE_MAIN_RENDER_PROP, false);
 			emit needIndicator (false);
+			preloadPage ();
 		}
 
 		emit pageRendered (_renderRequest.getNumber ());
