@@ -427,7 +427,7 @@ NSRReaderCore::onZoomRenderDone ()
 {
 	NSRRenderedPage page = _zoomThread->getRenderedPage ();
 
-	if (!page.isImageValid ())
+	if (!page.isImageValid () && !_zoomThread->property(NSR_CORE_MAIN_RENDER_PROP).toBool ())
 		return;
 
 	/* We do not need to reset document changed flag because it would be
