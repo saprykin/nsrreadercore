@@ -33,8 +33,8 @@ public:
 	bool isAutoCrop () const {return _isAutoCrop;}
 	void savePreventScreenLock (bool preventScreenLock);
 	bool isPreventScreenLock () const {return _isPreventScreenLock;}
-	bool isNewsShown () const {return _isNewsShown;}
-	void saveNewsShown ();
+	bool isNewsShown (const QString& version) const {return _lastVersionNewsShown == version;}
+	void saveNewsShown (const QString& version);
 	QString getFontFamily () const {return _fontFamily;}
 	void saveFontFamily (const QString& ff);
 	QString getTextEncoding () const {return _textEncoding;}
@@ -76,9 +76,9 @@ private:
 	bool			_isInvertedColors;
 	bool			_isAutoCrop;
 	bool			_isPreventScreenLock;
-	bool			_isNewsShown;
 	bool			_isFirstStart;
 	bool			_isStarting;
+	QString			_lastVersionNewsShown;
 	QString			_lastOpenDir;
 	QString			_fontFamily;
 	QString			_textEncoding;

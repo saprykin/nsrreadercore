@@ -38,8 +38,8 @@ NSRSettings::NSRSettings () :
 	_isInvertedColors = value("inverted-colors", false).toBool ();
 	_isAutoCrop = value("auto-crop", false).toBool ();
 	_isPreventScreenLock = value("prevent-screen-lock", true).toBool ();
+	_lastVersionNewsShown = (value("news-shown-version", "0.0.0").toString ());
 	_lastOpenDir = value("last-open-dir", "C:").toString ();
-	_isNewsShown = (value("news-shown-version", "1.0.0").toString () == NSR_CORE_VERSION);
 	_fontFamily = value("font-family", "Sans Serif").toString ();
 	_textEncoding = value("text-encoding", "UTF-8").toString ();
 	_lastDocuments = value("last-documents", QStringList ()).toStringList ();
@@ -225,11 +225,11 @@ NSRSettings::savePreventScreenLock (bool preventScreenLock)
 }
 
 void
-NSRSettings::saveNewsShown ()
+NSRSettings::saveNewsShown (const QString& version)
 {
-	_isNewsShown = true;
+	_lastVersionNewsShown = version;
 	beginGroup ("Global");
-	setValue ("news-shown-version", NSR_CORE_VERSION);
+	setValue ("news-shown-version", version);
 	endGroup ();
 
 	sync ();
