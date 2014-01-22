@@ -410,9 +410,7 @@ NSRReaderCore::onRenderDone ()
 	_cache->addPage (page);
 
 	if (_renderRequest.getNumber () == page.getNumber ()) {
-		if (_renderRequest.isZoomToWidth ())
-			_renderRequest.setZoom (page.getZoom ());
-
+		_renderRequest.setZoom (page.getRenderedZoom ());
 		_currentPage = page;
 
 		emit needIndicator (false);
@@ -441,9 +439,7 @@ NSRReaderCore::onZoomRenderDone ()
 	_cache->addPage (page);
 
 	if (_renderRequest.getNumber () == page.getNumber ()) {
-		if (_renderRequest.isZoomToWidth ())
-			_renderRequest.setZoom (page.getZoom ());
-
+		_renderRequest.setZoom (page.getRenderedZoom ());
 		_currentPage = page;
 
 		if (_zoomThread->property(NSR_CORE_MAIN_RENDER_PROP).toBool ()) {
@@ -475,9 +471,7 @@ NSRReaderCore::onPreloadRenderDone ()
 	_cache->addPage (page);
 
 	if (_renderRequest.getNumber () == page.getNumber ()) {
-		if (_renderRequest.isZoomToWidth ())
-			_renderRequest.setZoom (page.getZoom ());
-
+		_renderRequest.setZoom (page.getRenderedZoom ());
 		_currentPage = page;
 
 		if (_preloadThread->property(NSR_CORE_MAIN_RENDER_PROP).toBool ()) {
@@ -590,7 +584,7 @@ NSRReaderCore::loadPage (PageLoad				dir,
 		if (_zoomThread->isRunning ()) {
 			NSRRenderRequest zoomReq = _zoomThread->getCurrentRequest ();
 
-			if (!_zoomThread->isRenderCanceled() && isPageRelevant (zoomReq) &&
+			if (!_zoomThread->isRenderCanceled () && isPageRelevant (zoomReq) &&
 			    zoomReq.getNumber () == req.getNumber ())
 				return;
 			else
@@ -758,8 +752,12 @@ NSRReaderCore::isPageRelevant (const NSRRenderedPage& page) const
 			_renderRequest.isZoomToWidth () == page.isZoomToWidth () &&
 			qAbs (_renderRequest.getRotation () - page.getRotation () <= DBL_EPSILON);
 
-	if (!_renderRequest.isZoomToWidth ())
-		relevant = relevant && qAbs (_renderRequest.getZoom () - page.getZoom ()) <= DBL_EPSILON;
+	if (!_renderRequest.isZoomToWidth ()) {
+		if (page.getRenderedZoom () > 0)
+			relevant = relevant && qAbs (_renderRequest.getZoom () - page.getRenderedZoom ()) <= DBL_EPSILON;
+		else
+			relevant = relevant && qAbs (_renderRequest.getZoom () - page.getZoom ()) <= DBL_EPSILON;
+	}
 
 	return relevant;
 }

@@ -130,7 +130,7 @@ NSRRenderThread::updateThumbnail ()
 		_doc->setAutoCrop (false);
 		_doc->renderPage (1);
 
-		thumbPage.setZoom (_doc->getZoom ());
+		thumbPage.setRenderedZoom (_doc->getZoom ());
 		thumbPage.setImage (_doc->getCurrentPage ());
 
 		_doc->setTextOnly (true);
@@ -171,7 +171,7 @@ NSRRenderThread::run ()
 		if (!_doc->isTextOnly ()) {
 			_doc->renderPage (page.getNumber ());
 			page.setImage (_doc->getCurrentPage ());
-			page.setZoom (_doc->getZoom ());
+			page.setRenderedZoom (_doc->getZoom ());
 		}
 
 		if (isRenderCanceled ()) {

@@ -4,6 +4,7 @@
 
 NSRRenderedPage::NSRRenderedPage (QObject *parent) :
 	NSRRenderRequest (parent),
+	_renderedZoom (-1.0),
 	_cached (false)
 {
 }
@@ -15,11 +16,13 @@ NSRRenderedPage::NSRRenderedPage (const NSRRenderedPage& page) :
 	_text		= page._text;
 	_lastPos	= page._lastPos;
 	_lastTextPos	= page._lastTextPos;
+	_renderedZoom	= page._renderedZoom;
 	_cached		= page._cached;
 }
 
 NSRRenderedPage::NSRRenderedPage (const NSRRenderRequest& req) :
 	NSRRenderRequest (req),
+	_renderedZoom (-1.0),
 	_cached (false)
 {
 }
@@ -37,6 +40,7 @@ NSRRenderedPage::operator = (const NSRRenderedPage& page)
 		_text		= page._text;
 		_lastPos	= page._lastPos;
 		_lastTextPos	= page._lastTextPos;
+		_renderedZoom	= page._renderedZoom;
 		_cached		= page._cached;
 	}
 

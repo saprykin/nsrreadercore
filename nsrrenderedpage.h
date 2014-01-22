@@ -39,6 +39,10 @@ public:
 		return _lastTextPos;
 	}
 
+	inline double getRenderedZoom () const {
+		return _renderedZoom;
+	}
+
 	inline bool isCached () const {
 		return _cached;
 	}
@@ -62,6 +66,10 @@ public:
 		_lastTextPos = pos;
 	}
 
+	inline void setRenderedZoom (double zoom) {
+		_renderedZoom = zoom;
+	}
+
 	inline void setCached (bool cached) {
 		_cached = cached;
 	}
@@ -71,6 +79,7 @@ private:
 	QString			_text;
 	QPointF			_lastPos;
 	QPointF			_lastTextPos;
+	double			_renderedZoom;
 	bool			_cached;
 };
 
