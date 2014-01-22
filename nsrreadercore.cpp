@@ -316,8 +316,6 @@ NSRReaderCore::setZoom (double zoom, NSRRenderRequest::NSRRenderReason reason)
 	if (_renderRequest.isTextOnly ())
 		return;
 
-	NSRRenderedPage cachedPage = _cache->getPage (_renderRequest.getNumber ());
-
 	if (reason != NSRRenderRequest::NSR_RENDER_REASON_CROP_TO_WIDTH)
 		_cache->clearStorage ();
 
