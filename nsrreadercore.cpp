@@ -750,12 +750,8 @@ NSRReaderCore::isPageRelevant (const NSRRenderedPage& page) const
 			_renderRequest.isZoomToWidth () == page.isZoomToWidth () &&
 			qAbs (_renderRequest.getRotation () - page.getRotation () <= DBL_EPSILON);
 
-	if (!_renderRequest.isZoomToWidth ()) {
-		if (page.getRenderedZoom () > 0)
-			relevant = relevant && qAbs (_renderRequest.getZoom () - page.getRenderedZoom ()) <= DBL_EPSILON;
-		else
+	if (!_renderRequest.isZoomToWidth ())
 			relevant = relevant && qAbs (_renderRequest.getZoom () - page.getZoom ()) <= DBL_EPSILON;
-	}
 
 	return relevant;
 }
