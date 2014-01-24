@@ -34,7 +34,7 @@ NSRPagesCache::addPage (const NSRRenderedPage& page)
 	qint64		newSize;
 	int		deqPage;
 
-	if (page.isEmpty ())
+	if (!page.isValid ())
 		return;
 
 	newSize = page.getSize().width () * page.getSize().height () * 4 +

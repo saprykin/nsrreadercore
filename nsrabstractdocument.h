@@ -55,7 +55,7 @@ public:
 	virtual void rotateRight ();
 	virtual void setRotation (int angle);
 	virtual int getRotation () const {return _rotation;}
-	virtual QString getText ();
+	virtual QString getText () {return QString ();}
 	virtual void setTextOnly (bool textOnly) {_textOnly = textOnly;}
 	virtual bool isTextOnly () const {return _textOnly;}
 	void setInvertedColors (bool isInverted) {_invertedColors = isInverted;}

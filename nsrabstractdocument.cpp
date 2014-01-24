@@ -51,12 +51,6 @@ NSRAbstractDocument::rotateRight ()
 		_rotation = 0;
 }
 
-QString
-NSRAbstractDocument::getText ()
-{
-	return trUtf8 ("No text data available for this page");
-}
-
 void
 NSRAbstractDocument::setRotation (int angle)
 {
