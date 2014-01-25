@@ -5,7 +5,7 @@
 #include <QDir>
 #include <QDateTime>
 
-#define NSR_CORE_VERSION "1.3.3"
+#define NSR_CORE_VERSION "1.4.0"
 
 #ifdef NSR_CORE_LITE_VERSION
 #  define NSR_CORE_CONFIG_DIR 	".nsrreaderlite"
