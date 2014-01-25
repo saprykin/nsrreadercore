@@ -23,6 +23,10 @@ public:
 
 	NSRReaderCore (bool isCardMode, QObject *parent = 0);
 	virtual ~NSRReaderCore ();
+	void prepareForDestruction ();
+	inline bool isDestructing () const {
+		return _isDestructing;
+	}
 
 	void openDocument (const QString &path, const QString& password = QString ());
 	bool isDocumentOpened () const;
@@ -79,16 +83,17 @@ private:
 	bool isPageRelevant (const NSRRenderedPage& page) const;
 	void preloadPage ();
 
-	NSRAbstractDocument				*_doc;
-	NSRAbstractDocument				*_zoomDoc;
-	NSRAbstractDocument				*_preloadDoc;
-	NSRRenderThread					*_thread;
-	NSRRenderThread					*_zoomThread;
-	NSRRenderThread					*_preloadThread;
-	NSRPagesCache					*_cache;
-	NSRRenderedPage					_currentPage;
-	NSRRenderRequest				_renderRequest;
-	bool						_isCardMode;
+	NSRAbstractDocument *	_doc;
+	NSRAbstractDocument *	_zoomDoc;
+	NSRAbstractDocument *	_preloadDoc;
+	NSRRenderThread	*	_thread;
+	NSRRenderThread	*	_zoomThread;
+	NSRRenderThread	*	_preloadThread;
+	NSRPagesCache *		_cache;
+	NSRRenderedPage		_currentPage;
+	NSRRenderRequest	_renderRequest;
+	bool			_isCardMode;
+	bool			_isDestructing;
 };
 
 #endif /* NSRREADERCORE_H_ */

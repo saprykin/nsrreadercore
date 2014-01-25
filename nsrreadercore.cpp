@@ -20,7 +20,8 @@ NSRReaderCore::NSRReaderCore (bool isCardMode, QObject *parent) :
 	_zoomThread (NULL),
 	_preloadThread (NULL),
 	_cache (NULL),
-	_isCardMode (isCardMode)
+	_isCardMode (isCardMode),
+	_isDestructing (false)
 {
 	_thread		= new NSRRenderThread (this);
 	_zoomThread	= new NSRRenderThread (this);
@@ -48,6 +49,23 @@ NSRReaderCore::NSRReaderCore (bool isCardMode, QObject *parent) :
 
 NSRReaderCore::~NSRReaderCore ()
 {
+	disconnect (this);
+
+	_thread->deleteLater ();
+	_zoomThread->deleteLater ();
+	_preloadThread->deleteLater ();
+}
+
+void
+NSRReaderCore::prepareForDestruction ()
+{
+	_isDestructing = true;
+	_thread->cancelRequests ();
+	_thread->setRenderCanceled (true);
+	_zoomThread->cancelRequests ();
+	_zoomThread->setRenderCanceled (true);
+	_preloadThread->cancelRequests ();
+	_preloadThread->setRenderCanceled (true);
 }
 
 void
@@ -397,6 +415,9 @@ NSRReaderCore::switchTextReflow ()
 void
 NSRReaderCore::onRenderDone ()
 {
+	if (_isDestructing)
+		return;
+
 	NSRRenderedPage page = _thread->getRenderedPage ();
 
 	if (_thread->isRenderCanceled ())
@@ -421,6 +442,9 @@ NSRReaderCore::onRenderDone ()
 void
 NSRReaderCore::onZoomRenderDone ()
 {
+	if (_isDestructing)
+		return;
+
 	NSRRenderedPage page = _zoomThread->getRenderedPage ();
 
 	if (!page.isImageValid () && !_zoomThread->property(NSR_CORE_MAIN_RENDER_PROP).toBool ())
@@ -453,6 +477,9 @@ NSRReaderCore::onZoomRenderDone ()
 void
 NSRReaderCore::onPreloadRenderDone ()
 {
+	if (_isDestructing)
+		return;
+
 	NSRRenderedPage page = _preloadThread->getRenderedPage ();
 
 	if (!page.isValid ())
@@ -485,6 +512,9 @@ NSRReaderCore::onPreloadRenderDone ()
 void
 NSRReaderCore::onZoomThreadFinished ()
 {
+	if (_isDestructing)
+		return;
+
 	if (_zoomThread->isRenderCanceled ()) {
 		/* All requests must be canceled on document opening */
 		delete _zoomDoc;
@@ -501,6 +531,9 @@ NSRReaderCore::onZoomThreadFinished ()
 void
 NSRReaderCore::onPreloadThreadFinished ()
 {
+	if (_isDestructing)
+		return;
+
 	if (_preloadThread->isRenderCanceled ()) {
 		/* All requests must be canceled on document opening */
 		delete _preloadDoc;
