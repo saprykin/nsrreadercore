@@ -226,11 +226,15 @@ NSRReaderCore::reloadSettings ()
 			_cache->clearStorage ();
 			needReload = true;
 		}
+
+		emit autoCropChanged (_renderRequest.isAutoCrop ());
 	}
 
 	if (wasEncoding != _renderRequest.getEncoding () && _doc->isEncodingUsed ()) {
 		_cache->clearStorage ();
 		needReload = true;
+
+		emit encodingChanged (_renderRequest.getEncoding ());
 	}
 
 	if (needReload)

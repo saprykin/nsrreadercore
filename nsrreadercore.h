@@ -62,6 +62,8 @@ Q_SIGNALS:
 	void errorWhileOpening (NSRAbstractDocument::NSRDocumentError error);
 	void documentOpened (const QString& file);
 	void documentClosed (const QString& file);
+	void autoCropChanged (bool autocrop);
+	void encodingChanged (const QString& encoding);
 #ifdef NSR_CORE_LITE_VERSION
 	void liteVersionOverPage ();
 #endif
