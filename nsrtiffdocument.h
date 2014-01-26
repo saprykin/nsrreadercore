@@ -22,6 +22,12 @@ public:
 	inline NSRAbstractDocument::NSRDocumentStyle getPrefferedDocumentStyle () const {
 		return NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC;
 	}
+	inline void setEncoding (const QString& encoding) {
+		Q_UNUSED (encoding);
+	}
+	inline QString getEncoding () const {
+		return QString ("");
+	}
 
 private:
 	void updateCropPads ();

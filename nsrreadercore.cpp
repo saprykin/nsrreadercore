@@ -777,11 +777,17 @@ NSRReaderCore::normalizeAngle (double angle) const
 bool
 NSRReaderCore::isPageRelevant (const NSRRenderedPage& page) const
 {
+	if (_doc == NULL)
+		return false;
+
 	bool relevant = _renderRequest.isAutoCrop () == page.isAutoCrop () &&
 			_renderRequest.isTextOnly () == page.isTextOnly () &&
 			_renderRequest.isInvertColors () == page.isInvertColors () &&
 			_renderRequest.isZoomToWidth () == page.isZoomToWidth () &&
 			qAbs (_renderRequest.getRotation () - page.getRotation () <= DBL_EPSILON);
+
+	if (_doc->isEncodingUsed ())
+		relevant = relevant && (_renderRequest.getEncoding () == page.getEncoding ());
 
 	if (!_renderRequest.isZoomToWidth ())
 			relevant = relevant && qAbs (_renderRequest.getZoom () - page.getZoom ()) <= DBL_EPSILON;
