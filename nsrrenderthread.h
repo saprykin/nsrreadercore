@@ -45,6 +45,10 @@ public:
 		return (_renderCanceled == 1);
 	}
 
+	inline void forceThumbnailUpdate () {
+		_forceThumbnailUpdate = true;
+	}
+
 	virtual void run ();
 
 Q_SIGNALS:
@@ -65,6 +69,7 @@ private:
 	mutable QMutex			_renderedMutex;
 	QAtomicInt			_renderCanceled;
 	bool				_renderThumbnail;
+	bool				_forceThumbnailUpdate;
 };
 
 #endif // NSRRENDERTHREAD_H

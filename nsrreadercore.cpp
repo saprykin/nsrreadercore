@@ -662,6 +662,10 @@ NSRReaderCore::loadPage (PageLoad				dir,
 		_preloadThread->cancelRequests ();
 		_thread->addRequest (req);
 
+		if (req.getRenderReason () == NSRRenderRequest::NSR_RENDER_REASON_SETTINGS &&
+		    _doc->isEncodingUsed ())
+			_thread->forceThumbnailUpdate ();
+
 		if (!_thread->isRunning ())
 			_thread->start (QThread::NormalPriority);
 	}

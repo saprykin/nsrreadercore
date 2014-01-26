@@ -7,7 +7,8 @@ NSRRenderThread::NSRRenderThread (QObject *parent) :
 	QThread (parent),
 	_doc (NULL),
 	_renderCanceled (0),
-	_renderThumbnail (false)
+	_renderThumbnail (false),
+	_forceThumbnailUpdate (false)
 {
 }
 
@@ -121,7 +122,7 @@ NSRRenderThread::updateThumbnail ()
 
 	if (!_doc->getPassword().isEmpty ())
 		NSRThumbnailer::saveThumbnailEncrypted (_doc->getDocumentPath ());
-	else if (NSRThumbnailer::isThumbnailOutdated (_doc->getDocumentPath ())) {
+	else if (_forceThumbnailUpdate || NSRThumbnailer::isThumbnailOutdated (_doc->getDocumentPath ())) {
 		NSRRenderedPage	thumbPage;
 
 		_doc->zoomToWidth (256);
@@ -139,6 +140,8 @@ NSRRenderThread::updateThumbnail ()
 		thumbPage.setText (_doc->getText ());
 
 		NSRThumbnailer::saveThumbnail (_doc->getDocumentPath (), thumbPage);
+
+		_forceThumbnailUpdate = false;
 	}
 }
 
@@ -153,7 +156,7 @@ NSRRenderThread::run ()
 	bool hasPage = hasRequests ();
 
 	while (hasPage) {
-		/* Does we have new pages to render? */
+		/* Do we have new pages to render? */
 		NSRRenderedPage page (getRequest ());
 
 		if (page.getNumber () < 1 || page.getNumber () > _doc->getNumberOfPages ()) {
