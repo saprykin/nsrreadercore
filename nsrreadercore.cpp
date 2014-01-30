@@ -268,8 +268,8 @@ NSRReaderCore::loadSession (const NSRSession *session)
 			loadPage (PAGE_LOAD_CUSTOM, NSRRenderRequest::NSR_RENDER_REASON_NAVIGATION, session->getPage ());
 
 			if (!_doc->getPassword().isEmpty ())
-				NSRThumbnailer::saveThumbnailEncrypted (_doc->getDocumentPath ());
-			else if (NSRThumbnailer::isThumbnailOutdated (_doc->getDocumentPath ()))
+				NSRThumbnailer::instance()->saveThumbnailEncrypted (_doc->getDocumentPath ());
+			else if (NSRThumbnailer::instance()->isThumbnailOutdated (_doc->getDocumentPath ()))
 				requestThumbnail ();
 		}
 	}
@@ -459,7 +459,7 @@ NSRReaderCore::onZoomRenderDone ()
 	NSRRenderedPage page = _zoomThread->getRenderedPage ();
 
 	if (page.getRenderType () == NSRRenderRequest::NSR_RENDER_TYPE_THUMBNAIL) {
-		NSRThumbnailer::saveThumbnail (_zoomDoc->getDocumentPath (), page);
+		NSRThumbnailer::instance()->saveThumbnail (_zoomDoc->getDocumentPath (), page);
 		emit thumbnailRendered ();
 		return;
 	}

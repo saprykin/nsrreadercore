@@ -1,7 +1,6 @@
 #include "nsrthumbnailer.h"
 #include "nsrsettings.h"
 
-#include <QSettings>
 #include <QCryptographicHash>
 #include <QFile>
 #include <QFileInfo>
@@ -13,9 +12,35 @@
 using namespace bb::utility;
 #endif
 
-#define NSR_CORE_THUMBNAILS_DIR 		NSRSettings::getSettingsDirectory () + "/thumbnails"
 #define NSR_CORE_THUMBNAILS_MAX_TEXT_PRE	600
 #define NSR_CORE_THUMBNAILS_MAX_TEXT_OUT	500
+
+NSRThumbnailer * NSRThumbnailer::_instance = NULL;
+
+NSRThumbnailer::NSRThumbnailer () :
+	QSettings (NSRSettings::getSettingsDirectory () + "/thumbnails",
+		   QSettings::IniFormat)
+{
+	_configDir = QFileInfo(fileName ()).canonicalPath ();
+}
+
+NSRThumbnailer *
+NSRThumbnailer::instance ()
+{
+	if (_instance == NULL)
+		_instance = new NSRThumbnailer ();
+
+	return _instance;
+}
+
+void
+NSRThumbnailer::release ()
+{
+	if (_instance != NULL) {
+		delete _instance;
+		_instance = NULL;
+	}
+}
 
 bool
 NSRThumbnailer::isThumbnailExists (const QString& path)
@@ -27,14 +52,6 @@ void
 NSRThumbnailer::saveThumbnail (const QString&		path,
 			       const NSRRenderedPage&	page)
 {
-	QDir dir;
-
-	if (!dir.exists (NSR_CORE_THUMBNAILS_DIR))
-		dir.mkpath (NSR_CORE_THUMBNAILS_DIR);
-
-	QSettings settings (NSR_CORE_THUMBNAILS_DIR + "/thumbnails.ini",
-			    QSettings::IniFormat);
-
 	if (!QFile::exists (path))
 		return;
 
@@ -59,38 +76,30 @@ NSRThumbnailer::saveThumbnail (const QString&		path,
 	if (lastIndex > NSR_CORE_THUMBNAILS_MAX_TEXT_OUT)
 		pageText = pageText.left (lastIndex + 1) + "...";
 
-	settings.beginGroup (hash);
-	settings.setValue ("path", path);
-	settings.setValue ("text", pageText);
-	settings.setValue ("encrypted", false);
-	settings.setValue ("file-size", QFileInfo (path).size ());
-	settings.endGroup ();
-	settings.sync ();
+	beginGroup (hash);
+	setValue ("path", path);
+	setValue ("text", pageText);
+	setValue ("encrypted", false);
+	setValue ("file-size", QFileInfo (path).size ());
+	endGroup ();
+	sync ();
 }
 
 void
 NSRThumbnailer::saveThumbnailEncrypted (const QString&	path)
 {
-	QDir dir;
-
-	if (!dir.exists (NSR_CORE_THUMBNAILS_DIR))
-		dir.mkpath (NSR_CORE_THUMBNAILS_DIR);
-
-	QSettings settings (NSR_CORE_THUMBNAILS_DIR + "/thumbnails.ini",
-			    QSettings::IniFormat);
-
 	if (!QFile::exists (path))
 		return;
 
 	QString hash = filePathToHash (path);
 
-	settings.beginGroup (hash);
-	settings.setValue ("path", path);
-	settings.setValue ("encrypted", true);
-	settings.setValue ("file-size", QFileInfo (path).size ());
-	settings.remove ("text");
-	settings.endGroup ();
-	settings.sync ();
+	beginGroup (hash);
+	setValue ("path", path);
+	setValue ("encrypted", true);
+	setValue ("file-size", QFileInfo(path).size ());
+	remove ("text");
+	endGroup ();
+	sync ();
 
 	QFile::remove (getThumbnailPathFromHash (hash));
 }
@@ -104,58 +113,45 @@ NSRThumbnailer::getThumnailPath (const QString& path)
 void
 NSRThumbnailer::cleanOldFiles ()
 {
-	QSettings settings (NSR_CORE_THUMBNAILS_DIR + "/thumbnails.ini",
-			    QSettings::IniFormat);
-
-	QStringList files = settings.childGroups ();
+	QStringList files = childGroups ();
 	int count = files.count ();
 
 	for (int i = 0; i < count; ++i) {
-		settings.beginGroup (files.at (i));
+		beginGroup (files.at (i));
 
 		bool needDelete = false;
-		QString filePath = settings.value("path").toString ();
+		QString filePath =value("path").toString ();
 
 		if (!QFile::exists (filePath)) {
 			QFile::remove (getThumnailPath (filePath));
 			needDelete = true;
 		}
 
-		settings.endGroup ();
+		endGroup ();
 
 		if (needDelete)
-			settings.remove (files.at (i));
+			remove (files.at (i));
 	}
-
-	settings.endGroup ();
 }
 
 QString
 NSRThumbnailer::getThumbnailText (const QString& path)
 {
-	QSettings settings (NSR_CORE_THUMBNAILS_DIR + "/thumbnails.ini",
-			    QSettings::IniFormat);
-
-	return settings.value(filePathToHash (path) + "/text", "").toString ();
+	return value(filePathToHash (path) + "/text", "").toString ();
 }
 
 bool
 NSRThumbnailer::isThumbnailEncrypted (const QString& path)
 {
-	QSettings settings (NSR_CORE_THUMBNAILS_DIR + "/thumbnails.ini",
-			    QSettings::IniFormat);
-
-	return settings.value(filePathToHash (path) + "/encrypted", false).toBool ();
+	return value(filePathToHash (path) + "/encrypted", false).toBool ();
 }
 
 void
 NSRThumbnailer::removeThumbnail (const QString& path)
 {
-	QSettings settings (NSR_CORE_THUMBNAILS_DIR + "/thumbnails.ini",
-			    QSettings::IniFormat);
 	QString hash = filePathToHash (path);
 
-	settings.remove (hash);
+	remove (hash);
 	QFile::remove (getThumbnailPathFromHash (hash));
 }
 
@@ -165,16 +161,14 @@ NSRThumbnailer::isThumbnailOutdated (const QString& path)
 	if (!QFile::exists (path))
 		return false;
 
-	QSettings	settings (NSR_CORE_THUMBNAILS_DIR + "/thumbnails.ini",
-			    	  QSettings::IniFormat);
 	QFileInfo	fileInfo (path);
 	QString		hash = filePathToHash (path);
 	QString		filePath = getThumbnailPathFromHash (hash);
 	qint64		fileSize = fileInfo.size ();
-	qint64		storedFileSize = settings.value(hash + "/file-size", -1).toInt ();
+	qint64		storedFileSize = value(hash + "/file-size", -1).toInt ();
 
 	if (storedFileSize == -1) {
-		settings.setValue (hash + "/file-size", fileSize);
+		setValue (hash + "/file-size", fileSize);
 		storedFileSize = fileSize;
 	}
 
@@ -191,5 +185,5 @@ NSRThumbnailer::filePathToHash (const QString& path)
 QString
 NSRThumbnailer::getThumbnailPathFromHash (const QString& hash)
 {
-	return NSR_CORE_THUMBNAILS_DIR + "/" + hash + ".png";
+	return _configDir + "/" + hash + ".png";
 }

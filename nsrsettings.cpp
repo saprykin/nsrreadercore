@@ -77,7 +77,7 @@ NSRSettings::release ()
 }
 
 NSRSession
-NSRSettings::getLastSession()
+NSRSettings::getLastSession ()
 {
 	NSRSession	session;
 	QString		lastSession = value("Global/last-session", "").toString ();
@@ -440,7 +440,7 @@ NSRSettings::cleanOldFiles ()
 	for (int i = 0; i < count; ++i)
 		if (childs.at(i) != QString ("Global") &&
 		    !QFile::exists (value(childs.at (i) + "/file", "").toString ()))
-			remove(childs.at(i));
+			remove (childs.at(i));
 
 	QStringList docs = value("Global/last-documents", QStringList ()).toStringList ();
 	count = docs.count ();
@@ -455,6 +455,6 @@ NSRSettings::cleanOldFiles ()
 	setValue ("Global/last-documents", QVariant (docs));
 	sync ();
 
-	NSRThumbnailer::cleanOldFiles ();
+	NSRThumbnailer::instance()->cleanOldFiles ();
 	NSRBookmarksStorage::instance()->cleanOldFiles ();
 }
