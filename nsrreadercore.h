@@ -58,12 +58,11 @@ public:
 
 Q_SIGNALS:
 	void pageRendered (int number);
+	void thumbnailRendered ();
 	void needIndicator (bool enabled);
 	void errorWhileOpening (NSRAbstractDocument::NSRDocumentError error);
 	void documentOpened (const QString& file);
 	void documentClosed (const QString& file);
-	void autoCropChanged (bool autocrop);
-	void encodingChanged (const QString& encoding);
 #ifdef NSR_CORE_LITE_VERSION
 	void liteVersionOverPage ();
 #endif
@@ -84,6 +83,7 @@ private:
 	double normalizeAngle (double angle) const;
 	bool isPageRelevant (const NSRRenderedPage& page) const;
 	void preloadPage ();
+	void requestThumbnail ();
 
 	NSRAbstractDocument *	_doc;
 	NSRAbstractDocument *	_zoomDoc;

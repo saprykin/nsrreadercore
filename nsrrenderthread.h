@@ -24,18 +24,12 @@ public:
 	}
 
 	void addRequest (const NSRRenderRequest &req);
-	void cancelRequests ();
-	bool hasRequests () const;
+	void cancelRequests (NSRRenderRequest::NSRRenderType type);
+	void cancelAllRequests ();
+	bool hasRequests (NSRRenderRequest::NSRRenderType type) const;
+	bool hasAnyRequests () const;
 	NSRRenderedPage getRenderedPage ();
 	NSRRenderRequest getCurrentRequest () const;
-
-	inline void setThumbnailRender (bool enabled) {
-		_renderThumbnail = enabled;
-	}
-
-	inline bool isThumbnailRenderEnabled () const {
-		return _renderThumbnail;
-	}
 
 	inline void setRenderCanceled (bool canceled) {
 		_renderCanceled = canceled ? 1 : 0;
@@ -43,10 +37,6 @@ public:
 
 	inline bool isRenderCanceled () const {
 		return (_renderCanceled == 1);
-	}
-
-	inline void forceThumbnailUpdate () {
-		_forceThumbnailUpdate = true;
 	}
 
 	virtual void run ();
@@ -59,7 +49,6 @@ private:
 	void completeRequest (const NSRRenderedPage& page);
 	void setCurrentRequest (const NSRRenderRequest& req);
 	void prepareRenderContext (const NSRRenderRequest& req);
-	void updateThumbnail ();
 
 	NSRAbstractDocument		*_doc;
 	NSRRenderRequest		_currentRequest;
@@ -68,8 +57,6 @@ private:
 	mutable QMutex			_requestedMutex;
 	mutable QMutex			_renderedMutex;
 	QAtomicInt			_renderCanceled;
-	bool				_renderThumbnail;
-	bool				_forceThumbnailUpdate;
 };
 
 #endif // NSRRENDERTHREAD_H

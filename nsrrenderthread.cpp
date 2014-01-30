@@ -1,14 +1,11 @@
 #include "nsrrenderthread.h"
-#include "nsrthumbnailer.h"
 
 #include <QMutexLocker>
 
 NSRRenderThread::NSRRenderThread (QObject *parent) :
 	QThread (parent),
 	_doc (NULL),
-	_renderCanceled (0),
-	_renderThumbnail (false),
-	_forceThumbnailUpdate (false)
+	_renderCanceled (0)
 {
 }
 
@@ -38,14 +35,38 @@ NSRRenderThread::addRequest (const NSRRenderRequest& req)
 }
 
 void
-NSRRenderThread::cancelRequests ()
+NSRRenderThread::cancelRequests (NSRRenderRequest::NSRRenderType type)
+{
+	QMutexLocker locker (&_requestedMutex);
+
+	for (int i = _requestedPages.count () - 1; i >= 0; --i)
+		if (_requestedPages.at(i).getRenderType () == type)
+			_requestedPages.takeAt (i);
+}
+
+void
+NSRRenderThread::cancelAllRequests ()
 {
 	QMutexLocker locker (&_requestedMutex);
 	_requestedPages.clear ();
 }
 
 bool
-NSRRenderThread::hasRequests () const
+NSRRenderThread::hasRequests (NSRRenderRequest::NSRRenderType type) const
+{
+	QMutexLocker locker (&_requestedMutex);
+
+	int count = _requestedPages.count ();
+
+	for (int i = 0; i < count; ++i)
+		if (_requestedPages.at(i).getRenderType () == type)
+			return true;
+
+	return false;
+}
+
+bool
+NSRRenderThread::hasAnyRequests () const
 {
 	QMutexLocker locker (&_requestedMutex);
 	return !_requestedPages.isEmpty ();
@@ -115,37 +136,6 @@ NSRRenderThread::prepareRenderContext (const NSRRenderRequest& req)
 }
 
 void
-NSRRenderThread::updateThumbnail ()
-{
-	if (_doc == NULL || !_doc->isValid ())
-		return;
-
-	if (!_doc->getPassword().isEmpty ())
-		NSRThumbnailer::saveThumbnailEncrypted (_doc->getDocumentPath ());
-	else if (_forceThumbnailUpdate || NSRThumbnailer::isThumbnailOutdated (_doc->getDocumentPath ())) {
-		NSRRenderedPage	thumbPage;
-
-		_doc->zoomToWidth (256);
-		_doc->setTextOnly (false);
-		_doc->setInvertedColors (false);
-		_doc->setAutoCrop (false);
-		_doc->renderPage (1);
-
-		thumbPage.setRenderedZoom (_doc->getZoom ());
-		thumbPage.setImage (_doc->getCurrentPage ());
-
-		_doc->setTextOnly (true);
-		_doc->renderPage (1);
-
-		thumbPage.setText (_doc->getText ());
-
-		NSRThumbnailer::saveThumbnail (_doc->getDocumentPath (), thumbPage);
-
-		_forceThumbnailUpdate = false;
-	}
-}
-
-void
 NSRRenderThread::run ()
 {
 	if (_doc == NULL) {
@@ -153,7 +143,7 @@ NSRRenderThread::run ()
 		return;
 	}
 
-	bool hasPage = hasRequests ();
+	bool hasPage = hasAnyRequests ();
 
 	while (hasPage) {
 		/* Do we have new pages to render? */
@@ -186,13 +176,10 @@ NSRRenderThread::run ()
 		_doc->renderPage (page.getNumber ());
 		page.setText (_doc->getText ());
 
-		if (_renderThumbnail)
-			updateThumbnail ();
-
 		completeRequest (page);
 		emit renderDone ();
 
-		hasPage = hasRequests ();
+		hasPage = hasAnyRequests ();
 
 		setCurrentRequest (NSRRenderRequest ());
 	}
