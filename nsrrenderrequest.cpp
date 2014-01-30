@@ -6,6 +6,7 @@ NSRRenderRequest::NSRRenderRequest (QObject *parent) :
 	QObject (parent),
 	_encoding ("UTF-8"),
 	_reason (NSR_RENDER_REASON_NONE),
+	_type (NSR_RENDER_TYPE_PAGE),
 	_zoom (0.0),
 	_rotation (0.0),
 	_screenWidth (0.0),
@@ -21,6 +22,7 @@ NSRRenderRequest::NSRRenderRequest (int number, QObject *parent) :
 	QObject (parent),
 	_encoding ("UTF-8"),
 	_reason (NSR_RENDER_REASON_NONE),
+	_type (NSR_RENDER_TYPE_PAGE),
 	_zoom (0.0),
 	_rotation (0.0),
 	_screenWidth (0.0),
@@ -36,6 +38,7 @@ NSRRenderRequest::NSRRenderRequest (int number, NSRRenderReason reason, QObject 
 	QObject (parent),
 	_encoding ("UTF-8"),
 	_reason (reason),
+	_type (NSR_RENDER_TYPE_PAGE),
 	_zoom (0.0),
 	_rotation (0.0),
 	_screenWidth (0.0),
@@ -52,6 +55,7 @@ NSRRenderRequest::NSRRenderRequest (const NSRRenderRequest& req) :
 {
 	_encoding	= req._encoding;
 	_reason		= req._reason;
+	_type		= req._type;
 	_zoom		= req._zoom;
 	_rotation	= req._rotation;
 	_screenWidth	= req._screenWidth;
@@ -72,6 +76,7 @@ NSRRenderRequest::operator = (const NSRRenderRequest& req)
 	if (this != &req) {
 		_encoding	= req._encoding;
 		_reason		= req._reason;
+		_type		= req._type;
 		_zoom		= req._zoom;
 		_rotation	= req._rotation;
 		_screenWidth	= req._screenWidth;
