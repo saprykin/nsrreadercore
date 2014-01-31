@@ -1,6 +1,8 @@
 #ifndef NSRSESSION_H
 #define NSRSESSION_H
 
+#include "nsrabstractdocument.h"
+
 #include <QString>
 #include <QPointF>
 
@@ -15,7 +17,7 @@ public:
 		    bool isFitToWidth,
 		    const QPointF& pos,
 		    const QPointF& textPos,
-		    double angle);
+		    NSRAbstractDocument::NSRDocumentRotation rotation);
 
 	inline QString getFile () const {return _file;}
 	inline int getPage () const {return _page;}
@@ -25,7 +27,7 @@ public:
 	inline bool isFitToWidth () const {return _isFitToWidth;}
 	inline QPointF getPosition () const {return _pos;}
 	inline QPointF getTextPosition () const {return _textPos;}
-	inline double getRotation () const {return _angle;}
+	inline NSRAbstractDocument::NSRDocumentRotation getRotation () const {return _rotation;}
 	inline QString getPassword () const {return _passwd;}
 
 	inline void setFile (const QString& file) {_file = file;}
@@ -36,20 +38,20 @@ public:
 	inline void setFitToWidth (bool fit) {_isFitToWidth = fit;}
 	inline void setPosition (const QPointF& pos) {_pos = pos;}
 	inline void setTextPosition (const QPointF& pos) {_textPos = pos;}
-	inline void setRotation (double angle) {_angle = angle;}
+	inline void setRotation (NSRAbstractDocument::NSRDocumentRotation rotation) {_rotation = rotation;}
 	inline void setPassword (const QString& password) {_passwd = password;}
 
 private:
-	QString _file;
-	QString	_passwd;
-	QPointF	_pos;
-	QPointF	_textPos;
-	double	_zoomGraphic;
-	double	_angle;
-	int	_page;
-	int	_zoomText;
-	int	_zoomScreenWidth;
-	bool	_isFitToWidth;
+	QString 					_file;
+	QString						_passwd;
+	QPointF						_pos;
+	QPointF						_textPos;
+	double						_zoomGraphic;
+	NSRAbstractDocument::NSRDocumentRotation	_rotation;
+	int						_page;
+	int						_zoomText;
+	int						_zoomScreenWidth;
+	bool						_isFitToWidth;
 };
 
 #endif // NSRSESSION_H

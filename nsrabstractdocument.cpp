@@ -9,12 +9,12 @@ NSRAbstractDocument::NSRAbstractDocument (const QString& file, QObject *parent) 
 	_maxPageSize (4000, 4000),
 	_zoom (100.0),
 	_screenWidth (360),
-	_rotation (0),
 	_zoomToWidth (false),
 	_textOnly (false),
 	_invertedColors (false),
 	_autoCrop (false),
-	_lastError (NSR_DOCUMENT_ERROR_NO)
+	_lastError (NSR_DOCUMENT_ERROR_NO),
+	_rotation (NSR_DOCUMENT_ROTATION_0)
 {
 }
 
@@ -36,25 +36,33 @@ NSRAbstractDocument::zoomToWidth (int screenWidth)
 void
 NSRAbstractDocument::rotateLeft ()
 {
-	_rotation -= 90;
-
-	if (_rotation == -360)
-		_rotation = 0;
+	_rotation = (_rotation == NSRAbstractDocument::NSR_DOCUMENT_ROTATION_0) ?
+		    NSRAbstractDocument::NSR_DOCUMENT_ROTATION_270 :
+		    (NSRAbstractDocument::NSRDocumentRotation) (((int) _rotation) - 90);
 }
 
 void
 NSRAbstractDocument::rotateRight ()
 {
-	_rotation += 90;
-
-	if (_rotation == 360)
-		_rotation = 0;
+	_rotation = (_rotation == NSRAbstractDocument::NSR_DOCUMENT_ROTATION_270) ?
+		    NSRAbstractDocument::NSR_DOCUMENT_ROTATION_0 :
+		    (NSRAbstractDocument::NSRDocumentRotation) (((int) _rotation) + 90);
 }
 
 void
-NSRAbstractDocument::setRotation (int angle)
+NSRAbstractDocument::setRotation (NSRAbstractDocument::NSRDocumentRotation rotation)
 {
-	_rotation = angle < 0 ? -((-angle) % 360) : angle % 360;
+	switch (rotation) {
+		case NSRAbstractDocument::NSR_DOCUMENT_ROTATION_0:
+		case NSRAbstractDocument::NSR_DOCUMENT_ROTATION_90:
+		case NSRAbstractDocument::NSR_DOCUMENT_ROTATION_180:
+		case NSRAbstractDocument::NSR_DOCUMENT_ROTATION_270:
+			_rotation = rotation;
+			break;
+		default:
+			_rotation = NSRAbstractDocument::NSR_DOCUMENT_ROTATION_0;
+			break;
+	}
 }
 
 void

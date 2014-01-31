@@ -1,6 +1,8 @@
 #ifndef NSRCROPPADS_H_
 #define NSRCROPPADS_H_
 
+#include "nsrabstractdocument.h"
+
 class NSRCropPads
 {
 public:
@@ -45,7 +47,7 @@ public:
 		_bottom = bottom * _scale;
 	}
 
-	void setRotation (int angle);
+	void setRotation (NSRAbstractDocument::NSRDocumentRotation rotation);
 
 private:
 	void rotateRight ();
@@ -54,12 +56,12 @@ private:
 	void mirrorVertical ();
 	void mirrorHorizontal ();
 
-	double	_scale;
-	double	_left;
-	double	_right;
-	double	_top;
-	double	_bottom;
-	int	_angle;	/** Clockwise */
+	double						_scale;
+	double						_left;
+	double						_right;
+	double						_top;
+	double						_bottom;
+	NSRAbstractDocument::NSRDocumentRotation	_rotation;	/** Clockwise */
 };
 
 #endif /* NSRCROPPADS_H_ */

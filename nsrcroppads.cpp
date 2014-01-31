@@ -9,7 +9,7 @@ NSRCropPads::NSRCropPads () :
 	_right (0.0),
 	_top (0.0),
 	_bottom (0.0),
-	_angle (0)
+	_rotation (NSRAbstractDocument::NSR_DOCUMENT_ROTATION_0)
 {
 }
 
@@ -70,18 +70,9 @@ NSRCropPads::rotate180 ()
 }
 
 void
-NSRCropPads::setRotation (int angle)
+NSRCropPads::setRotation (NSRAbstractDocument::NSRDocumentRotation rotation)
 {
-	if (angle < 0)
-		return;
-
-	if (angle > 360)
-		angle %= 360;
-
-	if (angle % 90 != 0)
-		return;
-
-	int delta = angle - _angle;
+	int delta = (int) (rotation - _rotation);
 
 	if (delta < 0)
 		delta += 360;
@@ -104,7 +95,7 @@ NSRCropPads::setRotation (int angle)
 		break;
 	}
 
-	_angle = angle;
+	_rotation = rotation;
 }
 
 void

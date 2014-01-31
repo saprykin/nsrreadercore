@@ -105,8 +105,9 @@ NSRPopplerDocument::renderPage (int page)
 		return;
 	}
 
-	double pageWidth = (getRotation () == 90 || getRotation () == 270) ? _page->getCropHeight ()
-									   : _page->getCropWidth ();
+	double pageWidth = (getRotation () == NSRAbstractDocument::NSR_DOCUMENT_ROTATION_90 ||
+			    getRotation () == NSRAbstractDocument::NSR_DOCUMENT_ROTATION_270) ?
+			    _page->getCropHeight () : _page->getCropWidth ();
 
 	if (isZoomToWidth ()) {
 		double wZoom = ((double) getScreenWidth () / pageWidth * 100.0);
@@ -124,7 +125,7 @@ NSRPopplerDocument::renderPage (int page)
 	dpix = _dpix * getZoom () / 100.0;
 	dpiy = _dpiy * getZoom () / 100.0;
 
-	_page->display (_dev, dpix, dpiy, getRotation (), gFalse, gFalse, gTrue, NULL, NULL, NULL, NULL);
+	_page->display (_dev, dpix, dpiy, (int) getRotation (), gFalse, gFalse, gTrue, NULL, NULL, NULL, NULL);
 
 	_readyForLoad = true;
 }

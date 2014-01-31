@@ -7,6 +7,8 @@
  * @brief Rendering request
  */
 
+#include "nsrabstractdocument.h"
+
 #include <QObject>
 #include <QString>
 
@@ -143,7 +145,7 @@ public:
 	 * @return Rotation angle.
 	 * @since 1.4.0
 	 */
-	inline double getRotation () const {
+	inline NSRAbstractDocument::NSRDocumentRotation getRotation () const {
 		return _rotation;
 	}
 
@@ -253,7 +255,7 @@ public:
 	 * @param rotation Rotation angle.
 	 * @since 1.4.0
 	 */
-	inline void setRotation (double rotation) {
+	inline void setRotation (NSRAbstractDocument::NSRDocumentRotation rotation) {
 		_rotation = rotation;
 	}
 
@@ -310,17 +312,17 @@ public:
 	}
 
 private:
-	QString			_encoding;	/**< Text encoding		*/
-	NSRRenderReason		_reason;	/**< Rendering reason		*/
-	NSRRenderType		_type;		/**< Rendering type		*/
-	double			_zoom;		/**< Zoom, %			*/
-	double			_rotation;	/**< Rotation angle, clockwise	*/
-	double			_screenWidth;	/**< Screen width		*/
-	int			_number;	/**< Page number		*/
-	bool			_autoCrop;	/**< Autocrop flag		*/
-	bool			_invertColors;	/**< Inverted colors flag	*/
-	bool			_textOnly;	/**< Text only flag		*/
-	bool			_zoomToWidth;	/**< Zoom to width flag		*/
+	QString						_encoding;	/**< Text encoding		*/
+	NSRRenderReason					_reason;	/**< Rendering reason		*/
+	NSRRenderType					_type;		/**< Rendering type		*/
+	NSRAbstractDocument::NSRDocumentRotation	_rotation;	/**< Rotation angle, clockwise	*/
+	double						_zoom;		/**< Zoom, %			*/
+	double						_screenWidth;	/**< Screen width		*/
+	int						_number;	/**< Page number		*/
+	bool						_autoCrop;	/**< Autocrop flag		*/
+	bool						_invertColors;	/**< Inverted colors flag	*/
+	bool						_textOnly;	/**< Text only flag		*/
+	bool						_zoomToWidth;	/**< Zoom to width flag		*/
 };
 
 #endif /* NSRRENDERREQUEST_H_ */

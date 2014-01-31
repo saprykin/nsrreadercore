@@ -21,6 +21,11 @@ public:
 		PAGE_LOAD_CUSTOM	= 2
 	};
 
+	enum RotateDirection {
+		ROTATE_DIRECTION_RIGHT	= 0,
+		ROTATE_DIRECTION_LEFT	= 1
+	};
+
 	NSRReaderCore (bool isCardMode, QObject *parent = 0);
 	virtual ~NSRReaderCore ();
 	void prepareForDestruction ();
@@ -45,8 +50,8 @@ public:
 	double getMinZoom () const;
 	double getMaxZoom () const;
 	void setZoom (double zoom, NSRRenderRequest::NSRRenderReason reason);
-	void rotate (double rot);
-	double getRotation () const;
+	void rotate (RotateDirection dir);
+	NSRAbstractDocument::NSRDocumentRotation getRotation () const;
 	void saveCurrentPagePositions (const QPointF& pos,
 				       const QPointF& textPos);
 	bool isTextReflow () const;
@@ -80,7 +85,6 @@ private:
 		       int page					= 0);
 	NSRAbstractDocument * copyDocument (const NSRAbstractDocument *doc);
 	NSRAbstractDocument * documentByPath (const QString& path) const;
-	double normalizeAngle (double angle) const;
 	bool isPageRelevant (const NSRRenderedPage& page) const;
 	void preloadPage ();
 	void requestThumbnail ();

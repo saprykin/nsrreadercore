@@ -87,7 +87,8 @@ NSRTIFFDocument::renderPage (int page)
 	if (!_image.isNull ())
 		_image = QImage ();
 
-	double pageWidth = (getRotation () == 90 || getRotation () == 270) ? h : w;
+	double pageWidth = (getRotation () == NSRAbstractDocument::NSR_DOCUMENT_ROTATION_90 ||
+			    getRotation () == NSRAbstractDocument::NSR_DOCUMENT_ROTATION_270) ? h : w;
 
 	if (isZoomToWidth ()) {
 		double wZoom = ((double) getScreenWidth () / pageWidth * 100.0);
@@ -102,7 +103,7 @@ NSRTIFFDocument::renderPage (int page)
 		QTransform trans;
 
 		trans.scale (scale, scale);
-		trans.rotate (getRotation ());
+		trans.rotate ((int) getRotation ());
 		_image = _origImage.transformed (trans);
 
 		if (isAutoCrop ())
@@ -161,7 +162,7 @@ NSRTIFFDocument::renderPage (int page)
 		QTransform trans;
 
 		trans.scale (scale, scale);
-		trans.rotate (getRotation ());
+		trans.rotate ((int) getRotation ());
 
 		if (isAutoCrop ()) {
 			_pads = NSRPageCropper::findCropPads ((unsigned char *) img->bits (),

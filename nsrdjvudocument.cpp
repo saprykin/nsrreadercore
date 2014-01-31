@@ -263,22 +263,19 @@ NSRDjVuDocument::renderPage (int page)
 	int height = ddjvu_page_get_height (_page);
 
 	switch (getRotation ()) {
-	case 0:
+	case NSRAbstractDocument::NSR_DOCUMENT_ROTATION_0:
 		rot = DDJVU_ROTATE_0;
 		break;
-	case 90:
-	case -270:
+	case NSRAbstractDocument::NSR_DOCUMENT_ROTATION_90:
 		rot = DDJVU_ROTATE_270;
 		tmp = width;
 		width = height;
 		height = tmp;
 		break;
-	case 180:
-	case -180:
+	case NSRAbstractDocument::NSR_DOCUMENT_ROTATION_180:
 		rot = DDJVU_ROTATE_180;
 		break;
-	case 270:
-	case -90:
+	case NSRAbstractDocument::NSR_DOCUMENT_ROTATION_270:
 		rot = DDJVU_ROTATE_90;
 		tmp = width;
 		width = height;

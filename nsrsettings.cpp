@@ -1,6 +1,7 @@
 #include "nsrsettings.h"
 #include "nsrthumbnailer.h"
 #include "nsrbookmarksstorage.h"
+#include "nsrabstractdocument.h"
 
 #include <QDir>
 #include <QDateTime>
@@ -379,7 +380,7 @@ NSRSettings::readSession (const QString &name, NSRSession &session)
 	session.setFitToWidth (value("fit-to-width", true).toBool ());
 	session.setPosition (value("position", QPointF (0, 0)).toPointF ());
 	session.setTextPosition (value("text-position", QPointF (0, 0)).toPointF ());
-	session.setRotation (value("angle", 0).toDouble ());
+	session.setRotation ((NSRAbstractDocument::NSRDocumentRotation) ((int) (value("angle", 0).toDouble () + 0.5)));
 	endGroup ();
 }
 

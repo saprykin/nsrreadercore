@@ -31,9 +31,17 @@ public:
 		NSR_DOCUMENT_ERROR_TOO_LARGE	= 2,
 		NSR_DOCUMENT_ERROR_UNKNOWN	= 3
 	};
+
 	enum NSRDocumentStyle {
 		NSR_DOCUMENT_STYLE_GRAPHIC	= 1,
 		NSR_DOCUMENT_STYLE_TEXT		= 2
+	};
+
+	enum NSRDocumentRotation {
+		NSR_DOCUMENT_ROTATION_0		= 0,
+		NSR_DOCUMENT_ROTATION_90	= 90,
+		NSR_DOCUMENT_ROTATION_180	= 180,
+		NSR_DOCUMENT_ROTATION_270	= 270
 	};
 
 	explicit NSRAbstractDocument (const QString& file, QObject *parent = 0);
@@ -53,8 +61,8 @@ public:
 	int getScreenWidth () const {return _screenWidth;}
 	virtual void rotateLeft ();
 	virtual void rotateRight ();
-	virtual void setRotation (int angle);
-	virtual int getRotation () const {return _rotation;}
+	virtual void setRotation (NSRAbstractDocument::NSRDocumentRotation rotation);
+	virtual NSRAbstractDocument::NSRDocumentRotation getRotation () const {return _rotation;}
 	virtual QString getText () {return QString ();}
 	virtual void setTextOnly (bool textOnly) {_textOnly = textOnly;}
 	virtual bool isTextOnly () const {return _textOnly;}
@@ -86,12 +94,12 @@ private:
 	QSize			_maxPageSize;
 	double			_zoom;
 	int			_screenWidth;
-	int			_rotation;
 	bool			_zoomToWidth;
 	bool			_textOnly;
 	bool			_invertedColors;
 	bool			_autoCrop;
 	NSRDocumentError	_lastError;
+	NSRDocumentRotation	_rotation;
 
 };
 

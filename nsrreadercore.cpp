@@ -355,23 +355,29 @@ NSRReaderCore::setZoom (double zoom, NSRRenderRequest::NSRRenderReason reason)
 }
 
 void
-NSRReaderCore::rotate (double rot)
+NSRReaderCore::rotate (RotateDirection dir)
 {
 	if (isPageRendering ())
 		return;
 
-	int newRot = (int) normalizeAngle (_renderRequest.getRotation () + rot);
+	NSRAbstractDocument::NSRDocumentRotation rotation = _renderRequest.getRotation ();
 
-	if (newRot == (int) (_renderRequest.getRotation () + 0.5))
-		return;
+	if (dir == ROTATE_DIRECTION_RIGHT)
+		rotation = (rotation == NSRAbstractDocument::NSR_DOCUMENT_ROTATION_270 ?
+			    NSRAbstractDocument::NSR_DOCUMENT_ROTATION_0 :
+			    (NSRAbstractDocument::NSRDocumentRotation) (((int) rotation) + 90));
+	else
+		rotation = (rotation == NSRAbstractDocument::NSR_DOCUMENT_ROTATION_0 ?
+			    NSRAbstractDocument::NSR_DOCUMENT_ROTATION_270 :
+			    (NSRAbstractDocument::NSRDocumentRotation) (((int) rotation) - 90));
 
-	_renderRequest.setRotation (newRot);
+	_renderRequest.setRotation (rotation);
 	_cache->clearStorage ();
 
 	loadPage (PAGE_LOAD_CUSTOM, NSRRenderRequest::NSR_RENDER_REASON_ROTATION, _renderRequest.getNumber ());
 }
 
-double
+NSRAbstractDocument::NSRDocumentRotation
 NSRReaderCore::getRotation () const
 {
 	return _renderRequest.getRotation ();
@@ -777,20 +783,6 @@ NSRReaderCore::isInvertedColors () const
 	return _renderRequest.isInvertColors ();
 }
 
-double
-NSRReaderCore::normalizeAngle (double angle) const
-{
-	if (qAbs (angle) / 360.0 > 1.0)
-		angle -= ((long) (angle / 360.0) * 360);
-
-	if (angle < 0)
-		angle += 360.0;
-	else if (qAbs (angle - 360.0) <= DBL_EPSILON)
-		angle = 0.0;
-
-	return angle;
-}
-
 bool
 NSRReaderCore::isPageRelevant (const NSRRenderedPage& page) const
 {
@@ -802,7 +794,7 @@ NSRReaderCore::isPageRelevant (const NSRRenderedPage& page) const
 			_renderRequest.isInvertColors () == page.isInvertColors () &&
 			_renderRequest.isZoomToWidth () == page.isZoomToWidth () &&
 			_renderRequest.getRenderType () == page.getRenderType () &&
-			qAbs (_renderRequest.getRotation () - page.getRotation () <= DBL_EPSILON);
+			_renderRequest.getRotation () == page.getRotation ());
 
 	if (_doc->isEncodingUsed ())
 		relevant = relevant && (_renderRequest.getEncoding () == page.getEncoding ());
@@ -861,7 +853,7 @@ NSRReaderCore::requestThumbnail ()
 	thumbRequest.setInvertColors (false);
 	thumbRequest.setTextOnly (false);
 	thumbRequest.setZoomToWidth (true);
-	thumbRequest.setRotation (0);
+	thumbRequest.setRotation (NSRAbstractDocument::NSR_DOCUMENT_ROTATION_0);
 	thumbRequest.setScreenWidth (NSR_CORE_THUMBNAIL_WIDTH);
 
 	_zoomThread->cancelRequests (NSRRenderRequest::NSR_RENDER_TYPE_THUMBNAIL);
