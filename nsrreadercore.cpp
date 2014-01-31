@@ -794,7 +794,7 @@ NSRReaderCore::isPageRelevant (const NSRRenderedPage& page) const
 			_renderRequest.isInvertColors () == page.isInvertColors () &&
 			_renderRequest.isZoomToWidth () == page.isZoomToWidth () &&
 			_renderRequest.getRenderType () == page.getRenderType () &&
-			_renderRequest.getRotation () == page.getRotation ());
+			_renderRequest.getRotation () == page.getRotation ();
 
 	if (_doc->isEncodingUsed ())
 		relevant = relevant && (_renderRequest.getEncoding () == page.getEncoding ());
