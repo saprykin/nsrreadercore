@@ -28,8 +28,8 @@ NSRSettings::NSRSettings () :
 	defPath = QDir::homePath ();
 	defFont = QString ("Sans Serif");
 
-	if (!dir.exists (QDir::homePath () + "/"NSR_CORE_CONFIG_DIR))
-		dir.mkpath (QDir::homePath () + "/"NSR_CORE_CONFIG_DIR);
+	if (!dir.exists (NSRSettings::getSettingsDirectory ()))
+		dir.mkpath (NSRSettings::getSettingsDirectory ());
 
 	beginGroup ("Global");
 
