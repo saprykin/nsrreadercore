@@ -18,10 +18,15 @@ using namespace bb::utility;
 NSRThumbnailer * NSRThumbnailer::_instance = NULL;
 
 NSRThumbnailer::NSRThumbnailer () :
-	QSettings (NSRSettings::getSettingsDirectory () + "/thumbnails",
+	QSettings (NSRSettings::getSettingsDirectory () + "/thumbnails/thumbnails.ini",
 		   QSettings::IniFormat)
 {
-	_configDir = QFileInfo(fileName ()).canonicalPath ();
+	_configDir = NSRSettings::getSettingsDirectory () + "/thumbnails";
+
+	QDir dir;
+
+	if (!dir.exists (_configDir))
+		dir.mkpath (_configDir);
 }
 
 NSRThumbnailer *
