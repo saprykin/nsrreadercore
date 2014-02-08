@@ -453,7 +453,7 @@ NSRReaderCore::onRenderDone ()
 		emit pageRendered (_renderRequest.getNumber ());
 	}
 
-	preloadPage ();
+	preloadPages ();
 }
 
 void
@@ -490,10 +490,10 @@ NSRReaderCore::onZoomRenderDone ()
 		if (_zoomThread->property(NSR_CORE_MAIN_RENDER_PROP).toBool ()) {
 			_zoomThread->setProperty (NSR_CORE_MAIN_RENDER_PROP, false);
 			emit needIndicator (false);
-			preloadPage ();
 		}
 
 		emit pageRendered (_renderRequest.getNumber ());
+		preloadPages ();
 	}
 }
 
@@ -525,7 +525,7 @@ NSRReaderCore::onPreloadRenderDone ()
 		if (_preloadThread->property(NSR_CORE_MAIN_RENDER_PROP).toBool ()) {
 			_preloadThread->setProperty (NSR_CORE_MAIN_RENDER_PROP, false);
 			emit needIndicator (false);
-			preloadPage ();
+			preloadPages ();
 		}
 
 		emit pageRendered (_renderRequest.getNumber ());
@@ -622,7 +622,7 @@ NSRReaderCore::loadPage (PageLoad				dir,
 
 		_currentPage = _cache->getPage (pageToLoad);
 		emit pageRendered (pageToLoad);
-		preloadPage ();
+		preloadPages ();
 
 		return;
 	}
@@ -806,7 +806,7 @@ NSRReaderCore::isPageRelevant (const NSRRenderedPage& page) const
 }
 
 void
-NSRReaderCore::preloadPage ()
+NSRReaderCore::preloadPages ()
 {
 	if (!isDocumentOpened ())
 		return;

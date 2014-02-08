@@ -86,7 +86,7 @@ private:
 	NSRAbstractDocument * copyDocument (const NSRAbstractDocument *doc);
 	NSRAbstractDocument * documentByPath (const QString& path) const;
 	bool isPageRelevant (const NSRRenderedPage& page) const;
-	void preloadPage ();
+	void preloadPages ();
 	void requestThumbnail ();
 
 	NSRAbstractDocument *	_doc;
