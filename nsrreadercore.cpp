@@ -842,7 +842,7 @@ NSRReaderCore::preloadPages ()
 void
 NSRReaderCore::requestThumbnail ()
 {
-	if (!isDocumentOpened ())
+	if (!isDocumentOpened () || _isCardMode)
 		return;
 
 	NSRRenderRequest thumbRequest (1, NSRRenderRequest::NSR_RENDER_REASON_THUMBNAIL);
