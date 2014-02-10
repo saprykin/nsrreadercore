@@ -100,9 +100,14 @@ NSRReaderCore::openDocument (const QString &path,  const QString& password)
 		_renderRequest.setEncoding (NSRSettings::instance()->getTextEncoding ());
 	}
 
-	if (!_isCardMode && NSRSettings::instance()->isStarting ())
-		_renderRequest.setTextOnly (NSRSettings::instance()->isWordWrap ());
-	else
+	if (!_isCardMode && NSRSettings::instance()->isStarting ()) {
+		if ((NSRSettings::instance()->isWordWrap () &&
+		    _doc->isDocumentStyleSupported (NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT)) ||
+		    !_doc->isDocumentStyleSupported (NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC))
+			_renderRequest.setTextOnly (true);
+		else
+			_renderRequest.setTextOnly (false);
+	} else
 		_renderRequest.setTextOnly (_doc->getPrefferedDocumentStyle () == NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT);
 
 	_thread->setRenderContext (_doc);
