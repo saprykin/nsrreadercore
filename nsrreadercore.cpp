@@ -822,6 +822,11 @@ NSRReaderCore::preloadPages ()
 	bool needNext = !_cache->isPageExists (pageToLoadNext) && pageToLoadNext != _renderRequest.getNumber ();
 	bool needPrev = !_cache->isPageExists (pageToLoadPrev) && pageToLoadPrev != _renderRequest.getNumber ();
 
+#ifdef NSR_CORE_LITE_VERSION
+	if (pageToLoadNext > NSRSettings::getMaxAllowedPages ())
+		needNext = false;
+#endif
+
 	if (!needNext && !needPrev)
 		return;
 	else
