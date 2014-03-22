@@ -1663,11 +1663,13 @@ DataPool::analyze_iff(void)
 // It's just a sequential interface, nothing more. All the job for data
 // retrieval, waiting and thread synchronization is done by DataPool
 
+#define POLYBYTESTREAM_BUFFER_SIZE	102400
+
 class PoolByteStream : public ByteStream
 {
 public:
    PoolByteStream(GP<DataPool> data_pool);
-   virtual ~PoolByteStream() {};
+   virtual ~PoolByteStream() {delete [] buffer;}
 
    virtual size_t read(void *buffer, size_t size);
    virtual size_t write(const void *buffer, size_t size);
@@ -1681,8 +1683,8 @@ private:
    DataPool		* data_pool;
    GP<DataPool>		data_pool_lock;
    long			position;
-   
-   char			buffer[512];
+
+   char			* buffer;
    size_t		buffer_size;
    size_t		buffer_pos;
 
@@ -1692,10 +1694,12 @@ private:
 
 inline
 PoolByteStream::PoolByteStream(GP<DataPool> xdata_pool) :
-   data_pool(xdata_pool), position(0), buffer_size(0), buffer_pos(0)
+   data_pool(xdata_pool), position(0), buffer(0), buffer_size(0), buffer_pos(0)
 {
    if (!data_pool) 
        G_THROW( ERR_MSG("DataPool.zero_DataPool") );
+
+   buffer = new char[POLYBYTESTREAM_BUFFER_SIZE];
 
       // Secure the DataPool if possible. If we're called from DataPool
       // constructor (get_count()==0) there is no need to secure at all.
@@ -1706,14 +1710,14 @@ size_t
 PoolByteStream::read(void *data, size_t size)
 {
   if (buffer_pos >= buffer_size) {
-    if (size >= sizeof(buffer)) {
+    if (size >= POLYBYTESTREAM_BUFFER_SIZE) {
       // Direct read
       size = data_pool->get_data(data, position, size);
       position += size;
       return size;
     } else {
       // Refill buffer
-      buffer_size = data_pool->get_data(buffer, position, sizeof(buffer));
+      buffer_size = data_pool->get_data(buffer, position, POLYBYTESTREAM_BUFFER_SIZE);
       buffer_pos=0;
     }
   }
