@@ -166,14 +166,13 @@ NSRDjVuDocument::~NSRDjVuDocument()
 		delete [] _imgData;
 }
 
-
 int
 NSRDjVuDocument::getNumberOfPages () const
 {
 	if (_doc == NULL)
 		return 0;
 
-	return ddjvu_document_get_pagenum (_doc);
+	return _pageCount;
 }
 
 bool
