@@ -98,7 +98,6 @@ NSRDjVuDocument::NSRDjVuDocument (const QString& file, QObject *parent) :
 	if (_context == NULL)
 		return;
 
-	ddjvu_cache_set_size (_context, NSR_CORE_DOCUMENT_MAX_HEAP / 10);
 	_format = ddjvu_format_create (DDJVU_FORMAT_BGR24, 0, 0);
 
 	if (_format == NULL) {
