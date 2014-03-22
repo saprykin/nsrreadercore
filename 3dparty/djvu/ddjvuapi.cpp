@@ -351,38 +351,44 @@ ddjvu_code_get_version(void)
 // ----------------------------------------
 // Context
 
+static bool ddjvu_context_inited = false;
 
 ddjvu_context_t *
 ddjvu_context_create(const char *programname)
 {
-  ddjvu_context_t *ctx = 0;
-  G_TRY
-    {
+	ddjvu_context_t *ctx = 0;
+	G_TRY
+	{
+		if (!ddjvu_context_inited) {
 #ifdef LC_ALL
-      setlocale(LC_ALL,"");
+			setlocale(LC_ALL,"");
 # ifdef LC_NUMERIC
-      setlocale(LC_NUMERIC, "C");
+			setlocale(LC_NUMERIC, "C");
 # endif
 #endif
-      if (programname)
-        djvu_programname(programname);
-      DjVuMessage::use_language();
-      DjVuMessageLite::create();
-      ctx = new ddjvu_context_s;
-      ref(ctx);
-      ctx->uniqueid = 0;
-      ctx->callbackfun = 0;
-      ctx->callbackarg = 0;
-      ctx->cache = DjVuFileCache::create();
-    }
-  G_CATCH_ALL
-    {
-      if (ctx)
-        unref(ctx);
-      ctx = 0;
-    }
-  G_ENDCATCH;
-  return ctx;
+			if (programname)
+				djvu_programname(programname);
+			DjVuMessage::use_language();
+			DjVuMessageLite::create();
+
+			ddjvu_context_inited = true;
+		}
+
+		ctx = new ddjvu_context_s;
+		ref(ctx);
+		ctx->uniqueid = 0;
+		ctx->callbackfun = 0;
+		ctx->callbackarg = 0;
+		ctx->cache = DjVuFileCache::create();
+	}
+	G_CATCH_ALL
+	{
+		if (ctx)
+			unref(ctx);
+		ctx = 0;
+	}
+	G_ENDCATCH;
+	return ctx;
 }
 
 void 

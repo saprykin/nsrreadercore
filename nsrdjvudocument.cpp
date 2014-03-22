@@ -91,8 +91,8 @@ NSRDjVuDocument::NSRDjVuDocument (const QString& file, QObject *parent) :
 	_imgData (NULL)
 {
 	NSRDjVuError error;
-
 	error.type = NSR_DJVU_ERROR_NONE;
+
 	_context = ddjvu_context_create ("nsrreadercore");
 
 	if (_context == NULL)
@@ -133,7 +133,7 @@ NSRDjVuDocument::NSRDjVuDocument (const QString& file, QObject *parent) :
 	error.type = NSR_DJVU_ERROR_NONE;
 
 	if (ddjvu_document_decoding_error (_doc))
-		handleEvents(_context, true, &error);
+		handleEvents (_context, true, &error);
 
 	if (error.type != NSR_DJVU_ERROR_NONE) {
 		ddjvu_document_release (_doc);
