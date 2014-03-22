@@ -108,7 +108,7 @@ NSRDjVuDocument::NSRDjVuDocument (const QString& file, QObject *parent) :
 
 	ddjvu_format_set_row_order (_format, 1);
 
-	_doc = ddjvu_document_create_by_filename (_context, file.toUtf8().data (), true);
+	_doc = ddjvu_document_create_by_filename_utf8 (_context, file.toUtf8().data (), true);
 
 	if (_doc == NULL) {
 		ddjvu_context_release (_context);
