@@ -1,6 +1,12 @@
 #include "nsrdjvudocument.h"
 #include "nsrpagecropper.h"
 
+#include <djvu/DjVuImage.h>
+#include <djvu/DjVuText.h>
+#include <djvu/GBitmap.h>
+#include <djvu/ByteStream.h>
+#include <djvu/IFFByteStream.h>
+
 #include <qmath.h>
 
 #include <QString>
@@ -10,6 +16,21 @@
 
 /* DjVu stuff for text extraction */
 #define S(n,s) (n = miniexp_symbol(s))
+
+static struct zone_names_s {
+	const char *name;
+	DjVuTXT::ZoneType ztype;
+	char separator;
+} zone_names[] = {
+		 {"page",	DjVuTXT::PAGE,		0},
+		 {"column",	DjVuTXT::COLUMN,	DjVuTXT::end_of_column},
+		 {"region",	DjVuTXT::REGION,	DjVuTXT::end_of_region},
+		 {"para",	DjVuTXT::PARAGRAPH,	DjVuTXT::end_of_paragraph},
+		 {"line",	DjVuTXT::LINE,		DjVuTXT::end_of_line},
+		 {"word",	DjVuTXT::WORD,		' '},
+		 {"char",	DjVuTXT::CHARACTER,	0},
+		 { 0, (DjVuTXT::ZoneType) 0,		0}
+};
 
 static bool
 miniexp_get_int (miniexp_t &r, int &x)
@@ -76,92 +97,122 @@ flatten_hiddentext (miniexp_t p)
 	return d;
 }
 
+static miniexp_t
+pagetext_sub (const GP<DjVuTXT> &txt, DjVuTXT::Zone &zone, DjVuTXT::ZoneType detail)
+{
+	int zinfo;
+
+	for (zinfo = 0; zone_names[zinfo].name; zinfo++)
+		if (zone.ztype == zone_names[zinfo].ztype)
+			break;
+
+	minivar_t p;
+	minivar_t a;
+
+	bool gather = zone.children.isempty ();
+
+	for (GPosition pos=zone.children; pos; ++pos)
+		if (zone.children[pos].ztype > detail)
+			gather = true;
+
+	if (gather) {
+		const char *data = (const char *) (txt->textUTF8) + zone.text_start;
+		int length = zone.text_length;
+
+		if (length > 0 && data[length-1] == zone_names[zinfo].separator)
+			length -= 1;
+
+		a = miniexp_substring (data, length);
+		p = miniexp_cons (a, p);
+	} else {
+		for (GPosition pos=zone.children; pos; ++pos) {
+			a = pagetext_sub (txt, zone.children[pos], detail);
+			p = miniexp_cons (a, p);
+		}
+	}
+
+	p = miniexp_reverse (p);
+	const char *s = zone_names[zinfo].name;
+
+	if (s) {
+		p = miniexp_cons (miniexp_number (zone.rect.ymax), p);
+		p = miniexp_cons (miniexp_number (zone.rect.xmax), p);
+		p = miniexp_cons (miniexp_number (zone.rect.ymin), p);
+		p = miniexp_cons (miniexp_number (zone.rect.xmin), p);
+		p = miniexp_cons (miniexp_symbol (s), p);
+		return p;
+	}
+
+	return miniexp_nil;
+}
+
+static void
+fmt_convert_bitmap (GBitmap *bm, char *buffer, int rowsize)
+{
+	int h = bm->rows ();
+	int m = bm->get_grays ();
+	const GPixel wh = GPixel::WHITE;
+
+	unsigned char g[256][4];
+
+	for (int i = 0; i < m; i++) {
+		g[i][0] = wh.b - (i * wh.b + (m - 1) / 2) / (m - 1);
+		g[i][1] = wh.g - (i * wh.g + (m - 1) / 2) / (m - 1);
+		g[i][2] = wh.r - (i * wh.r + (m - 1) / 2) / (m - 1);
+		g[i][3] = (5 * g[i][2] + 9 * g[i][1] + 2 * g[i][0]) >> 4;
+	}
+
+	for (int i = m; i < 256; i++)
+		g[i][0] = g[i][1] = g[i][2] = g[i][3] = 0;
+
+	for (int r = h - 1; r >= 0; r--, buffer += rowsize) {
+		int w = bm->columns ();
+		unsigned char *p = (*bm)[r];
+		char *pbuf = buffer;
+
+		while (--w >= 0) {
+			pbuf[0] = g[*p][0];
+			pbuf[1] = g[*p][1];
+			pbuf[2] = g[*p][2];
+			pbuf += 3;
+			p += 1;
+		}
+	}
+}
+
+static void
+fmt_convert_pixmap (GPixmap *pm, char *buffer, int rowsize)
+{
+	int w = pm->columns ();
+	int h = pm->rows ();
+
+	for (int r = h - 1; r >= 0; r--, buffer += rowsize)
+		memcpy (buffer, (*pm)[r], w * 3);
+}
+
+/*
+ * OK, we are using color render mode and BGR24 pixel format
+ */
 NSRDjVuDocument::NSRDjVuDocument (const QString& file, QObject *parent) :
 	NSRAbstractDocument (file, parent),
 	_cachedPageSize (QSize (0, 0)),
-	_context (NULL),
-	_doc (NULL),
-	_page (NULL),
-	_renderMode (DDJVU_RENDER_COLOR),
 	_cachedMinZoom (NSR_CORE_DJVU_MIN_ZOOM),
 	_cachedMaxZoom (100.0),
 	_cachedResolution (72),
 	_pageCount (0),
-	_readyForLoad (false),
 	_imgData (NULL)
 {
-	NSRDjVuError error;
-	error.type = NSR_DJVU_ERROR_NONE;
+	GURL url = GURL::Filename::UTF8 (file.toUtf8().data ());
 
-	_context = ddjvu_context_create ("nsrreadercore");
+	_cache = DjVuFileCache::create ();
+	_doc = DjVuDocument::create_wait (url, NULL, _cache);
 
-	if (_context == NULL)
-		return;
-
-	_format = ddjvu_format_create (DDJVU_FORMAT_BGR24, 0, 0);
-
-	if (_format == NULL) {
-		ddjvu_context_release (_context);
-		_context = NULL;
-		return;
-	}
-
-	ddjvu_format_set_row_order (_format, 1);
-
-	_doc = ddjvu_document_create_by_filename_utf8 (_context, file.toUtf8().data (), true);
-
-	if (_doc == NULL) {
-		ddjvu_context_release (_context);
-		ddjvu_format_release (_format);
-		_context = NULL;
-		_format = NULL;
-		return;
-	}
-
-	waitForMessage (_context, DDJVU_DOCINFO, &error);
-
-	if (error.type != NSR_DJVU_ERROR_NONE) {
-		ddjvu_document_release (_doc);
-		ddjvu_context_release (_context);
-		ddjvu_format_release (_format);
-		_doc = NULL;
-		_context = NULL;
-		_format = NULL;
-		return;
-	}
-
-	error.type = NSR_DJVU_ERROR_NONE;
-
-	if (ddjvu_document_decoding_error (_doc))
-		handleEvents (_context, true, &error);
-
-	if (error.type != NSR_DJVU_ERROR_NONE) {
-		ddjvu_document_release (_doc);
-		ddjvu_context_release (_context);
-		ddjvu_format_release (_format);
-		_doc = NULL;
-		_context = NULL;
-		_format = NULL;
-		return;
-	}
-
-	_pageCount = ddjvu_document_get_pagenum (_doc);
+	if (_doc != NULL)
+		_pageCount = _doc->get_pages_num ();
 }
 
 NSRDjVuDocument::~NSRDjVuDocument()
 {
-	if (_page != NULL)
-		ddjvu_page_release (_page);
-
-	if (_doc != NULL)
-		ddjvu_document_release (_doc);
-
-	if (_context != NULL)
-		ddjvu_context_release (_context);
-
-	if (_format != NULL)
-		ddjvu_format_release (_format);
-
 	if (_imgData != NULL)
 		delete [] _imgData;
 }
@@ -169,9 +220,6 @@ NSRDjVuDocument::~NSRDjVuDocument()
 int
 NSRDjVuDocument::getNumberOfPages () const
 {
-	if (_doc == NULL)
-		return 0;
-
 	return _pageCount;
 }
 
@@ -184,18 +232,14 @@ NSRDjVuDocument::isValid () const
 void
 NSRDjVuDocument::renderPage (int page)
 {
-	ddjvu_rect_t		prect;
-	ddjvu_page_rotation_t	rot;
-	int			tmp;
-	double			resFactor;
+	int	rot;
+	int	tmp;
+	double	resFactor;
 
 	if (_doc == NULL || page > getNumberOfPages () || page < 1)
 		return;
 
-	_page = ddjvu_page_create_by_pageno (_doc, page - 1);
-
-	while (!ddjvu_page_decoding_done (_page))
-		handleEvents (_context, true, NULL);
+	clearRenderedData ();
 
 	if (isTextOnly ()) {
 		QString		ans;
@@ -203,16 +247,26 @@ NSRDjVuDocument::renderPage (int page)
 		miniexp_t	ptext;
 		int		separator;
 
-		S(seps[0], "page");
-		S(seps[1], "column");
-		S(seps[2], "region");
-		S(seps[3], "para");
-		S(seps[4], "line");
-		S(seps[5], "word");
-		S(seps[6], "char");
+		S(seps[0], zone_names[0].name);
+		S(seps[1], zone_names[1].name);
+		S(seps[2], zone_names[2].name);
+		S(seps[3], zone_names[3].name);
+		S(seps[4], zone_names[4].name);
+		S(seps[5], zone_names[5].name);
+		S(seps[6], zone_names[6].name);
 
-		while ((ptext = ddjvu_document_get_pagetext (_doc, page - 1, 0)) == miniexp_dummy)
-			handleEvents (_context, true, NULL);
+		GP<DjVuFile> file = _doc->get_djvu_file (page - 1);
+		GP<ByteStream> bs = file->get_text ();
+
+		if (bs != NULL) {
+			GP<DjVuText> text = DjVuText::create ();
+			text->decode (bs);
+
+			GP<DjVuTXT> txt = text->txt;
+
+			if (txt != NULL)
+				ptext = pagetext_sub (txt, txt->page_zone, DjVuTXT::CHARACTER);
+		}
 
 		ptext = flatten_hiddentext (ptext);
 		separator = 6;
@@ -247,47 +301,47 @@ NSRDjVuDocument::renderPage (int page)
 					separator = s;
 		}
 
-		ddjvu_miniexp_release (_doc, ptext);
-		ddjvu_page_release (_page);
-
-		_text		= processText (ans);
-		_readyForLoad	= true;
-		_page		= NULL;
-
+		_text = processText (ans);
 		return;
 	}
 
-	int width = ddjvu_page_get_width (_page);
-	int height = ddjvu_page_get_height (_page);
+	GP<DjVuImage> img = _doc->get_page (page - 1, true, NULL);
+
+	if (img == NULL)
+		return;
+
+	int width = img->get_width ();
+	int height = img->get_height ();
 
 	switch (getRotation ()) {
 	case NSRAbstractDocument::NSR_DOCUMENT_ROTATION_0:
-		rot = DDJVU_ROTATE_0;
+		rot = 0;
 		break;
 	case NSRAbstractDocument::NSR_DOCUMENT_ROTATION_90:
-		rot = DDJVU_ROTATE_270;
+		rot = 3;
 		tmp = width;
 		width = height;
 		height = tmp;
 		break;
 	case NSRAbstractDocument::NSR_DOCUMENT_ROTATION_180:
-		rot = DDJVU_ROTATE_180;
+		rot = 2;
 		break;
 	case NSRAbstractDocument::NSR_DOCUMENT_ROTATION_270:
-		rot = DDJVU_ROTATE_90;
+		rot = 1;
 		tmp = width;
 		width = height;
 		height = tmp;
 		break;
 	default:
-		rot = DDJVU_ROTATE_0;
+		rot = 0;
 		break;
 	}
 
-	ddjvu_page_set_rotation (_page, rot);
+	if (img->get_info () != NULL)
+        	img->set_rotate (rot);
 
 	_cachedPageSize = QSize (width, height);
-	_cachedResolution = ddjvu_page_get_resolution (_page);
+	_cachedResolution = img->get_dpi ();
 
 	resFactor = 72.0 / _cachedResolution;
 
@@ -301,36 +355,32 @@ NSRDjVuDocument::renderPage (int page)
 
 	setZoomSilent (validateMaxZoom (_cachedPageSize * resFactor, getZoom ()));
 
-	prect.w = (int) ((double) width * getZoom () / 100.0 * resFactor);
-	prect.h = (int) ((double) height * getZoom () / 100.0 * resFactor);
+	GRect grect (0, 0,
+		    (int) ((double) width * getZoom () / 100.0 * resFactor),
+		    (int) ((double) height * getZoom () / 100.0 * resFactor));
 
-	QSize newSize (prect.w, prect.h);
-
-	if (_imgData != NULL)
-		delete [] _imgData;
-
-	if (newSize.width () * newSize.height () * 3 > NSR_CORE_DOCUMENT_MAX_HEAP) {
-		ddjvu_page_release (_page);
-
-		_imgData = NULL;
-		_page = NULL;
-
+	if (grect.xmax * grect.ymax * 3 > NSR_CORE_DOCUMENT_MAX_HEAP)
 		return;
-	}
 
-	_imgData = new char[newSize.width () * newSize.height () * 3];
-	int rowSize = newSize.width () * 3;
+	_imgData = new char[grect.xmax * grect.ymax * 3];
+	int rowSize = grect.xmax * 3;
 
-	int result = ddjvu_page_render (_page, _renderMode, &prect, &prect, _format, rowSize, _imgData);
+	GP<GPixmap> pm;
+	GP<GBitmap> bm;
 
-	if (!result)
-		memset (_imgData, 0xFF, rowSize * prect.h);
+	pm = img->get_pixmap (grect, grect, 2.2, GPixel::WHITE);
 
-	ddjvu_page_release (_page);
+	if (pm == NULL)
+		bm = img->get_bitmap (grect, grect);
 
-	_imgSize = newSize;
-	_page = NULL;
-	_readyForLoad = true;
+	if (pm != NULL)
+		fmt_convert_pixmap (pm, _imgData, rowSize);
+	else if (bm != NULL)
+		fmt_convert_bitmap (bm, _imgData, rowSize);
+	else
+		memset (_imgData, 0xFF, rowSize * grect.ymax);
+
+	_imgSize = QSize (grect.xmax, grect.ymax);
 }
 
 double
@@ -376,9 +426,6 @@ NSRDjVuDocument::getMinZoom ()
 NSR_CORE_IMAGE_DATATYPE
 NSRDjVuDocument::getCurrentPage ()
 {
-	if (!_readyForLoad)
-		return NSR_CORE_IMAGE_DATATYPE ();
-
 	if (_imgData == NULL)
 		return NSR_CORE_IMAGE_DATATYPE ();
 
@@ -417,93 +464,24 @@ NSRDjVuDocument::getCurrentPage ()
 			}
 		}
 
-	delete [] _imgData;
-	_imgData = NULL;
-	_readyForLoad = false;
+	clearRenderedData ();
 
 	return imgData;
 #else
-	_readyForLoad = false;
-	return (NSR_CORE_IMAGE_DATATYPE) ();
+	return NSR_CORE_IMAGE_DATATYPE ();
 #endif
 }
 
 QString
 NSRDjVuDocument::getText ()
 {
-	if (!_readyForLoad)
-		return NSRAbstractDocument::getText ();
-
-	_readyForLoad = false;
-
 	if (_text.isEmpty ())
 		return NSRAbstractDocument::getText ();
-	else
-		return _text;
-}
+	else {
+		QString ret = _text;
+		_text.clear ();
 
-void
-NSRDjVuDocument::handleEvents (ddjvu_context_t *context, bool wait, NSRDjVuError *error)
-{
-	const ddjvu_message_t *msg;
-
-	if (context == NULL)
-		return;
-
-	if (wait)
-		ddjvu_message_wait (context);
-
-	while ((msg = ddjvu_message_peek (context))) {
-		handleMessage (msg, error);
-		ddjvu_message_pop (context);
-
-		if (error != NULL && error->type != NSR_DJVU_ERROR_NONE)
-			return;
-	}
-}
-
-void
-NSRDjVuDocument::waitForMessage (ddjvu_context_t *context, ddjvu_message_tag_t message, NSRDjVuError *error)
-{
-	const ddjvu_message_t *msg;
-
-	ddjvu_message_wait (context);
-
-	while ((msg = ddjvu_message_peek (context)) && (msg->m_any.tag != message)) {
-		handleMessage (msg, error);
-		ddjvu_message_pop (context);
-
-		if (error != NULL && error->type != NSR_DJVU_ERROR_NONE)
-			return;
-	}
-
-	if (msg && msg->m_any.tag == message)
-		ddjvu_message_pop (context);
-}
-
-void
-NSRDjVuDocument::handleMessage (const ddjvu_message_t *msg, NSRDjVuError *error)
-{
-	if (msg == NULL)
-		return;
-
-	switch (msg->m_any.tag) {
-	case DDJVU_ERROR:
-	{
-		if (error != NULL) {
-			if (msg->m_error.filename)
-				error->type = NSR_DJVU_ERROR_FILENAME;
-			else
-				error->type = NSR_DJVU_ERROR_OTHER;
-
-			error->text = QString (msg->m_error.message);
-		}
-	}
-		break;
-	default:
-		if (error != NULL)
-			error->type = NSR_DJVU_ERROR_NONE;
-		break;
+		return ret;
 	}
 }
 
@@ -518,18 +496,74 @@ QSize
 NSRDjVuDocument::getPageSize (int page)
 {
 	ddjvu_pageinfo_t	info;
-	ddjvu_status_t		r;
 
 	if (page < 1)
 		return QSize (0, 0);
 
-	while ((r = ddjvu_document_get_pageinfo (_doc, page - 1, &info)) < DDJVU_JOB_OK)
-		handleEvents (_context, true, NULL);
+	memset (&info, 0, sizeof (info));
+	GP<DjVuFile> file = _doc->get_djvu_file (page - 1);
 
-	if (r >= DDJVU_JOB_FAILED)
-		handleEvents (_context, true, NULL);
+	const GP<ByteStream> pbs (file->get_djvu_bytestream (false, false));
+	const GP<IFFByteStream> iff (IFFByteStream::create (pbs));
+
+	GUTF8String chkid;
+
+	if (!iff->get_chunk (chkid))
+		return QSize (0, 0);
+
+	if (chkid == "FORM:DJVU") {
+		while (iff->get_chunk (chkid) && chkid != "INFO")
+			iff->close_chunk ();
+
+		if (chkid == "INFO") {
+			GP<ByteStream> gbs = iff->get_bytestream ();
+			GP<DjVuInfo> dinfo = DjVuInfo::create ();
+
+			dinfo->decode (*gbs);
+
+			int rot = dinfo->orientation;
+			info.rotation = rot;
+			info.width = (rot&1) ? dinfo->height : dinfo->width;
+			info.height = (rot&1) ? dinfo->width : dinfo->height;
+			info.dpi = dinfo->dpi;
+			info.version = dinfo->version;
+		}
+	} else if (chkid == "FORM:BM44" || chkid == "FORM:PM44") {
+		while (iff->get_chunk (chkid) && chkid != "BM44" && chkid != "PM44")
+			iff->close_chunk ();
+
+		if (chkid == "BM44" || chkid == "PM44") {
+			GP<ByteStream> gbs = iff->get_bytestream ();
+
+			if (gbs->read8 () == 0) {
+				gbs->read8 ();
+				unsigned char vhi = gbs->read8 ();
+				unsigned char vlo = gbs->read8 ();
+				unsigned char xhi = gbs->read8 ();
+				unsigned char xlo = gbs->read8 ();
+				unsigned char yhi = gbs->read8 ();
+				unsigned char ylo = gbs->read8 ();
+
+				info.width = (xhi << 8) + xlo;
+				info.height = (yhi << 8) + ylo;
+				info.dpi = 100;
+				info.rotation = 0;
+				info.version = (vhi << 8) + vlo;
+			}
+		}
+	}
 
 	return QSize (info.width * 72 / _cachedResolution, info.height * 72 / _cachedResolution);
+}
+
+void
+NSRDjVuDocument::clearRenderedData ()
+{
+	if (_imgData != NULL) {
+		delete [] _imgData;
+		_imgData = NULL;
+		_imgSize = QSize (0, 0);
+	}
 }
 
 void
