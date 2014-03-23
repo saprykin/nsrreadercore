@@ -256,16 +256,19 @@ NSRDjVuDocument::renderPage (int page)
 		S(seps[6], zone_names[6].name);
 
 		GP<DjVuFile> file = _doc->get_djvu_file (page - 1);
-		GP<ByteStream> bs = file->get_text ();
 
-		if (bs != NULL) {
-			GP<DjVuText> text = DjVuText::create ();
-			text->decode (bs);
+		if (file != NULL) {
+			GP<ByteStream> bs = file->get_text ();
 
-			GP<DjVuTXT> txt = text->txt;
+			if (bs != NULL) {
+				GP<DjVuText> text = DjVuText::create ();
+				text->decode (bs);
 
-			if (txt != NULL)
-				ptext = pagetext_sub (txt, txt->page_zone, DjVuTXT::CHARACTER);
+				GP<DjVuTXT> txt = text->txt;
+
+				if (txt != NULL)
+					ptext = pagetext_sub (txt, txt->page_zone, DjVuTXT::CHARACTER);
+			}
 		}
 
 		ptext = flatten_hiddentext (ptext);
@@ -415,7 +418,7 @@ NSRDjVuDocument::getMinZoom ()
 			  * 3 * 72 / _cachedResolution;
 
 	if (pageSize > NSR_CORE_DOCUMENT_MAX_HEAP)
-		_cachedMinZoom = getMaxZoom();
+		_cachedMinZoom = getMaxZoom ();
 	else
 		_cachedMinZoom = (getMaxZoom () / 10) > NSR_CORE_DJVU_MIN_ZOOM ? NSR_CORE_DJVU_MIN_ZOOM
 									       : getMaxZoom () / 10;
