@@ -1021,7 +1021,7 @@ ByteStream::create(const GURL &url,char const * const xmode)
                 retval=0;
             }
 #endif
-          if (! retval)
+          if (!retval && (fd = urlopen(url,O_NOSYMLINK | O_RDONLY,0777)) >= 0)
             {
               FILE *f = fdopen(fd, mode);
               if (f) 
