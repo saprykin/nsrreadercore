@@ -397,7 +397,7 @@ NSRDjVuDocument::getMaxZoom ()
 
 	/* Each pixel needs 3 bytes (RGB) of memory */
 	double resFactor = 72.0 / _cachedResolution;
-	double pageSize = _cachedPageSize.width() * _cachedPageSize.height() * 3 * resFactor / 4;
+	double pageSize = _cachedPageSize.width () * _cachedPageSize.height () * 3 * resFactor / 4;
 	_cachedMaxZoom = (sqrt (NSR_CORE_DOCUMENT_MAX_HEAP * 72 * 72 / pageSize) / 72 * 100 + 0.5);
 	_cachedMaxZoom = validateMaxZoom (_cachedPageSize * resFactor, _cachedMaxZoom);
 
@@ -449,21 +449,21 @@ NSRDjVuDocument::getCurrentPage ()
 
 	for (int i = pads.getTop (); i < _imgSize.height() - pads.getBottom (); ++i)
 		for (int j = pads.getLeft (); j < _imgSize.width() - pads.getRight (); ++j) {
-			if (isInvertedColors()) {
-				unsigned char meanVal = (unsigned char) (((unsigned int) 255 * 3 - *(_imgData + i * _imgSize.width() * 3 + j * 3 + 2) -
-												   *(_imgData + i * _imgSize.width() * 3 + j * 3 + 2) -
-												   *(_imgData + i * _imgSize.width() * 3 + j * 3)) / 3);
+			if (isInvertedColors ()) {
+				unsigned char meanVal = (unsigned char) (((unsigned int) 255 * 3 - *(_imgData + i * _imgSize.width () * 3 + j * 3 + 2) -
+												   *(_imgData + i * _imgSize.width () * 3 + j * 3 + 2) -
+												   *(_imgData + i * _imgSize.width () * 3 + j * 3)) / 3);
 
 				*(image + rowSize * (i - pads.getTop ()) + (j - pads.getLeft ()) * 4) = meanVal;
 				*(image + rowSize * (i - pads.getTop ()) + (j - pads.getLeft ()) * 4 + 1) = meanVal;
 				*(image + rowSize * (i - pads.getTop ()) + (j - pads.getLeft ()) * 4 + 2) = meanVal;
 			} else {
 				*(image + rowSize * (i - pads.getTop ()) + (j - pads.getLeft ()) * 4) =
-						*(_imgData + i * _imgSize.width() * 3 + j * 3 + 2);
+						*(_imgData + i * _imgSize.width () * 3 + j * 3 + 2);
 				*(image + rowSize * (i - pads.getTop ()) + (j - pads.getLeft ()) * 4 + 1) =
-						*(_imgData + i * _imgSize.width() * 3 + j * 3 + 1);
+						*(_imgData + i * _imgSize.width () * 3 + j * 3 + 1);
 				*(image + rowSize * (i - pads.getTop ()) + (j - pads.getLeft ()) * 4 + 2) =
-						*(_imgData + i * _imgSize.width() * 3 + j * 3);
+						*(_imgData + i * _imgSize.width () * 3 + j * 3);
 			}
 		}
 
@@ -498,13 +498,15 @@ NSRDjVuDocument::isDocumentStyleSupported (NSRAbstractDocument::NSRDocumentStyle
 QSize
 NSRDjVuDocument::getPageSize (int page)
 {
-	ddjvu_pageinfo_t	info;
+	int h = 0, w = 0;
 
 	if (page < 1)
 		return QSize (0, 0);
 
-	memset (&info, 0, sizeof (info));
 	GP<DjVuFile> file = _doc->get_djvu_file (page - 1);
+
+	if (file == NULL)
+		return QSize (0, 0);
 
 	const GP<ByteStream> pbs (file->get_djvu_bytestream (false, false));
 	const GP<IFFByteStream> iff (IFFByteStream::create (pbs));
@@ -523,13 +525,10 @@ NSRDjVuDocument::getPageSize (int page)
 			GP<DjVuInfo> dinfo = DjVuInfo::create ();
 
 			dinfo->decode (*gbs);
-
 			int rot = dinfo->orientation;
-			info.rotation = rot;
-			info.width = (rot&1) ? dinfo->height : dinfo->width;
-			info.height = (rot&1) ? dinfo->width : dinfo->height;
-			info.dpi = dinfo->dpi;
-			info.version = dinfo->version;
+
+			w = (rot&1) ? dinfo->height : dinfo->width;
+			h = (rot&1) ? dinfo->width : dinfo->height;
 		}
 	} else if (chkid == "FORM:BM44" || chkid == "FORM:PM44") {
 		while (iff->get_chunk (chkid) && chkid != "BM44" && chkid != "PM44")
@@ -539,24 +538,19 @@ NSRDjVuDocument::getPageSize (int page)
 			GP<ByteStream> gbs = iff->get_bytestream ();
 
 			if (gbs->read8 () == 0) {
-				gbs->read8 ();
-				unsigned char vhi = gbs->read8 ();
-				unsigned char vlo = gbs->read8 ();
+				gbs->read24 ();
 				unsigned char xhi = gbs->read8 ();
 				unsigned char xlo = gbs->read8 ();
 				unsigned char yhi = gbs->read8 ();
 				unsigned char ylo = gbs->read8 ();
 
-				info.width = (xhi << 8) + xlo;
-				info.height = (yhi << 8) + ylo;
-				info.dpi = 100;
-				info.rotation = 0;
-				info.version = (vhi << 8) + vlo;
+				w = (xhi << 8) + xlo;
+				h = (yhi << 8) + ylo;
 			}
 		}
 	}
 
-	return QSize (info.width * 72 / _cachedResolution, info.height * 72 / _cachedResolution);
+	return QSize (w * 72 / _cachedResolution, h * 72 / _cachedResolution);
 }
 
 void
