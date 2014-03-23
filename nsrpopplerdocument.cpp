@@ -296,6 +296,8 @@ NSRPopplerDocument::createInternalDoc (QString passwd)
 			setLastError (NSR_DOCUMENT_ERROR_UNKNOWN);
 
 		delete _doc;
+		delete _dev;
+		_dev = NULL;
 		_doc = NULL;
 
 		return;
