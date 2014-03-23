@@ -211,7 +211,7 @@ NSRDjVuDocument::NSRDjVuDocument (const QString& file, QObject *parent) :
 		_pageCount = _doc->get_pages_num ();
 }
 
-NSRDjVuDocument::~NSRDjVuDocument()
+NSRDjVuDocument::~NSRDjVuDocument ()
 {
 	if (_imgData != NULL)
 		delete [] _imgData;
