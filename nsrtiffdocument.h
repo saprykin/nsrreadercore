@@ -41,7 +41,6 @@ private:
 	TIFF			*_tiff;
 	int			_pageCount;
 	int			_cachedPage;
-	bool			_readyForLoad;
 };
 
 #endif // NSRTIFFDOCUMENT_H

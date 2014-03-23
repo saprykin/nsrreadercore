@@ -5,13 +5,13 @@
 
 #include "nsrabstractdocument.h"
 
+#include "poppler/poppler/GlobalParams.h"
 #include "poppler/poppler/PDFDoc.h"
 #include "poppler/poppler/SplashOutputDev.h"
 #include "poppler/poppler/TextOutputDev.h"
 #include "poppler/poppler/OutputDev.h"
 #include "poppler/splash/SplashTypes.h"
 #include "poppler/splash/SplashBitmap.h"
-#include "poppler/poppler/GlobalParams.h"
 
 class NSRPopplerDocument : public NSRAbstractDocument
 {
@@ -54,7 +54,6 @@ private:
 	double		_cachedMaxZoom;
 	int		_dpix;
 	int		_dpiy;
-	bool		_readyForLoad;
 };
 
 #endif // NSRPOPPLERDOCUMENT_H

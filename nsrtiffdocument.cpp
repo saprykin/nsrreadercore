@@ -10,8 +10,7 @@ NSRTIFFDocument::NSRTIFFDocument (const QString& file, QObject *parent) :
 	NSRAbstractDocument (file, parent),
 	_tiff (NULL),
 	_pageCount (0),
-	_cachedPage (0),
-	_readyForLoad (false)
+	_cachedPage (0)
 {
 	if ((_tiff = TIFFOpen (file.toUtf8().data(), "r")) == NULL)
 		return;
@@ -45,7 +44,6 @@ NSRTIFFDocument::~NSRTIFFDocument ()
 		_image = QImage ();
 }
 
-
 int
 NSRTIFFDocument::getNumberOfPages () const
 {
@@ -75,17 +73,14 @@ NSRTIFFDocument::renderPage (int page)
 	if (_pageCount > 0 && TIFFSetDirectory (_tiff, page - 1) == 0)
 		return;
 
+	_image = QImage ();
+
 	TIFFGetField (_tiff, TIFFTAG_IMAGEWIDTH, &w);
 	TIFFGetField (_tiff, TIFFTAG_IMAGELENGTH, &h);
 	npixels = w * h;
 
-	_readyForLoad = false;
-
 	if (npixels * sizeof (uint32) > NSR_CORE_DOCUMENT_MAX_HEAP)
 		return;
-
-	if (!_image.isNull ())
-		_image = QImage ();
 
 	double pageWidth = (getRotation () == NSRAbstractDocument::NSR_DOCUMENT_ROTATION_90 ||
 			    getRotation () == NSRAbstractDocument::NSR_DOCUMENT_ROTATION_270) ? h : w;
@@ -109,13 +104,10 @@ NSRTIFFDocument::renderPage (int page)
 		if (isAutoCrop ())
 			updateCropPads ();
 
-		_readyForLoad = true;
 		return;
 	}
 
-	if (!_origImage.isNull ())
-		_origImage = QImage ();
-
+	_origImage = QImage ();
 	imgBuf = new char[npixels * sizeof (uint32)];
 	img = new QImage ((const uchar*) imgBuf, w, h, w * sizeof (uint32), QImage::Format_ARGB32);
 
@@ -187,8 +179,6 @@ NSRTIFFDocument::renderPage (int page)
 			_image = _origImage.transformed (trans);
 			_cachedPage = page;
 		}
-
-		_readyForLoad = true;
 	}
 }
 
@@ -226,9 +216,6 @@ NSRTIFFDocument::getMinZoom ()
 NSR_CORE_IMAGE_DATATYPE
 NSRTIFFDocument::getCurrentPage ()
 {
-	if (!_readyForLoad)
-		return NSR_CORE_IMAGE_DATATYPE ();
-
 	if (_image.isNull ())
 		return NSR_CORE_IMAGE_DATATYPE ();
 
@@ -266,10 +253,17 @@ NSRTIFFDocument::getCurrentPage ()
 		addr += stride;
 	}
 
+	_image = QImage ();
 	return imgData;
 #else
 	return NSR_CORE_IMAGE_DATATYPE ();
 #endif
+}
+
+bool
+NSRTIFFDocument::isDocumentStyleSupported (NSRAbstractDocument::NSRDocumentStyle style) const
+{
+	return (style == NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC);
 }
 
 void
@@ -310,12 +304,6 @@ NSRTIFFDocument::rotateRightMirrorHorizontal (QImage** const image, char **buf)
 
 	*image = generated;
 	*buf = newBuf;
-}
-
-bool
-NSRTIFFDocument::isDocumentStyleSupported (NSRAbstractDocument::NSRDocumentStyle style) const
-{
-	return (style == NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC);
 }
 
 void

@@ -43,7 +43,7 @@ NSRTextDocument::renderPage (int page)
 
 	_text = QString ();
 
-	QFile	data (getDocumentPath ());
+	QFile data (getDocumentPath ());
 
 	if (data.open (QFile::ReadOnly)) {
 		QDataStream	in (&data);
@@ -69,7 +69,7 @@ NSRTextDocument::renderPage (int page)
 				bn.append (ba.at (strPos++));
 		}
 
-		_text = QTextCodec::codecForName(getEncoding().toAscii ())->toUnicode( bn);
+		_text = QTextCodec::codecForName(getEncoding().toAscii ())->toUnicode (bn);
 
 		if (!_text.isEmpty () && page > 1) {
 			/* Remove previous semi-full words and spaces */
@@ -85,7 +85,7 @@ NSRTextDocument::renderPage (int page)
 				_text = _text.right (_text.size () - strPos);
 		}
 
-		data.close();
+		data.close ();
 	}
 }
 
@@ -125,7 +125,10 @@ NSRTextDocument::setTextOnly (bool textOnly)
 QString
 NSRTextDocument::getText ()
 {
-	return _text;
+	QString ret = _text;
+	_text.clear ();
+
+	return ret;
 }
 
 bool

@@ -1,7 +1,7 @@
 #include "nsrpopplerdocument.h"
 #include "nsrpagecropper.h"
 
-#include "ErrorCodes.h"
+#include "poppler/poppler/ErrorCodes.h"
 
 #include <qmath.h>
 
@@ -22,8 +22,7 @@ NSRPopplerDocument::NSRPopplerDocument (const QString& file, QObject *parent) :
 	_cachedMinZoom (NSR_CORE_PDF_MIN_ZOOM),
 	_cachedMaxZoom (100.0),
 	_dpix (72),
-	_dpiy (72),
-	_readyForLoad (false)
+	_dpiy (72)
 {
 	_mutex.lock ();
 
@@ -41,9 +40,6 @@ NSRPopplerDocument::NSRPopplerDocument (const QString& file, QObject *parent) :
 
 NSRPopplerDocument::~NSRPopplerDocument ()
 {
-	if (_readyForLoad)
-		_dev->startPage (0, NULL);
-
 	if (_dev != NULL)
 		delete _dev;
 
@@ -58,7 +54,6 @@ NSRPopplerDocument::~NSRPopplerDocument ()
 
 	_mutex.unlock ();
 }
-
 
 int
 NSRPopplerDocument::getNumberOfPages () const
@@ -100,7 +95,6 @@ NSRPopplerDocument::renderPage (int page)
 
 		delete text;
 		delete dev;
-		_readyForLoad = true;
 
 		return;
 	}
@@ -119,15 +113,12 @@ NSRPopplerDocument::renderPage (int page)
 
 	setZoomSilent (validateMaxZoom (QSize (_page->getCropWidth (), _page->getCropHeight ()), getZoom ()));
 
-	if (_readyForLoad)
-		_dev->startPage (0, NULL);
+	_dev->startPage (0, NULL);
 
 	dpix = _dpix * getZoom () / 100.0;
 	dpiy = _dpiy * getZoom () / 100.0;
 
 	_page->display (_dev, dpix, dpiy, (int) getRotation (), gFalse, gFalse, gTrue, NULL, NULL, NULL, NULL);
-
-	_readyForLoad = true;
 }
 
 double
@@ -174,7 +165,7 @@ NSRPopplerDocument::getMinZoom ()
 NSR_CORE_IMAGE_DATATYPE
 NSRPopplerDocument::getCurrentPage ()
 {
-	if (!_readyForLoad)
+	if (_dev == NULL || (_dev->getBitmapHeight () == 1 && _dev->getBitmapWidth () == 1))
 		return NSR_CORE_IMAGE_DATATYPE ();
 
 	SplashBitmap *bitmap = _dev->getBitmap ();
@@ -225,27 +216,24 @@ NSRPopplerDocument::getCurrentPage ()
 	}
 
 	_dev->startPage (0, NULL);
-	_readyForLoad = false;
 
 	return imgData;
 #else
-	_readyForLoad = false;
 	return NSR_CORE_IMAGE_DATATYPE ();
 #endif
 }
 
 QString
-NSRPopplerDocument::getText()
+NSRPopplerDocument::getText ()
 {
-	if (!_readyForLoad)
-		return NSRAbstractDocument::getText ();
-
-	_readyForLoad = false;
-
 	if (_text.isEmpty ())
 		return NSRAbstractDocument::getText ();
-	else
-		return _text;
+	else {
+		QString ret = _text;
+		_text.clear ();
+
+		return ret;
+	}
 }
 
 void
