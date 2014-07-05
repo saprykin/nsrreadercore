@@ -18,7 +18,7 @@ public:
 			    const NSRRenderedPage&	page);
 	void saveThumbnailEncrypted (const QString& path);
 	QString getThumbnailText (const QString& path);
-	QString getThumnailPath (const QString& path);
+	QString getThumbnailPath (const QString& path);
 	bool isThumbnailEncrypted (const QString& path);
 	void cleanOldFiles ();
 	void removeThumbnail (const QString& path);

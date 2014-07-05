@@ -50,7 +50,7 @@ NSRThumbnailer::release ()
 bool
 NSRThumbnailer::isThumbnailExists (const QString& path)
 {
-	return QFile::exists (getThumnailPath (path));
+	return QFile::exists (getThumbnailPath (path));
 }
 
 void
@@ -110,7 +110,7 @@ NSRThumbnailer::saveThumbnailEncrypted (const QString&	path)
 }
 
 QString
-NSRThumbnailer::getThumnailPath (const QString& path)
+NSRThumbnailer::getThumbnailPath (const QString& path)
 {
 	return getThumbnailPathFromHash (filePathToHash (path));
 }
@@ -128,7 +128,7 @@ NSRThumbnailer::cleanOldFiles ()
 		QString filePath =value("path").toString ();
 
 		if (!QFile::exists (filePath)) {
-			QFile::remove (getThumnailPath (filePath));
+			QFile::remove (getThumbnailPath (filePath));
 			needDelete = true;
 		}
 
