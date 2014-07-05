@@ -26,7 +26,7 @@ public:
 		ROTATE_DIRECTION_LEFT	= 1
 	};
 
-	NSRReaderCore (bool isCardMode, const INSRSettings *settings, QObject *parent = 0);
+	NSRReaderCore (const INSRSettings *settings, QObject *parent = 0);
 	virtual ~NSRReaderCore ();
 	void prepareForDestruction ();
 	inline bool isDestructing () const {
@@ -107,7 +107,6 @@ private:
 	NSRRenderedPage		_currentPage;
 	NSRRenderRequest	_renderRequest;
 	int			_pagesLimit;
-	bool			_isCardMode;
 	bool			_isDestructing;
 };
 

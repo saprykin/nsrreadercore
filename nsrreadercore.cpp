@@ -14,7 +14,7 @@
 #define NSR_CORE_THUMBNAIL_WIDTH	256
 #define NSR_CORE_VERSION		"1.4.1"
 
-NSRReaderCore::NSRReaderCore (bool isCardMode, const INSRSettings *settings,  QObject *parent) :
+NSRReaderCore::NSRReaderCore (const INSRSettings *settings,  QObject *parent) :
 	QObject (parent),
 	_settings (settings),
 	_doc (NULL),
@@ -25,7 +25,6 @@ NSRReaderCore::NSRReaderCore (bool isCardMode, const INSRSettings *settings,  QO
 	_preloadThread (NULL),
 	_cache (NULL),
 	_pagesLimit (0),
-	_isCardMode (isCardMode),
 	_isDestructing (false)
 {
 	_thread		= new NSRRenderThread (this);
@@ -101,15 +100,15 @@ NSRReaderCore::openDocument (const QString &path,  const QString& password)
 		return;
 	}
 
-	if (_isCardMode)
+	if (_settings == NULL)
 		_renderRequest.setInvertColors (false);
-	else if (_settings != NULL) {
+	else {
 		_renderRequest.setInvertColors (_settings->isInvertedColors ());
 		_renderRequest.setAutoCrop (_settings->isAutoCrop ());
 		_renderRequest.setEncoding (_settings->getTextEncoding ());
 	}
 
-	if (!_isCardMode && _settings != NULL && _settings->isStarting ()) {
+	if (_settings != NULL && _settings->isStarting ()) {
 		if ((_settings->isWordWrap () &&
 		    _doc->isDocumentStyleSupported (NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT)) ||
 		    !_doc->isDocumentStyleSupported (NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC))
@@ -219,7 +218,7 @@ NSRReaderCore::getPagesCount () const
 void
 NSRReaderCore::reloadSettings ()
 {
-	if (_doc == NULL || _settings == NULL || isPageRendering () || _isCardMode)
+	if (_doc == NULL || _settings == NULL || isPageRendering ())
 		return;
 
 	bool	needReload = false;
@@ -854,7 +853,7 @@ NSRReaderCore::preloadPages ()
 void
 NSRReaderCore::requestThumbnail ()
 {
-	if (!isDocumentOpened () || _isCardMode)
+	if (!isDocumentOpened () || _settings == NULL)
 		return;
 
 	NSRRenderRequest thumbRequest (1, NSRRenderRequest::NSR_RENDER_REASON_THUMBNAIL);
