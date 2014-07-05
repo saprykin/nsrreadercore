@@ -12,6 +12,7 @@
 
 #define NSR_CORE_MAIN_RENDER_PROP	"nsr-main-render"
 #define NSR_CORE_THUMBNAIL_WIDTH	256
+#define NSR_CORE_VERSION		"1.4.1"
 
 NSRReaderCore::NSRReaderCore (bool isCardMode, const INSRSettings *settings,  QObject *parent) :
 	QObject (parent),
@@ -67,6 +68,12 @@ NSRReaderCore::prepareForDestruction ()
 	_zoomThread->setRenderCanceled (true);
 	_preloadThread->cancelAllRequests ();
 	_preloadThread->setRenderCanceled (true);
+}
+
+QString
+NSRReaderCore::getVersion ()
+{
+	return QString (NSR_CORE_VERSION);
 }
 
 void

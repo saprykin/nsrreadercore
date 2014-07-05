@@ -33,6 +33,8 @@ public:
 		return _isDestructing;
 	}
 
+	static QString getVersion ();
+
 	void openDocument (const QString &path, const QString& password = QString ());
 	bool isDocumentOpened () const;
 	void closeDocument ();
