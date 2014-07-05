@@ -3,20 +3,22 @@
 #include "nsrdjvudocument.h"
 #include "nsrtiffdocument.h"
 #include "nsrtextdocument.h"
-#include "nsrthumbnailer.h"
 
+#include <QVariant>
 #include <QFile>
 #include <QFileInfo>
 
 #include <float.h>
 
 #define NSR_CORE_MAIN_RENDER_PROP	"nsr-main-render"
-#define NSR_CORE_THUMBNAIL_WIDTH	256
 #define NSR_CORE_VERSION		"1.4.1"
 
-NSRReaderCore::NSRReaderCore (const INSRSettings *settings,  QObject *parent) :
+NSRReaderCore::NSRReaderCore (const INSRSettings *	settings,
+			      INSRThumbnailer *		thumbnailer,
+			      QObject *			parent) :
 	QObject (parent),
 	_settings (settings),
+	_thumbnailer (thumbnailer),
 	_doc (NULL),
 	_zoomDoc (NULL),
 	_preloadDoc (NULL),
@@ -263,23 +265,26 @@ NSRReaderCore::loadSession (const NSRSession *session)
 
 	QString file = session->getFile ();
 
-	if (QFile::exists (file)) {
-		openDocument (file, session->getPassword ());
+	if (!QFile::exists (file))
+		return;
 
-		if (isDocumentOpened ()) {
-			_renderRequest.setRenderType (NSRRenderRequest::NSR_RENDER_TYPE_PAGE);
-			_renderRequest.setRotation (session->getRotation ());
-			_renderRequest.setZoom (session->getZoomGraphic ());
-			_renderRequest.setZoomToWidth (session->isFitToWidth ());
+	openDocument (file, session->getPassword ());
 
-			if (_renderRequest.isZoomToWidth ())
-				_renderRequest.setScreenWidth (session->getZoomScreenWidth ());
+	if (isDocumentOpened ()) {
+		_renderRequest.setRenderType (NSRRenderRequest::NSR_RENDER_TYPE_PAGE);
+		_renderRequest.setRotation (session->getRotation ());
+		_renderRequest.setZoom (session->getZoomGraphic ());
+		_renderRequest.setZoomToWidth (session->isFitToWidth ());
 
-			loadPage (PAGE_LOAD_CUSTOM, NSRRenderRequest::NSR_RENDER_REASON_NAVIGATION, session->getPage ());
+		if (_renderRequest.isZoomToWidth ())
+			_renderRequest.setScreenWidth (session->getZoomScreenWidth ());
 
+		loadPage (PAGE_LOAD_CUSTOM, NSRRenderRequest::NSR_RENDER_REASON_NAVIGATION, session->getPage ());
+
+		if (_thumbnailer != NULL) {
 			if (!_doc->getPassword().isEmpty ())
-				NSRThumbnailer::instance()->saveThumbnailEncrypted (_doc->getDocumentPath ());
-			else if (NSRThumbnailer::instance()->isThumbnailOutdated (_doc->getDocumentPath ()))
+				_thumbnailer->saveThumbnailEncrypted (_doc->getDocumentPath ());
+			else if (_thumbnailer->isThumbnailOutdated (_doc->getDocumentPath ()))
 				requestThumbnail ();
 		}
 	}
@@ -474,8 +479,9 @@ NSRReaderCore::onZoomRenderDone ()
 
 	NSRRenderedPage page = _zoomThread->getRenderedPage ();
 
-	if (page.getRenderType () == NSRRenderRequest::NSR_RENDER_TYPE_THUMBNAIL) {
-		NSRThumbnailer::instance()->saveThumbnail (_zoomDoc->getDocumentPath (), page);
+	if (_thumbnailer != NULL &&
+	    page.getRenderType () == NSRRenderRequest::NSR_RENDER_TYPE_THUMBNAIL) {
+		_thumbnailer->saveThumbnail (_zoomDoc->getDocumentPath (), page);
 		emit thumbnailRendered ();
 		return;
 	}
@@ -853,7 +859,7 @@ NSRReaderCore::preloadPages ()
 void
 NSRReaderCore::requestThumbnail ()
 {
-	if (!isDocumentOpened () || _settings == NULL)
+	if (!isDocumentOpened () || _thumbnailer == NULL)
 		return;
 
 	NSRRenderRequest thumbRequest (1, NSRRenderRequest::NSR_RENDER_REASON_THUMBNAIL);
@@ -865,7 +871,7 @@ NSRReaderCore::requestThumbnail ()
 	thumbRequest.setTextOnly (false);
 	thumbRequest.setZoomToWidth (true);
 	thumbRequest.setRotation (NSRAbstractDocument::NSR_DOCUMENT_ROTATION_0);
-	thumbRequest.setScreenWidth (NSR_CORE_THUMBNAIL_WIDTH);
+	thumbRequest.setScreenWidth (_thumbnailer->getThumbnailWidth ());
 
 	_zoomThread->cancelRequests (NSRRenderRequest::NSR_RENDER_TYPE_THUMBNAIL);
 	_zoomThread->addRequest (thumbRequest);

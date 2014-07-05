@@ -4,6 +4,7 @@
 #include <QObject.h>
 
 #include "insrsettings.h"
+#include "insrthumbnailer.h"
 #include "nsrabstractdocument.h"
 #include "nsrrenderthread.h"
 #include "nsrrenderrequest.h"
@@ -26,7 +27,9 @@ public:
 		ROTATE_DIRECTION_LEFT	= 1
 	};
 
-	NSRReaderCore (const INSRSettings *settings, QObject *parent = 0);
+	NSRReaderCore (const INSRSettings *	settings,
+		       INSRThumbnailer *	thumbnailer,
+		       QObject *		parent = 0);
 	virtual ~NSRReaderCore ();
 	void prepareForDestruction ();
 	inline bool isDestructing () const {
@@ -97,6 +100,7 @@ private:
 	void requestThumbnail ();
 
 	const INSRSettings *	_settings;
+	INSRThumbnailer *	_thumbnailer;
 	NSRAbstractDocument *	_doc;
 	NSRAbstractDocument *	_zoomDoc;
 	NSRAbstractDocument *	_preloadDoc;
