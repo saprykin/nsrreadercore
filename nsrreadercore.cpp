@@ -13,8 +13,9 @@
 #define NSR_CORE_MAIN_RENDER_PROP	"nsr-main-render"
 #define NSR_CORE_THUMBNAIL_WIDTH	256
 
-NSRReaderCore::NSRReaderCore (bool isCardMode, QObject *parent) :
+NSRReaderCore::NSRReaderCore (bool isCardMode, const INSRSettings *settings,  QObject *parent) :
 	QObject (parent),
+	_settings (settings),
 	_doc (NULL),
 	_zoomDoc (NULL),
 	_preloadDoc (NULL),
@@ -94,14 +95,14 @@ NSRReaderCore::openDocument (const QString &path,  const QString& password)
 
 	if (_isCardMode)
 		_renderRequest.setInvertColors (false);
-	else {
-		_renderRequest.setInvertColors (NSRSettings::instance()->isInvertedColors ());
-		_renderRequest.setAutoCrop (NSRSettings::instance()->isAutoCrop ());
-		_renderRequest.setEncoding (NSRSettings::instance()->getTextEncoding ());
+	else if (_settings != NULL) {
+		_renderRequest.setInvertColors (_settings->isInvertedColors ());
+		_renderRequest.setAutoCrop (_settings->isAutoCrop ());
+		_renderRequest.setEncoding (_settings->getTextEncoding ());
 	}
 
-	if (!_isCardMode && NSRSettings::instance()->isStarting ()) {
-		if ((NSRSettings::instance()->isWordWrap () &&
+	if (!_isCardMode && _settings != NULL && _settings->isStarting ()) {
+		if ((_settings->isWordWrap () &&
 		    _doc->isDocumentStyleSupported (NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT)) ||
 		    !_doc->isDocumentStyleSupported (NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC))
 			_renderRequest.setTextOnly (true);
@@ -123,9 +124,6 @@ NSRReaderCore::openDocument (const QString &path,  const QString& password)
 		_preloadDoc->setParent (_preloadThread);
 		_preloadThread->setRenderContext (_preloadDoc);
 	}
-
-	if (!_isCardMode)
-		NSRSettings::instance()->addLastDocument (path);
 
 	emit documentOpened (path);
 }
@@ -213,7 +211,7 @@ NSRReaderCore::getPagesCount () const
 void
 NSRReaderCore::reloadSettings ()
 {
-	if (_doc == NULL || isPageRendering () || _isCardMode)
+	if (_doc == NULL || _settings == NULL || isPageRendering () || _isCardMode)
 		return;
 
 	bool	needReload = false;
@@ -221,8 +219,8 @@ NSRReaderCore::reloadSettings ()
 	bool	wasCropped = _renderRequest.isAutoCrop ();
 	QString	wasEncoding = _renderRequest.getEncoding ();
 
-	_renderRequest.setAutoCrop (NSRSettings::instance()->isAutoCrop ());
-	_renderRequest.setEncoding (NSRSettings::instance()->getTextEncoding ());
+	_renderRequest.setAutoCrop (_settings->isAutoCrop ());
+	_renderRequest.setEncoding (_settings->getTextEncoding ());
 
 	if (wasCropped != _renderRequest.isAutoCrop ()) {
 		/* Do not clear text from cache if text mode is remained */

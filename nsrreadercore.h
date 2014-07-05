@@ -3,12 +3,12 @@
 
 #include <QObject.h>
 
+#include "insrsettings.h"
 #include "nsrabstractdocument.h"
 #include "nsrrenderthread.h"
 #include "nsrrenderrequest.h"
 #include "nsrpagescache.h"
 #include "nsrsession.h"
-#include "nsrsettings.h"
 
 class NSRReaderCore: public QObject
 {
@@ -26,7 +26,7 @@ public:
 		ROTATE_DIRECTION_LEFT	= 1
 	};
 
-	NSRReaderCore (bool isCardMode, QObject *parent = 0);
+	NSRReaderCore (bool isCardMode, const INSRSettings *settings, QObject *parent = 0);
 	virtual ~NSRReaderCore ();
 	void prepareForDestruction ();
 	inline bool isDestructing () const {
@@ -89,6 +89,7 @@ private:
 	void preloadPages ();
 	void requestThumbnail ();
 
+	const INSRSettings *	_settings;
 	NSRAbstractDocument *	_doc;
 	NSRAbstractDocument *	_zoomDoc;
 	NSRAbstractDocument *	_preloadDoc;
