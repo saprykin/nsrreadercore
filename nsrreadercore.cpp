@@ -24,6 +24,7 @@ NSRReaderCore::NSRReaderCore (bool isCardMode, const INSRSettings *settings,  QO
 	_zoomThread (NULL),
 	_preloadThread (NULL),
 	_cache (NULL),
+	_pagesLimit (0),
 	_isCardMode (isCardMode),
 	_isDestructing (false)
 {
@@ -609,12 +610,10 @@ NSRReaderCore::loadPage (PageLoad				dir,
 	else if (pageToLoad > _doc->getNumberOfPages ())
 		pageToLoad = _doc->getNumberOfPages ();
 
-#ifdef NSR_CORE_LITE_VERSION
-	if (pageToLoad > NSRSettings::getMaxAllowedPages ()) {
-		pageToLoad = NSRSettings::getMaxAllowedPages ();
-		emit liteVersionOverPage ();
+	if (_pagesLimit > 0 && pageToLoad > _pagesLimit) {
+		pageToLoad = _pagesLimit;
+		emit pagesLimitPassed ();
 	}
-#endif
 
 	if (reason != NSRRenderRequest::NSR_RENDER_REASON_PRELOAD)
 		_renderRequest.setNumber (pageToLoad);
@@ -827,10 +826,8 @@ NSRReaderCore::preloadPages ()
 	bool needNext = !_cache->isPageExists (pageToLoadNext) && pageToLoadNext != _renderRequest.getNumber ();
 	bool needPrev = !_cache->isPageExists (pageToLoadPrev) && pageToLoadPrev != _renderRequest.getNumber ();
 
-#ifdef NSR_CORE_LITE_VERSION
-	if (pageToLoadNext > NSRSettings::getMaxAllowedPages ())
+	if (_pagesLimit > 0 && pageToLoadNext > _pagesLimit)
 		needNext = false;
-#endif
 
 	if (!needNext && !needPrev)
 		return;

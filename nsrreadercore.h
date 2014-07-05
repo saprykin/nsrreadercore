@@ -63,6 +63,13 @@ public:
 	void invertColors ();
 	bool isInvertedColors () const;
 
+	inline void setPagesLimit (int limit) {
+		_pagesLimit = limit;
+	}
+	inline int getPagesLimit () const {
+		return _pagesLimit;
+	}
+
 Q_SIGNALS:
 	void pageRendered (int number);
 	void thumbnailRendered ();
@@ -70,9 +77,7 @@ Q_SIGNALS:
 	void errorWhileOpening (NSRAbstractDocument::NSRDocumentError error);
 	void documentOpened (const QString& file);
 	void documentClosed (const QString& file);
-#ifdef NSR_CORE_LITE_VERSION
-	void liteVersionOverPage ();
-#endif
+	void pagesLimitPassed ();
 
 private Q_SLOTS:
 	void onRenderDone ();
@@ -101,6 +106,7 @@ private:
 	NSRPagesCache *		_cache;
 	NSRRenderedPage		_currentPage;
 	NSRRenderRequest	_renderRequest;
+	int			_pagesLimit;
 	bool			_isCardMode;
 	bool			_isDestructing;
 };
