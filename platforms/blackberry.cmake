@@ -68,8 +68,8 @@ set (CMAKE_STRIP
 	"${QNX_HOST}/usr/bin/nto${CMAKE_SYSTEM_PROCESSOR}-strip${HOST_EXECUTABLE_SUFFIX}"
 	CACHE PATH "QNX Strip Program")
 
-set (CMAKE_C_COMPILER ${QNX_HOST}/usr/bin/nto${CMAKE_SYSTEM_PROCESSOR}-gcc${HOST_EXECUTABLE_SUFFIX})
-set (CMAKE_CXX_COMPILER ${QNX_HOST}/usr/bin/nto${CMAKE_SYSTEM_PROCESSOR}-c++${HOST_EXECUTABLE_SUFFIX})
+set (CMAKE_C_COMPILER ${QNX_HOST}/usr/bin/qcc${HOST_EXECUTABLE_SUFFIX})
+set (CMAKE_CXX_COMPILER ${QNX_HOST}/usr/bin/qcc${HOST_EXECUTABLE_SUFFIX})
 
 set (NSR_ARM_FLAGS "-mcpu=cortex-a9 -mthumb")
 set (NSR_BASE_FLAGS "-D_REENTRANT -Wno-psabi -fstack-protector -fstack-protector-all")
@@ -78,15 +78,21 @@ if (CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7")
 	set (NSR_CPU_FLAGS ${NSR_ARM_FLAGS})
 endif()
 
-set (NSR_C_FLAGS_DEBUG "${NSR_BASE_FLAGS} ${NSR_CPU_FLAGS} -g")
-set (NSR_C_FLAGS_MINSIZEREL "${NSR_BASE_FLAGS} ${NSR_CPU_FLAGS} -O2 -fstack-protector-strong -fvisibility=hidden -Os")
-set (NSR_C_FLAGS_RELEASE "${NSR_BASE_FLAGS} ${NSR_CPU_FLAGS} -O2 -fstack-protector-strong -fvisibility=hidden -Os")
-set (NSR_C_FLAGS_RELWITHDEBINFO "${NSR_BASE_FLAGS} ${NSR_CPU_FLAGS} -O2 -g -fstack-protector-strong -fvisibility=hidden")
+if (CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7")
+	set (NSR_QCC_FLAGS "-Vgcc_ntoarmv7le")
+elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86")
+	set (NSR_QCC_FLAGS "-Vgcc_ntox86")
+endif()
 
-set (NSR_CXX_FLAGS_DEBUG "${NSR_BASE_FLAGS} ${NSR_CPU_FLAGS} -g")
-set (NSR_CXX_FLAGS_MINSIZEREL "${NSR_BASE_FLAGS} ${NSR_CPU_FLAGS} -O2 -fstack-protector-strong -fvisibility=hidden -Os")
-set (NSR_CXX_FLAGS_RELEASE "${NSR_BASE_FLAGS} ${NSR_CPU_FLAGS} -O2 -fstack-protector-strong -fvisibility=hidden -Os")
-set (NSR_CXX_FLAGS_RELWITHDEBINFO "${NSR_BASE_FLAGS} ${NSR_CPU_FLAGS} -O2 -g -fstack-protector-strong -fvisibility=hidden")
+set (NSR_C_FLAGS_DEBUG "${NSR_QCC_FLAGS} ${NSR_BASE_FLAGS} ${NSR_CPU_FLAGS} -g")
+set (NSR_C_FLAGS_MINSIZEREL "${NSR_QCC_FLAGS} ${NSR_BASE_FLAGS} ${NSR_CPU_FLAGS} -O2 -fstack-protector-strong -fvisibility=hidden -Os")
+set (NSR_C_FLAGS_RELEASE "${NSR_QCC_FLAGS} ${NSR_BASE_FLAGS} ${NSR_CPU_FLAGS} -O2 -fstack-protector-strong -fvisibility=hidden -Os")
+set (NSR_C_FLAGS_RELWITHDEBINFO "${NSR_QCC_FLAGS} ${NSR_BASE_FLAGS} ${NSR_CPU_FLAGS} -O2 -g -fstack-protector-strong -fvisibility=hidden")
+
+set (NSR_CXX_FLAGS_DEBUG "${NSR_QCC_FLAGS} -lang-c++ ${NSR_BASE_FLAGS} ${NSR_CPU_FLAGS} -g")
+set (NSR_CXX_FLAGS_MINSIZEREL "${NSR_QCC_FLAGS} -lang-c++ ${NSR_BASE_FLAGS} ${NSR_CPU_FLAGS} -O2 -fstack-protector-strong -fvisibility=hidden -Os")
+set (NSR_CXX_FLAGS_RELEASE "${NSR_QCC_FLAGS} -lang-c++ ${NSR_BASE_FLAGS} ${NSR_CPU_FLAGS} -O2 -fstack-protector-strong -fvisibility=hidden -Os")
+set (NSR_CXX_FLAGS_RELWITHDEBINFO "${NSR_QCC_FLAGS} -lang-c++ ${NSR_BASE_FLAGS} ${NSR_CPU_FLAGS} -O2 -g -fstack-protector-strong -fvisibility=hidden")
 
 set (NSR_INCLUDE_DIRECTORIES "${QNX_TARGET}/usr/include" "${QNX_TARGET}/usr/include/freetype2")
 
