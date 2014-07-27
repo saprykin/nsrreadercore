@@ -641,11 +641,11 @@ NSRReaderCore::loadPage (PageLoad				dir,
 		return;
 	}
 
-	NSRRenderRequest::NSRRenderReason reason = req.getRenderReason ();
+	NSRRenderRequest::NSRRenderReason reqReason = req.getRenderReason ();
 
-	if (reason == NSRRenderRequest::NSR_RENDER_REASON_ZOOM ||
-	    reason == NSRRenderRequest::NSR_RENDER_REASON_ZOOM_TO_WIDTH ||
-	    reason == NSRRenderRequest::NSR_RENDER_REASON_CROP_TO_WIDTH) {
+	if (reqReason == NSRRenderRequest::NSR_RENDER_REASON_ZOOM ||
+	    reqReason == NSRRenderRequest::NSR_RENDER_REASON_ZOOM_TO_WIDTH ||
+	    reqReason == NSRRenderRequest::NSR_RENDER_REASON_CROP_TO_WIDTH) {
 		_preloadThread->cancelAllRequests ();
 		_zoomThread->cancelRequests (NSRRenderRequest::NSR_RENDER_TYPE_PAGE);
 
@@ -661,7 +661,7 @@ NSRReaderCore::loadPage (PageLoad				dir,
 			_zoomThread->addRequest (req);
 			_zoomThread->start (QThread::LowestPriority);
 		}
-	} else if (reason == NSRRenderRequest::NSR_RENDER_REASON_PRELOAD) {
+	} else if (reqReason == NSRRenderRequest::NSR_RENDER_REASON_PRELOAD) {
 		req.setRenderReason (NSRRenderRequest::NSR_RENDER_REASON_NAVIGATION);
 
 		/* Do not cancel preload requests because we can add several requests at once */
