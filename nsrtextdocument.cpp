@@ -92,7 +92,7 @@ NSRTextDocument::renderPage (int page)
 NSR_CORE_IMAGE_DATATYPE
 NSRTextDocument::getCurrentPage ()
 {
-	return bb::ImageData ();
+	return NSR_CORE_IMAGE_DATATYPE ();
 }
 
 bool
