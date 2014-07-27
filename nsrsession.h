@@ -2,11 +2,12 @@
 #define NSRSESSION_H
 
 #include "nsrabstractdocument.h"
+#include "nsrreadercore_global.h"
 
 #include <QString>
 #include <QPointF>
 
-class NSRSession
+class NSRREADERCORE_SHARED NSRSession
 {
 public:
 	NSRSession ();

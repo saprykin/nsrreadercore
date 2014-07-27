@@ -7,9 +7,10 @@
  * @brief Interface for thumbnailer
  */
 
-#include <QString>
-
+#include "nsrreadercore_global.h"
 #include "nsrrenderedpage.h"
+
+#include <QString>
 
 /**
  * @class INSRThumbnailer insrthumbnailer.h
@@ -17,7 +18,7 @@
  *
  * #INSRThumbnailer interface represents thumbnailer for opened documents.
  */
-class INSRThumbnailer
+class NSRREADERCORE_SHARED INSRThumbnailer
 {
 public:
 	/** Destructor */
@@ -30,7 +31,7 @@ public:
 	 * @since 1.4.2
 	 */
 	virtual void saveThumbnail (const QString&		path,
-			    	    const NSRRenderedPage&	page) = 0;
+				    const NSRRenderedPage&	page) = 0;
 
 	/**
 	 * @brief Saves empty thumbnail for encrypted file

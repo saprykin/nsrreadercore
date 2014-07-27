@@ -1,6 +1,8 @@
 #ifndef NSRABSTRACTDOCUMENT_H
 #define NSRABSTRACTDOCUMENT_H
 
+#include "nsrreadercore_global.h"
+
 #include <QObject>
 #include <QtGui/QPixmap>
 
@@ -19,7 +21,7 @@
 #  define NSR_CORE_IMAGE_DATATYPE	QImage
 #endif
 
-class NSRAbstractDocument : public QObject
+class NSRREADERCORE_SHARED NSRAbstractDocument : public QObject
 {
 	Q_OBJECT
 	Q_ENUMS (NSRDocumentError)
@@ -53,7 +55,7 @@ public:
 	virtual bool isValid ()	const				= 0;
 	double getZoom () const {return _zoom;}
 	void setZoom (double zoom);
-        void setZoomSilent (double zoom) {_zoom = zoom;}
+	void setZoomSilent (double zoom) {_zoom = zoom;}
 	virtual double getMaxZoom ()				= 0;
 	virtual double getMinZoom ()				= 0;
 	virtual void zoomToWidth (int screenWidth);
@@ -100,7 +102,6 @@ private:
 	bool			_autoCrop;
 	NSRDocumentError	_lastError;
 	NSRDocumentRotation	_rotation;
-
 };
 
 #endif // NSRABSTRACTDOCUMENT_H

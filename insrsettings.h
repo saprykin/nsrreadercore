@@ -7,6 +7,8 @@
  * @brief Interface for rendering settings
  */
 
+#include "nsrreadercore_global.h"
+
 #include <QString>
 
 /**
@@ -15,7 +17,7 @@
  *
  * #INSRSettings interface represents rendering settings.
  */
-class INSRSettings
+class NSRREADERCORE_SHARED INSRSettings
 {
 public:
 	/** Destructor */

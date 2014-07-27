@@ -1,8 +1,6 @@
 #ifndef NSRREADERCORE_H_
 #define NSRREADERCORE_H_
 
-#include <QObject.h>
-
 #include "insrsettings.h"
 #include "insrthumbnailer.h"
 #include "nsrabstractdocument.h"
@@ -10,8 +8,11 @@
 #include "nsrrenderrequest.h"
 #include "nsrpagescache.h"
 #include "nsrsession.h"
+#include "nsrreadercore_global.h"
 
-class NSRReaderCore: public QObject
+#include <QObject.h>
+
+class NSRREADERCORE_SHARED NSRReaderCore: public QObject
 {
 	Q_OBJECT
 	Q_ENUMS (PageLoad)

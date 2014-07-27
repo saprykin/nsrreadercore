@@ -8,6 +8,7 @@
  */
 
 #include "nsrabstractdocument.h"
+#include "nsrreadercore_global.h"
 
 #include <QObject>
 #include <QString>
@@ -28,7 +29,7 @@
  * Thumbnails are always rendered with both image and text, with autocrop
  * and inverted colors disabled, zoomed to specified screen width.
  */
-class NSRRenderRequest : public QObject
+class NSRREADERCORE_SHARED NSRRenderRequest : public QObject
 {
 	Q_OBJECT
 	Q_ENUMS (NSRRenderReason)

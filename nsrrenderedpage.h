@@ -3,12 +3,13 @@
 
 #include "nsrrenderrequest.h"
 #include "nsrabstractdocument.h"
+#include "nsrreadercore_global.h"
 
 #include <QObject>
 #include <QSize>
 #include <QPointF>
 
-class NSRRenderedPage: public NSRRenderRequest
+class NSRREADERCORE_SHARED NSRRenderedPage: public NSRRenderRequest
 {
 	Q_OBJECT
 public:
