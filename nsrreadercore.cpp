@@ -105,9 +105,12 @@ NSRReaderCore::openDocument (const QString &path,  const QString& password)
 	if (_settings == NULL)
 		_renderRequest.setInvertColors (false);
 	else {
+		QString encoding = _settings->isEncodingAutodetection () ? QString ()
+									 : _settings->getTextEncoding ();
+
 		_renderRequest.setInvertColors (_settings->isInvertedColors ());
 		_renderRequest.setAutoCrop (_settings->isAutoCrop ());
-		_renderRequest.setEncoding (_settings->getTextEncoding ());
+		_renderRequest.setEncoding (encoding);
 	}
 
 	if (_settings != NULL && _settings->isStarting ()) {
@@ -227,9 +230,11 @@ NSRReaderCore::reloadSettings ()
 	bool	needThumbnail = false;
 	bool	wasCropped = _renderRequest.isAutoCrop ();
 	QString	wasEncoding = _renderRequest.getEncoding ();
+	QString newEncoding = _settings->isEncodingAutodetection () ? QString ()
+								    : _settings->getTextEncoding ();
 
 	_renderRequest.setAutoCrop (_settings->isAutoCrop ());
-	_renderRequest.setEncoding (_settings->getTextEncoding ());
+	_renderRequest.setEncoding (newEncoding);
 
 	if (wasCropped != _renderRequest.isAutoCrop ()) {
 		/* Do not clear text from cache if text mode is remained */
@@ -303,7 +308,7 @@ NSRReaderCore::isPageRendering () const
 	       (_zoomThread->isRunning () && !_zoomThread->isRenderCanceled () &&
 		_zoomThread->property(NSR_CORE_MAIN_RENDER_PROP).toBool ()) ||
 	       (_preloadThread->isRunning () && !_preloadThread->isRenderCanceled () &&
-	        _preloadThread->property(NSR_CORE_MAIN_RENDER_PROP).toBool ());
+		_preloadThread->property(NSR_CORE_MAIN_RENDER_PROP).toBool ());
 }
 
 void
