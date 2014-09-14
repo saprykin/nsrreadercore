@@ -28,8 +28,12 @@ public:
 	}
 
 private:
-	QString			_text;
-	int			_pagesCount;
+	QString detectCharset ();
+
+	QString	_text;
+	QString	_autodetectedEncoding;
+	int	_pagesCount;
+	bool	_wasEncodingDetected;
 };
 
 #endif // NSRTEXTDOCUMENT_H

@@ -1,4 +1,5 @@
 #include "nsrtextdocument.h"
+#include "nsrcharsetdetector.h"
 
 #include <qmath.h>
 
@@ -7,13 +8,15 @@
 #include <QDataStream>
 #include <QTextCodec>
 
-#define NSR_CORE_TEXT_PAGE_SIZE	5120
-#define NSR_CORE_TEXT_MIN_ZOOM	25.0
-#define NSR_CORE_TEXT_MAX_ZOOM	400.0
+#define NSR_CORE_TEXT_PAGE_SIZE		5120
+#define NSR_CORE_TEXT_MIN_ZOOM		25.0
+#define NSR_CORE_TEXT_MAX_ZOOM		400.0
+#define NSR_CORE_TEXT_DETECT_CHARS	1024
 
 NSRTextDocument::NSRTextDocument (const QString &file, QObject *parent) :
 	NSRAbstractDocument (file, parent),
-	_pagesCount (0)
+	_pagesCount (0),
+	_wasEncodingDetected (false)
 {
 	QFileInfo info (file);
 
@@ -43,6 +46,16 @@ NSRTextDocument::renderPage (int page)
 
 	_text = QString ();
 
+	QString charset = getEncoding ();
+
+	if (charset.isEmpty () && !_wasEncodingDetected) {
+		_autodetectedEncoding = detectCharset ();
+		_wasEncodingDetected = true;
+	}
+
+	if (charset.isEmpty ())
+		charset = _autodetectedEncoding;
+
 	QFile data (getDocumentPath ());
 
 	if (data.open (QFile::ReadOnly)) {
@@ -69,7 +82,9 @@ NSRTextDocument::renderPage (int page)
 				bn.append (ba.at (strPos++));
 		}
 
-		_text = QTextCodec::codecForName(getEncoding().toAscii ())->toUnicode (bn);
+		QTextCodec *codec = QTextCodec::codecForName (charset.toAscii ());
+
+		_text = codec == NULL ? QString (bn) : codec->toUnicode (bn);
 
 		if (!_text.isEmpty () && page > 1) {
 			/* Remove previous semi-full words and spaces */
@@ -147,4 +162,41 @@ bool
 NSRTextDocument::isDocumentStyleSupported (NSRAbstractDocument::NSRDocumentStyle style) const
 {
 	return (style == NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT);
+}
+
+QString NSRTextDocument::detectCharset ()
+{
+	if (!QFile::exists (getDocumentPath ()))
+		return QString ();
+
+	NSRCharsetDetector	detector;
+	QFile			data (getDocumentPath ());
+
+	if (!data.open (QFile::ReadOnly))
+		return QString ();
+
+	QDataStream	in (&data);
+	QByteArray	ba;
+	int		bytesRead;
+
+	ba.resize (NSR_CORE_TEXT_DETECT_CHARS);
+
+	while (!detector.isCharsetDetected () && !in.atEnd ()) {
+		if ((bytesRead = in.readRawData (ba.data (), NSR_CORE_TEXT_DETECT_CHARS)) == -1) {
+			detector.finishData ();
+			return detector.getCharset ();
+		}
+
+		detector.addData (ba, bytesRead);
+
+		if (detector.isCharsetDetected ())
+			return detector.getCharset ();
+	}
+
+	/* Reached end of the file */
+	if (!detector.isCharsetDetected ())
+		detector.finishData ();
+
+	/* The best try */
+	return detector.getCharset ();
 }

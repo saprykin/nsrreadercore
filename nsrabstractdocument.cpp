@@ -68,7 +68,8 @@ NSRAbstractDocument::setRotation (NSRAbstractDocument::NSRDocumentRotation rotat
 void
 NSRAbstractDocument::setEncoding (const QString &enc)
 {
-	if (QTextCodec::codecForName (enc.toAscii ()) == NULL)
+	/* Empty encoding means we will use autodetection */
+	if (!enc.isEmpty () && QTextCodec::codecForName (enc.toAscii ()) == NULL)
 		return;
 	else
 		_encoding = enc;
@@ -146,4 +147,3 @@ NSRAbstractDocument::validateMaxZoom (const QSize& pageSize, double zoom) const
 
 	return scale * 100.0;
 }
-
