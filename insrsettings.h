@@ -45,6 +45,13 @@ public:
 	virtual bool isAutoCrop () const = 0;
 
 	/**
+	 * @brief Checks whether text encoding autodetection is enabled.
+	 * @return True if text encoding autodetection is enabled, false otherwise.
+	 * @since 1.4.2
+	 */
+	virtual bool isEncodingAutodetection () const = 0;
+
+	/**
 	 * @brief Gets text encoding name
 	 * @return Text encoding name.
 	 * @since 1.4.2
