@@ -18,6 +18,7 @@ include (${QT_USE_FILE})
 
 set (SOURCES
 	nsrabstractdocument.cpp
+	nsrcharsetdetector.cpp
 	nsrcroppads.cpp
 	nsrdjvudocument.cpp
 	nsrpagecropper.cpp
@@ -242,6 +243,34 @@ set (TIFF_SOURCES
 	3dparty/tiff/tif_zip.c
 )
 
+set (UNIVERSALCHARDET_SOURCES
+	3dparty/universalchardet/CharDistribution.cpp
+	3dparty/universalchardet/JpCntx.cpp
+	3dparty/universalchardet/LangBulgarianModel.cpp
+	3dparty/universalchardet/LangCyrillicModel.cpp
+	3dparty/universalchardet/LangGreekModel.cpp
+	3dparty/universalchardet/LangHebrewModel.cpp
+	3dparty/universalchardet/LangHungarianModel.cpp
+	3dparty/universalchardet/LangThaiModel.cpp
+	3dparty/universalchardet/nsBig5Prober.cpp
+	3dparty/universalchardet/nsCharSetProber.cpp
+	3dparty/universalchardet/nsEscCharsetProber.cpp
+	3dparty/universalchardet/nsEscSM.cpp
+	3dparty/universalchardet/nsEUCJPProber.cpp
+	3dparty/universalchardet/nsEUCKRProber.cpp
+	3dparty/universalchardet/nsEUCTWProber.cpp
+	3dparty/universalchardet/nsGB2312Prober.cpp
+	3dparty/universalchardet/nsHebrewProber.cpp
+	3dparty/universalchardet/nsLatin1Prober.cpp
+	3dparty/universalchardet/nsMBCSGroupProber.cpp
+	3dparty/universalchardet/nsMBCSSM.cpp
+	3dparty/universalchardet/nsSBCharSetProber.cpp
+	3dparty/universalchardet/nsSBCSGroupProber.cpp
+	3dparty/universalchardet/nsSJISProber.cpp
+	3dparty/universalchardet/nsUniversalDetector.cpp
+	3dparty/universalchardet/nsUTF8Prober.cpp	
+)
+
 set (QT_HEADERS
 	nsrabstractdocument.h
 	nsrdjvudocument.h
@@ -463,6 +492,28 @@ set (TIFF_HEADERS
 	3dparty/tiff/uvcode.h
 )
 
+set (UNIVERSALCHARDET_HEADERS
+	3dparty/universalchardet/CharDistribution.h
+	3dparty/universalchardet/JpCntx.h
+	3dparty/universalchardet/nsBig5Prober.h
+	3dparty/universalchardet/nsCharSetProber.h
+	3dparty/universalchardet/nsCodingStateMachine.h
+	3dparty/universalchardet/nsEscCharsetProber.h
+	3dparty/universalchardet/nsEUCJPProber.h
+	3dparty/universalchardet/nsEUCKRProber.h
+	3dparty/universalchardet/nsEUCTWProber.h
+	3dparty/universalchardet/nsGB2312Prober.h
+	3dparty/universalchardet/nsHebrewProber.h
+	3dparty/universalchardet/nsLatin1Prober.h
+	3dparty/universalchardet/nsMBCSGroupProber.h
+	3dparty/universalchardet/nsPkgInt.h
+	3dparty/universalchardet/nsSBCharSetProber.h
+	3dparty/universalchardet/nsSBCSGroupProber.h
+	3dparty/universalchardet/nsSJISProber.h
+	3dparty/universalchardet/nsUniversalDetector.h
+	3dparty/universalchardet/nsUTF8Prober.h
+)
+
 QT4_WRAP_CPP (QT_HEADERS_MOC ${QT_HEADERS})
 
 include_directories (
@@ -473,6 +524,7 @@ include_directories (
 	3dparty/poppler
 	3dparty/poppler/goo
 	3dparty/poppler/poppler
+	3dparty/universalchardet
 	${PROJECT_SOURCE_DIR}
 	${NSR_INCLUDE_DIRECTORIES}
 )
@@ -482,11 +534,13 @@ add_library (${PROJECT_NAME} SHARED
 	${DJVU_SOURCES}
 	${POPPLER_SOURCES}
 	${TIFF_SOURCES}
+	${UNIVERSALCHARDET_SOURCES}
 	${HEADERS}
 	${QT_HEADERS_MOC}
 	${DJVU_HEADERS}
 	${POPPLER_HEADERS}
 	${TIFF_HEADERS}
+	${UNIVERSALCHARDET_HEADERS}
 )
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
