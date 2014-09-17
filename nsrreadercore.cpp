@@ -102,9 +102,10 @@ NSRReaderCore::openDocument (const QString &path,  const QString& password)
 		return;
 	}
 
-	if (_settings == NULL)
+	if (_settings == NULL) {
 		_renderRequest.setInvertColors (false);
-	else {
+		_renderRequest.setEncoding ("");
+	} else {
 		QString encoding = _settings->isEncodingAutodetection () ? QString ()
 									 : _settings->getTextEncoding ();
 
