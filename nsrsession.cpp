@@ -8,7 +8,6 @@ NSRSession::NSRSession () :
 	_rotation (NSRAbstractDocument::NSR_DOCUMENT_ROTATION_0),
 	_page (0),
 	_zoomText (100),
-	_zoomScreenWidth (720),
 	_isFitToWidth (false)
 {
 }
@@ -28,7 +27,6 @@ NSRSession::NSRSession (const QString& file,
 	_rotation (rotation),
 	_page (page),
 	_zoomText (zoomText),
-	_zoomScreenWidth (720),
 	_isFitToWidth (isFitToWidth)
 {
 }
