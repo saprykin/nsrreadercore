@@ -88,7 +88,8 @@ NSRPagesCache::removePage (int number)
 			page.getText().size () * 2);
 }
 
-void NSRPagesCache::clearStorage ()
+void
+NSRPagesCache::clearStorage ()
 {
 	_hash.clear ();
 	_pages.clear ();
