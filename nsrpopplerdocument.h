@@ -1,5 +1,11 @@
-#ifndef NSRPOPPLERDOCUMENT_H
-#define NSRPOPPLERDOCUMENT_H
+#ifndef __NSRPOPPLERDOCUMENT_H__
+#define __NSRPOPPLERDOCUMENT_H__
+
+/**
+ * @file nsrpopplerdocument.h
+ * @author Alexander Saprykin
+ * @brief PDF file handler
+ */
 
 #include <QMutex>
 
@@ -13,12 +19,27 @@
 #include "poppler/splash/SplashTypes.h"
 #include "poppler/splash/SplashBitmap.h"
 
+/**
+ * @class NSRPopplerDocument nsrpopplerdocument.h
+ * @brief Class for PDF file handler
+ */
 class NSRPopplerDocument : public NSRAbstractDocument
 {
 	Q_OBJECT
 public:
+	/**
+	 * @brief Constructor with parameters
+	 * @param file Path to file.
+	 * @param parent Parent object.
+	 */
 	NSRPopplerDocument (const QString& file, QObject *parent = 0);
+
+	/**
+	 * @brief Destructor
+	 */
 	virtual ~NSRPopplerDocument ();
+
+	/* Reimplemented from NSRAbstractDocument */
 	int getPagesCount () const;
 	void renderPage (int page);
 	NSR_CORE_IMAGE_DATATYPE getCurrentPage ();
@@ -26,34 +47,39 @@ public:
 	double getMaxZoom ();
 	double getMinZoom ();
 	QString getText ();
-	void setPassword (const QString &passwd);
 	bool isDocumentStyleSupported (NSRAbstractDocument::NSRDocumentStyle style) const;
-	inline NSRAbstractDocument::NSRDocumentStyle getPreferredDocumentStyle () const {
+	NSRAbstractDocument::NSRDocumentStyle getPreferredDocumentStyle () const {
 		return NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC;
 	}
+
+	void setPassword (const QString &passwd);
+
 	inline void setEncoding (const QString& encoding) {
 		Q_UNUSED (encoding);
 	}
+
 	inline QString getEncoding () const {
 		return QString ("UTF-8");
 	}
 
 private:
-	void createInternalDoc (QString passwd = QString());
+	/**
+	 * @brief Creates internal structure
+	 * @param passwd File password.
+	 */
+	void createInternalDoc (QString passwd = QString ());
 
-	static QMutex	_mutex;
-	static int	_refcount;
+	static QMutex	_mutex;			/**< Mutex for global config	*/
+	static int	_refcount;		/**< Reference count for config	*/
 
-	QSize		_cachedPageSize;
-	QString		_text;
-	PDFDoc		*_doc;
-	Catalog		*_catalog;
-	Page		*_page;
-	SplashOutputDev *_dev;
-	double		_cachedMinZoom;
-	double		_cachedMaxZoom;
-	int		_dpix;
-	int		_dpiy;
+	QSize		_cachedPageSize;	/**< Cached page size		*/
+	QString		_text;			/**< Page text			*/
+	PDFDoc		*_doc;			/**< PDF file handler		*/
+	Catalog		*_catalog;		/**< PDF catalog		*/
+	Page		*_page;			/**< PDF page			*/
+	SplashOutputDev *_dev;			/**< PDF rendering device	*/
+	double		_cachedMinZoom;		/**< Cached min zoom		*/
+	double		_cachedMaxZoom;		/**< Cached max zoom		*/
 };
 
-#endif /* NSRPOPPLERDOCUMENT_H */
+#endif /* __NSRPOPPLERDOCUMENT_H__ */

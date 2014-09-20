@@ -20,9 +20,7 @@ NSRPopplerDocument::NSRPopplerDocument (const QString& file, QObject *parent) :
 	_page (NULL),
 	_dev (NULL),
 	_cachedMinZoom (NSR_CORE_PDF_MIN_ZOOM),
-	_cachedMaxZoom (100.0),
-	_dpix (72),
-	_dpiy (72)
+	_cachedMaxZoom (100.0)
 {
 	_mutex.lock ();
 
@@ -115,8 +113,8 @@ NSRPopplerDocument::renderPage (int page)
 
 	_dev->startPage (0, NULL);
 
-	dpix = _dpix * getZoom () / 100.0;
-	dpiy = _dpiy * getZoom () / 100.0;
+	dpix = 72.0 * getZoom () / 100.0;
+	dpiy = 72.0 * getZoom () / 100.0;
 
 	_page->display (_dev, dpix, dpiy, (int) getRotation (), gFalse, gFalse, gTrue, NULL, NULL, NULL, NULL);
 }
