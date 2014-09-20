@@ -27,6 +27,7 @@ NSRReaderCore::NSRReaderCore (const INSRSettings *	settings,
 	_preloadThread (NULL),
 	_cache (NULL),
 	_pagesLimit (0),
+	_screenWidth (0),
 	_isDestructing (false)
 {
 	_thread		= new NSRRenderThread (this);
@@ -281,9 +282,8 @@ NSRReaderCore::loadSession (const NSRSession *session)
 		_renderRequest.setRotation (session->getRotation ());
 		_renderRequest.setZoom (session->getZoomGraphic ());
 		_renderRequest.setZoomToWidth (session->isFitToWidth ());
+		_renderRequest.setScreenWidth (_screenWidth);
 
-		if (_renderRequest.isZoomToWidth ())
-			_renderRequest.setScreenWidth (session->getZoomScreenWidth ());
 
 		loadPage (PAGE_LOAD_CUSTOM, NSRRenderRequest::NSR_RENDER_REASON_NAVIGATION, session->getPage ());
 
@@ -318,7 +318,10 @@ NSRReaderCore::setScreenWidth (int width)
 	if (width <= 0)
 		return;
 
-	_renderRequest.setScreenWidth (width);
+	_screenWidth = width;
+
+	if (isDocumentOpened ())
+		_renderRequest.setScreenWidth (width);
 }
 
 bool

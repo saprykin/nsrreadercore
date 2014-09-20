@@ -112,6 +112,7 @@ private:
 	NSRRenderedPage		_currentPage;
 	NSRRenderRequest	_renderRequest;
 	int			_pagesLimit;
+	int			_screenWidth;
 	bool			_isDestructing;
 };
 
