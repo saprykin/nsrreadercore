@@ -23,17 +23,6 @@ NSRAbstractDocument::~NSRAbstractDocument ()
 }
 
 void
-NSRAbstractDocument::zoomToWidth (int screenWidth)
-{
-	if (screenWidth < 0)
-		_zoomToWidth = false;
-	else {
-		_screenWidth = screenWidth;
-		_zoomToWidth = true;
-	}
-}
-
-void
 NSRAbstractDocument::rotateLeft ()
 {
 	_rotation = (_rotation == NSRAbstractDocument::NSR_DOCUMENT_ROTATION_0) ?

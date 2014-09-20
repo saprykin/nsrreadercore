@@ -58,9 +58,10 @@ public:
 	void setZoomSilent (double zoom) {_zoom = zoom;}
 	virtual double getMaxZoom ()				= 0;
 	virtual double getMinZoom ()				= 0;
-	virtual void zoomToWidth (int screenWidth);
-	bool isZoomToWidth () const {return _zoomToWidth;}
+	virtual void setScreenWidth (int screenWidth) {_screenWidth = screenWidth;}
 	int getScreenWidth () const {return _screenWidth;}
+	void setZoomToWidth (bool toWidth) {_zoomToWidth = toWidth;}
+	bool isZoomToWidth () const {return _zoomToWidth;}
 	virtual void rotateLeft ();
 	virtual void rotateRight ();
 	virtual void setRotation (NSRAbstractDocument::NSRDocumentRotation rotation);
@@ -84,7 +85,6 @@ public:
 	virtual NSRAbstractDocument::NSRDocumentStyle getPrefferedDocumentStyle () const = 0;
 
 protected:
-	void setZoomToWidth (bool toWidth) {_zoomToWidth = toWidth;}
 	void setLastError (NSRDocumentError err) {_lastError = err;}
 	QString processText (const QString& text);
 	double validateMaxZoom (const QSize& pageSize, double zoom) const;

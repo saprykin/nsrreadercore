@@ -124,10 +124,11 @@ NSRRenderThread::prepareRenderContext (const NSRRenderRequest& req)
 		return;
 
 	if (req.isZoomToWidth () && req.getRenderReason () != NSRRenderRequest::NSR_RENDER_REASON_CROP_TO_WIDTH)
-		_doc->zoomToWidth (req.getScreenWidth ());
+		_doc->setZoomToWidth (true);
 	else
 		_doc->setZoom (req.getZoom ());
 
+	_doc->setScreenWidth (req.getScreenWidth ());
 	_doc->setTextOnly (req.isTextOnly ());
 	_doc->setInvertedColors (req.isInvertColors ());
 	_doc->setAutoCrop (req.isAutoCrop ());
