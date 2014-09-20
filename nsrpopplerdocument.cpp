@@ -183,7 +183,10 @@ NSRPopplerDocument::getCurrentPage ()
 	if (isAutoCrop ())
 		pads = NSRPageCropper::findCropPads ((unsigned char *) bitmap->getDataPtr (),
 						     NSRPageCropper::NSR_PIXEL_ORDER_RGB,
-						     bw, bh, rowBytes);
+						     bw,
+						     bh,
+						     rowBytes,
+						     !isZoomToWidth () ? getScreenWidth () : 0);
 
 #ifdef Q_OS_BLACKBERRY
 	bb::ImageData imgData (bb::PixelFormat::RGBX,

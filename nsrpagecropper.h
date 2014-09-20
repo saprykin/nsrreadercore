@@ -14,7 +14,12 @@ public:
 		NSR_PIXEL_ORDER_RGBA	= 4
 	};
 
-	static NSRCropPads findCropPads (unsigned char *data, NSRPixelOrder order, int width, int height, int stride);
+	static NSRCropPads findCropPads (unsigned char *	data,
+					 NSRPixelOrder		order,
+					 int			width,
+					 int			height,
+					 int			stride,
+					 int			widthLimit);
 
 private:
 	NSRPageCropper ();

@@ -341,7 +341,7 @@ NSRDjVuDocument::renderPage (int page)
 	}
 
 	if (img->get_info () != NULL)
-        	img->set_rotate (rot);
+		img->set_rotate (rot);
 
 	_cachedPageSize = QSize (width, height);
 	_cachedResolution = img->get_dpi ();
@@ -437,7 +437,10 @@ NSRDjVuDocument::getCurrentPage ()
 	if (isAutoCrop ())
 		pads = NSRPageCropper::findCropPads ((unsigned char *) _imgData,
 						     NSRPageCropper::NSR_PIXEL_ORDER_BGR,
-						     _imgSize.width (), _imgSize.height (), _imgSize.width () * 3);
+						     _imgSize.width (),
+						     _imgSize.height (),
+						     _imgSize.width () * 3,
+						     !isZoomToWidth () ? getScreenWidth () : 0);
 
 #ifdef Q_OS_BLACKBERRY
 	bb::ImageData imgData (bb::PixelFormat::RGBX,

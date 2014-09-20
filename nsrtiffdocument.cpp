@@ -159,7 +159,10 @@ NSRTIFFDocument::renderPage (int page)
 		if (isAutoCrop ()) {
 			_pads = NSRPageCropper::findCropPads ((unsigned char *) img->bits (),
 							      NSRPageCropper::NSR_PIXEL_ORDER_ARGB,
-							      img->width (), img->height (), img->bytesPerLine ());
+							      img->width (),
+							      img->height (),
+							      img->bytesPerLine (),
+							      !isZoomToWidth () ? getScreenWidth () : 0);
 			updateCropPads ();
 		} else
 			_pads = NSRCropPads ();

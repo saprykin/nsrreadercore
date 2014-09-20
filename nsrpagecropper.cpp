@@ -11,7 +11,12 @@ NSRPageCropper::NSRPageCropper ()
 }
 
 NSRCropPads
-NSRPageCropper::findCropPads (unsigned char *data, NSRPixelOrder order, int width, int height, int stride)
+NSRPageCropper::findCropPads (unsigned char *data,
+			      NSRPixelOrder order,
+			      int width,
+			      int height,
+			      int stride,
+			      int widthLimit)
 {
 	NSRCropPads	pads;
 	unsigned char *	dataPtr = data;
@@ -21,6 +26,9 @@ NSRPageCropper::findCropPads (unsigned char *data, NSRPixelOrder order, int widt
 	int		pxShift;		/* Shift in bytes to the first color component in pixel	*/
 
 	if (data == NULL || stride < width * 3 || width < 3 || height < 3)
+		return pads;
+
+	if (width <= widthLimit)
 		return pads;
 
 	int maxWCrop = (int) (width * NSR_CORE_CROP_MAX_PAD_PERCENT);
@@ -162,6 +170,16 @@ NSRPageCropper::findCropPads (unsigned char *data, NSRPixelOrder order, int widt
 	pads.setRight (qMax (pads.getRight () - 5, 0));
 	pads.setBottom (qMax (pads.getBottom () - 5, 0));
 	pads.setLeft (qMax (pads.getLeft () - 5, 0));
+
+	if (widthLimit > 0 && (width - pads.getLeft () - pads.getRight ()) < widthLimit) {
+		double limitDelta = width - widthLimit;
+
+		double leftPadRatio = pads.getLeft () / (float) (pads.getLeft() + pads.getRight ());
+		double rightPadRatio = pads.getRight () / (float) (pads.getLeft() + pads.getRight ());
+
+		pads.setLeft ((int) (leftPadRatio * limitDelta + 0.5));
+		pads.setRight ((int) (rightPadRatio * limitDelta + 0.5));
+	}
 
 	return pads;
 }
