@@ -82,9 +82,6 @@ NSRReaderCore::getVersion ()
 void
 NSRReaderCore::openDocument (const QString &path,  const QString& password)
 {
-	if (isPageRendering ())
-		return;
-
 	closeDocument ();
 
 	_doc = documentByPath (path);
@@ -94,7 +91,6 @@ NSRReaderCore::openDocument (const QString &path,  const QString& password)
 
 	_doc->setParent (_thread);
 	_doc->setPassword (password);
-	_renderRequest = NSRRenderRequest ();
 
 	if (!_doc->isValid ()) {
 		emit errorWhileOpening (_doc->getLastError ());
@@ -102,28 +98,6 @@ NSRReaderCore::openDocument (const QString &path,  const QString& password)
 		_doc = NULL;
 		return;
 	}
-
-	if (_settings == NULL) {
-		_renderRequest.setInvertColors (false);
-		_renderRequest.setEncoding ("");
-	} else {
-		QString encoding = _settings->isEncodingAutodetection () ? QString ()
-									 : _settings->getTextEncoding ();
-
-		_renderRequest.setInvertColors (_settings->isInvertedColors ());
-		_renderRequest.setAutoCrop (_settings->isAutoCrop ());
-		_renderRequest.setEncoding (encoding);
-	}
-
-	if (_settings != NULL && _settings->isStarting ()) {
-		if ((_settings->isWordWrap () &&
-		    _doc->isDocumentStyleSupported (NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT)) ||
-		    !_doc->isDocumentStyleSupported (NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC))
-			_renderRequest.setTextOnly (true);
-		else
-			_renderRequest.setTextOnly (false);
-	} else
-		_renderRequest.setTextOnly (_doc->getPrefferedDocumentStyle () == NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT);
 
 	_thread->setRenderContext (_doc);
 
@@ -154,9 +128,6 @@ NSRReaderCore::isDocumentOpened () const
 void
 NSRReaderCore::closeDocument ()
 {
-	if (isPageRendering ())
-		return;
-
 	QString path;
 
 	if (_doc != NULL) {
@@ -275,9 +246,33 @@ NSRReaderCore::loadSession (const NSRSession *session)
 	if (!QFile::exists (file))
 		return;
 
+	_renderRequest = NSRRenderRequest ();
+
 	openDocument (file, session->getPassword ());
 
 	if (isDocumentOpened ()) {
+		if (_settings == NULL) {
+			_renderRequest.setInvertColors (false);
+			_renderRequest.setEncoding ("");
+		} else {
+			QString encoding = _settings->isEncodingAutodetection () ? QString ()
+										 : _settings->getTextEncoding ();
+
+			_renderRequest.setInvertColors (_settings->isInvertedColors ());
+			_renderRequest.setAutoCrop (_settings->isAutoCrop ());
+			_renderRequest.setEncoding (encoding);
+		}
+
+		if (_settings != NULL && _settings->isStarting ()) {
+			if ((_settings->isWordWrap () &&
+			    _doc->isDocumentStyleSupported (NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT)) ||
+			    !_doc->isDocumentStyleSupported (NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC))
+				_renderRequest.setTextOnly (true);
+			else
+				_renderRequest.setTextOnly (false);
+		} else
+			_renderRequest.setTextOnly (_doc->getPrefferedDocumentStyle () == NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT);
+
 		_renderRequest.setRenderType (NSRRenderRequest::NSR_RENDER_TYPE_PAGE);
 		_renderRequest.setRotation (session->getRotation ());
 		_renderRequest.setZoom (session->getZoomGraphic ());
@@ -294,6 +289,18 @@ NSRReaderCore::loadSession (const NSRSession *session)
 				requestThumbnail ();
 		}
 	}
+}
+
+void
+NSRReaderCore::resetSession ()
+{
+	if (isPageRendering ())
+		return;
+
+	if (isDocumentOpened ())
+		closeDocument ();
+
+	_renderRequest = NSRRenderRequest ();
 }
 
 void

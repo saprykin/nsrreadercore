@@ -39,15 +39,14 @@ public:
 
 	static QString getVersion ();
 
-	void openDocument (const QString &path, const QString& password = QString ());
 	bool isDocumentOpened () const;
-	void closeDocument ();
 	QString getDocumentPath () const;
 
 	NSRRenderedPage getCurrentPage () const;
 	int getPagesCount () const;
 	void reloadSettings ();
 	void loadSession (const NSRSession *session);
+	void resetSession ();
 	void navigateToPage (PageLoad dir, int pageNumber = 0);
 	bool isPageRendering () const;
 	void setScreenWidth (int width);
@@ -91,6 +90,8 @@ private Q_SLOTS:
 	void onPreloadThreadFinished ();
 
 private:
+	void openDocument (const QString &path, const QString& password = QString ());
+	void closeDocument ();
 	void loadPage (PageLoad					dir,
 		       NSRRenderRequest::NSRRenderReason	reason,
 		       int page					= 0);
