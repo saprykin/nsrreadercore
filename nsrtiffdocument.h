@@ -43,4 +43,4 @@ private:
 	int			_cachedPage;
 };
 
-#endif // NSRTIFFDOCUMENT_H
+#endif /* NSRTIFFDOCUMENT_H */

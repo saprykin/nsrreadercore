@@ -56,4 +56,4 @@ private:
 	int		_dpiy;
 };
 
-#endif // NSRPOPPLERDOCUMENT_H
+#endif /* NSRPOPPLERDOCUMENT_H */

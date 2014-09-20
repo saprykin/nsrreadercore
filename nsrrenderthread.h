@@ -59,4 +59,4 @@ private:
 	QAtomicInt			_renderCanceled;
 };
 
-#endif // NSRRENDERTHREAD_H
+#endif /* NSRRENDERTHREAD_H */

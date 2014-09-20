@@ -36,4 +36,4 @@ private:
 	bool	_wasEncodingDetected;
 };
 
-#endif // NSRTEXTDOCUMENT_H
+#endif /* NSRTEXTDOCUMENT_H */

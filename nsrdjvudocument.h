@@ -55,4 +55,4 @@ private:
 	char			*_imgData;
 };
 
-#endif // NSRDJVUDOCUMENT_H
+#endif /* NSRDJVUDOCUMENT_H */
