@@ -55,7 +55,6 @@ public:
 	virtual bool isValid ()	const				= 0;
 	double getZoom () const {return _zoom;}
 	void setZoom (double zoom);
-	void setZoomSilent (double zoom) {_zoom = zoom;}
 	virtual double getMaxZoom ()				= 0;
 	virtual double getMinZoom ()				= 0;
 	virtual void setScreenWidth (int screenWidth) {_screenWidth = screenWidth;}
@@ -85,6 +84,7 @@ public:
 	virtual NSRAbstractDocument::NSRDocumentStyle getPrefferedDocumentStyle () const = 0;
 
 protected:
+	void setZoomSilent (double zoom) {_zoom = zoom;}
 	void setLastError (NSRDocumentError err) {_lastError = err;}
 	QString processText (const QString& text);
 	double validateMaxZoom (const QSize& pageSize, double zoom) const;
@@ -104,4 +104,4 @@ private:
 	NSRDocumentRotation	_rotation;
 };
 
-#endif // NSRABSTRACTDOCUMENT_H
+#endif /* NSRABSTRACTDOCUMENT_H */
