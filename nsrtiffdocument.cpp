@@ -45,7 +45,7 @@ NSRTIFFDocument::~NSRTIFFDocument ()
 }
 
 int
-NSRTIFFDocument::getNumberOfPages () const
+NSRTIFFDocument::getPagesCount () const
 {
 	if (_tiff == NULL)
 		return 0;
@@ -67,7 +67,7 @@ NSRTIFFDocument::renderPage (int page)
 	char	*imgBuf;
 	QImage	*img;
 
-	if (_tiff == NULL || page > getNumberOfPages () || page < 1)
+	if (_tiff == NULL || page > getPagesCount () || page < 1)
 		return;
 
 	if (_pageCount > 0 && TIFFSetDirectory (_tiff, page - 1) == 0)
@@ -86,7 +86,7 @@ NSRTIFFDocument::renderPage (int page)
 			    getRotation () == NSRAbstractDocument::NSR_DOCUMENT_ROTATION_270) ? h : w;
 
 	if (isZoomToWidth ()) {
-		double wZoom = ((double) getScreenWidth () / pageWidth * 100.0);
+		double wZoom = ((double) getPageWidth () / pageWidth * 100.0);
 		setZoomSilent (wZoom);
 	}
 
@@ -162,7 +162,7 @@ NSRTIFFDocument::renderPage (int page)
 							      img->width (),
 							      img->height (),
 							      img->bytesPerLine (),
-							      !isZoomToWidth () ? getScreenWidth () : 0);
+							      !isZoomToWidth () ? getPageWidth () : 0);
 			updateCropPads ();
 		} else
 			_pads = NSRCropPads ();

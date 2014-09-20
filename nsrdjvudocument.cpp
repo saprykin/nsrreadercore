@@ -218,7 +218,7 @@ NSRDjVuDocument::~NSRDjVuDocument ()
 }
 
 int
-NSRDjVuDocument::getNumberOfPages () const
+NSRDjVuDocument::getPagesCount () const
 {
 	return _pageCount;
 }
@@ -236,7 +236,7 @@ NSRDjVuDocument::renderPage (int page)
 	int	tmp;
 	double	resFactor;
 
-	if (_doc == NULL || page > getNumberOfPages () || page < 1)
+	if (_doc == NULL || page > getPagesCount () || page < 1)
 		return;
 
 	clearRenderedData ();
@@ -349,7 +349,7 @@ NSRDjVuDocument::renderPage (int page)
 	resFactor = 72.0 / _cachedResolution;
 
 	if (isZoomToWidth ()) {
-		double wZoom = ((double) getScreenWidth () / ((double) width * resFactor) * 100.0);
+		double wZoom = ((double) getPageWidth () / ((double) width * resFactor) * 100.0);
 		setZoomSilent (wZoom);
 	}
 
@@ -440,7 +440,7 @@ NSRDjVuDocument::getCurrentPage ()
 						     _imgSize.width (),
 						     _imgSize.height (),
 						     _imgSize.width () * 3,
-						     !isZoomToWidth () ? getScreenWidth () : 0);
+						     !isZoomToWidth () ? getPageWidth () : 0);
 
 #ifdef Q_OS_BLACKBERRY
 	bb::ImageData imgData (bb::PixelFormat::RGBX,
@@ -564,11 +564,4 @@ NSRDjVuDocument::clearRenderedData ()
 		_imgData = NULL;
 		_imgSize = QSize (0, 0);
 	}
-}
-
-void
-NSRDjVuDocument::setZoom (double zoom)
-{
-	NSRAbstractDocument::setZoom (zoom);
-	NSRAbstractDocument::setZoomSilent (zoom / 72 * _cachedResolution);
 }

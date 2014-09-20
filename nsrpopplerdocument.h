@@ -19,7 +19,7 @@ class NSRPopplerDocument : public NSRAbstractDocument
 public:
 	NSRPopplerDocument (const QString& file, QObject *parent = 0);
 	virtual ~NSRPopplerDocument ();
-	int getNumberOfPages () const;
+	int getPagesCount () const;
 	void renderPage (int page);
 	NSR_CORE_IMAGE_DATATYPE getCurrentPage ();
 	bool isValid () const;
@@ -28,7 +28,7 @@ public:
 	QString getText ();
 	void setPassword (const QString &passwd);
 	bool isDocumentStyleSupported (NSRAbstractDocument::NSRDocumentStyle style) const;
-	inline NSRAbstractDocument::NSRDocumentStyle getPrefferedDocumentStyle () const {
+	inline NSRAbstractDocument::NSRDocumentStyle getPreferredDocumentStyle () const {
 		return NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC;
 	}
 	inline void setEncoding (const QString& encoding) {

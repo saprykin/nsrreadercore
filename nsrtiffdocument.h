@@ -12,14 +12,14 @@ class NSRTIFFDocument : public NSRAbstractDocument
 public:
 	NSRTIFFDocument (const QString& file, QObject *parent = 0);
 	virtual ~NSRTIFFDocument ();
-	int getNumberOfPages () const;
+	int getPagesCount () const;
 	void renderPage (int page);
 	NSR_CORE_IMAGE_DATATYPE getCurrentPage ();
 	bool isValid () const;
 	double getMaxZoom ();
 	double getMinZoom ();
 	bool isDocumentStyleSupported (NSRAbstractDocument::NSRDocumentStyle style) const;
-	inline NSRAbstractDocument::NSRDocumentStyle getPrefferedDocumentStyle () const {
+	inline NSRAbstractDocument::NSRDocumentStyle getPreferredDocumentStyle () const {
 		return NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC;
 	}
 	inline void setEncoding (const QString& encoding) {

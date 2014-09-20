@@ -128,7 +128,7 @@ NSRRenderThread::prepareRenderContext (const NSRRenderRequest& req)
 	else
 		_doc->setZoom (req.getZoom ());
 
-	_doc->setScreenWidth (req.getScreenWidth ());
+	_doc->setPageWidth (req.getScreenWidth ());
 	_doc->setTextOnly (req.isTextOnly ());
 	_doc->setInvertedColors (req.isInvertColors ());
 	_doc->setAutoCrop (req.isAutoCrop ());
@@ -150,7 +150,7 @@ NSRRenderThread::run ()
 		/* Do we have new pages to render? */
 		NSRRenderedPage page (getRequest ());
 
-		if (page.getNumber () < 1 || page.getNumber () > _doc->getNumberOfPages ()) {
+		if (page.getNumber () < 1 || page.getNumber () > _doc->getPagesCount ()) {
 			emit renderDone ();
 			return;
 		}

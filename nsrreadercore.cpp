@@ -190,7 +190,7 @@ NSRReaderCore::getPagesCount () const
 	if (_doc == NULL)
 		return 0;
 
-	return _doc->getNumberOfPages ();
+	return _doc->getPagesCount ();
 }
 
 void
@@ -271,7 +271,7 @@ NSRReaderCore::loadSession (const NSRSession *session)
 			else
 				_renderRequest.setTextOnly (false);
 		} else
-			_renderRequest.setTextOnly (_doc->getPrefferedDocumentStyle () == NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT);
+			_renderRequest.setTextOnly (_doc->getPreferredDocumentStyle () == NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT);
 
 		_renderRequest.setRenderType (NSRRenderRequest::NSR_RENDER_TYPE_PAGE);
 		_renderRequest.setRotation (session->getRotation ());
@@ -628,8 +628,8 @@ NSRReaderCore::loadPage (PageLoad				dir,
 
 	if (pageToLoad < 1)
 		pageToLoad = 1;
-	else if (pageToLoad > _doc->getNumberOfPages ())
-		pageToLoad = _doc->getNumberOfPages ();
+	else if (pageToLoad > _doc->getPagesCount ())
+		pageToLoad = _doc->getPagesCount ();
 
 	if (_pagesLimit > 0 && pageToLoad > _pagesLimit) {
 		pageToLoad = _pagesLimit;
@@ -841,7 +841,7 @@ NSRReaderCore::preloadPages ()
 	if (!isDocumentOpened ())
 		return;
 
-	int pageToLoadNext = qMin (_doc->getNumberOfPages (), _renderRequest.getNumber () + 1);
+	int pageToLoadNext = qMin (_doc->getPagesCount (), _renderRequest.getNumber () + 1);
 	int pageToLoadPrev = qMax (1, _renderRequest.getNumber () - 1);
 
 	bool needNext = !_cache->isPageExists (pageToLoadNext) && pageToLoadNext != _renderRequest.getNumber ();

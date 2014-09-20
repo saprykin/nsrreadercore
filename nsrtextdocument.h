@@ -12,7 +12,7 @@ public:
 	NSRTextDocument (const QString& file, QObject *parent = 0);
 	virtual ~NSRTextDocument ();
 
-	int getNumberOfPages () const;
+	int getPagesCount () const;
 	void renderPage (int page);
 	NSR_CORE_IMAGE_DATATYPE getCurrentPage ();
 	bool isValid ()	const;
@@ -23,7 +23,7 @@ public:
 	bool isEncodingUsed () const;
 	bool isAutoCrop () const;
 	bool isDocumentStyleSupported (NSRAbstractDocument::NSRDocumentStyle style) const;
-	inline NSRAbstractDocument::NSRDocumentStyle getPrefferedDocumentStyle () const {
+	inline NSRAbstractDocument::NSRDocumentStyle getPreferredDocumentStyle () const {
 		return NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT;
 	}
 

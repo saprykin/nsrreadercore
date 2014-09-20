@@ -56,7 +56,7 @@ NSRPopplerDocument::~NSRPopplerDocument ()
 }
 
 int
-NSRPopplerDocument::getNumberOfPages () const
+NSRPopplerDocument::getPagesCount () const
 {
 	if (_doc == NULL)
 		return 0;
@@ -75,7 +75,7 @@ NSRPopplerDocument::renderPage (int page)
 {
 	double dpix, dpiy;
 
-	if (_doc == NULL || page > getNumberOfPages () || page < 1)
+	if (_doc == NULL || page > getPagesCount () || page < 1)
 		return;
 
 	_page = _catalog->getPage (page);
@@ -104,7 +104,7 @@ NSRPopplerDocument::renderPage (int page)
 			    _page->getCropHeight () : _page->getCropWidth ();
 
 	if (isZoomToWidth ()) {
-		double wZoom = ((double) getScreenWidth () / pageWidth * 100.0);
+		double wZoom = ((double) getPageWidth () / pageWidth * 100.0);
 		setZoomSilent (wZoom);
 	}
 
@@ -186,7 +186,7 @@ NSRPopplerDocument::getCurrentPage ()
 						     bw,
 						     bh,
 						     rowBytes,
-						     !isZoomToWidth () ? getScreenWidth () : 0);
+						     !isZoomToWidth () ? getPageWidth () : 0);
 
 #ifdef Q_OS_BLACKBERRY
 	bb::ImageData imgData (bb::PixelFormat::RGBX,

@@ -30,7 +30,7 @@ NSRTextDocument::~NSRTextDocument ()
 }
 
 int
-NSRTextDocument::getNumberOfPages () const
+NSRTextDocument::getPagesCount () const
 {
 	return _pagesCount;
 }
@@ -38,7 +38,7 @@ NSRTextDocument::getNumberOfPages () const
 void
 NSRTextDocument::renderPage (int page)
 {
-	if (page < 1 || page > getNumberOfPages ())
+	if (page < 1 || page > getPagesCount ())
 		return;
 
 	if (!isValid ())

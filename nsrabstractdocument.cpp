@@ -2,13 +2,14 @@
 
 #include <QTextCodec>
 
+static QSize maxPageSize = QSize (4000, 4000);
+
 NSRAbstractDocument::NSRAbstractDocument (const QString& file, QObject *parent) :
 	QObject (parent),
 	_docPath (file),
 	_encoding ("UTF-8"),
-	_maxPageSize (4000, 4000),
 	_zoom (100.0),
-	_screenWidth (360),
+	_pageWidth (360),
 	_zoomToWidth (false),
 	_textOnly (false),
 	_invertedColors (false),
@@ -125,14 +126,12 @@ NSRAbstractDocument::processText (const QString &text)
 double
 NSRAbstractDocument::validateMaxZoom (const QSize& pageSize, double zoom) const
 {
-	QSize maxSize = getMaximumPageSize ();
-
-	if (pageSize.width () * zoom / 100.0 <= maxSize.width () &&
-	    pageSize.height () * zoom / 100.0 <= maxSize.height ())
+	if (pageSize.width () * zoom / 100.0 <= maxPageSize.width () &&
+	    pageSize.height () * zoom / 100.0 <= maxPageSize.height ())
 		return zoom;
 
-	double scale = qMin (maxSize.width () / (double) pageSize.width (),
-			     maxSize.height () / (double) pageSize.height ());
+	double scale = qMin (maxPageSize.width () / (double) pageSize.width (),
+			     maxPageSize.height () / (double) pageSize.height ());
 
 	return scale * 100.0;
 }
