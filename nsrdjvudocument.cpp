@@ -199,7 +199,7 @@ NSRDjVuDocument::NSRDjVuDocument (const QString& file, QObject *parent) :
 	_cachedMinZoom (NSR_CORE_DJVU_MIN_ZOOM),
 	_cachedMaxZoom (100.0),
 	_cachedResolution (72),
-	_pageCount (0),
+	_pagesCount (0),
 	_imgData (NULL)
 {
 	GURL url = GURL::Filename::UTF8 (file.toUtf8().data ());
@@ -208,7 +208,7 @@ NSRDjVuDocument::NSRDjVuDocument (const QString& file, QObject *parent) :
 	_doc = DjVuDocument::create_wait (url, NULL, _cache);
 
 	if (_doc != NULL)
-		_pageCount = _doc->get_pages_num ();
+		_pagesCount = _doc->get_pages_num ();
 }
 
 NSRDjVuDocument::~NSRDjVuDocument ()
@@ -220,7 +220,7 @@ NSRDjVuDocument::~NSRDjVuDocument ()
 int
 NSRDjVuDocument::getPagesCount () const
 {
-	return _pageCount;
+	return _pagesCount;
 }
 
 bool
