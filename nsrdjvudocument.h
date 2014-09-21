@@ -55,6 +55,10 @@ public:
 		return NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC;
 	}
 
+	QString getPassword () const {
+		return QString ();
+	}
+
 	void setPassword (const QString& passwd) {
 		Q_UNUSED (passwd);
 	}
