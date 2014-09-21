@@ -80,117 +80,88 @@ NSRReaderCore::getVersion ()
 }
 
 void
-NSRReaderCore::openDocument (const QString &path,  const QString& password)
+NSRReaderCore::loadSession (const NSRSession *session)
 {
-	closeDocument ();
-
-	_doc = documentByPath (path);
-
-	if (_doc == NULL)
+	if (isPageRendering ())
 		return;
 
-	_doc->setParent (_thread);
-	_doc->setPassword (password);
-
-	if (!_doc->isValid ()) {
-		emit errorWhileOpening (_doc->getLastError ());
-		delete _doc;
-		_doc = NULL;
+	if (session == NULL)
 		return;
+
+	QString file = session->getFile ();
+
+	if (!QFile::exists (file))
+		return;
+
+	_renderRequest = NSRRenderRequest ();
+
+	openFile (file, session->getPassword ());
+
+	if (isFileOpened ()) {
+		if (_settings == NULL) {
+			_renderRequest.setInvertColors (false);
+			_renderRequest.setEncoding ("");
+		} else {
+			QString encoding = _settings->isEncodingAutodetection () ? QString ()
+										 : _settings->getTextEncoding ();
+
+			_renderRequest.setInvertColors (_settings->isInvertedColors ());
+			_renderRequest.setAutoCrop (_settings->isAutoCrop ());
+			_renderRequest.setEncoding (encoding);
+		}
+
+		if (_settings != NULL && _settings->isStarting ()) {
+			if ((_settings->isWordWrap () &&
+			    _doc->isDocumentStyleSupported (NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT)) ||
+			    !_doc->isDocumentStyleSupported (NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC))
+				_renderRequest.setTextOnly (true);
+			else
+				_renderRequest.setTextOnly (false);
+		} else
+			_renderRequest.setTextOnly (_doc->getPreferredDocumentStyle () == NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT);
+
+		_renderRequest.setRenderType (NSRRenderRequest::NSR_RENDER_TYPE_PAGE);
+		_renderRequest.setRotation (session->getRotation ());
+		_renderRequest.setZoom (session->getZoomGraphic ());
+		_renderRequest.setZoomToWidth (session->isFitToWidth ());
+		_renderRequest.setScreenWidth (_screenWidth);
+
+		loadPage (PAGE_LOAD_CUSTOM, NSRRenderRequest::NSR_RENDER_REASON_NAVIGATION, session->getPage ());
+
+		if (_thumbnailer != NULL) {
+			if (!_doc->getPassword().isEmpty ())
+				_thumbnailer->saveThumbnailEncrypted (_doc->getDocumentPath ());
+			else if (_thumbnailer->isThumbnailOutdated (_doc->getDocumentPath ()))
+				requestThumbnail ();
+		}
 	}
-
-	_thread->setRenderContext (_doc);
-
-	if (_zoomDoc == NULL) {
-		_zoomDoc = copyDocument (_doc);
-		_zoomDoc->setParent (_zoomThread);
-		_zoomThread->setRenderContext (_zoomDoc);
-	}
-
-	if (_preloadDoc == NULL) {
-		_preloadDoc = copyDocument (_doc);
-		_preloadDoc->setParent (_preloadThread);
-		_preloadThread->setRenderContext (_preloadDoc);
-	}
-
-	emit documentOpened (path);
-}
-
-bool
-NSRReaderCore::isDocumentOpened () const
-{
-	if (_doc == NULL)
-		return false;
-
-	return _doc->isValid ();
 }
 
 void
-NSRReaderCore::closeDocument ()
+NSRReaderCore::resetSession ()
 {
-	QString path;
+	if (isPageRendering ())
+		return;
 
-	if (_doc != NULL) {
-		path = _doc->getDocumentPath ();
-		delete _doc;
-		_doc = NULL;
-		_thread->setRenderContext (NULL);
-	}
-
-	/* Check whether we can delete zoom document */
-	if (_zoomDoc != NULL) {
-		if (!_zoomThread->isRunning ()) {
-			delete _zoomDoc;
-			_zoomDoc = NULL;
-			_zoomThread->setRenderContext (NULL);
-		} else {
-			_zoomThread->setRenderCanceled (true);
-			_zoomThread->cancelAllRequests ();
-		}
-	}
-
-	/* Check whether we can delete preload document */
-	if (_preloadDoc != NULL) {
-		if (!_preloadThread->isRunning ()) {
-			delete _preloadDoc;
-			_preloadDoc = NULL;
-			_preloadThread->setRenderContext (NULL);
-		} else {
-			_preloadThread->setRenderCanceled (true);
-			_preloadThread->cancelAllRequests ();
-		}
-	}
+	if (isFileOpened ())
+		closeFile ();
 
 	_renderRequest = NSRRenderRequest ();
-	_currentPage = NSRRenderedPage ();
-	_cache->clearStorage ();
+}
 
-	if (!path.isEmpty ())
-		emit documentClosed (path);
+bool
+NSRReaderCore::isSessionLoaded () const
+{
+	return isFileOpened ();
 }
 
 QString
-NSRReaderCore::getDocumentPath () const
+NSRReaderCore::getSessionFile () const
 {
 	if (_doc == NULL)
 		return QString ();
 	else
 		return _doc->getDocumentPath ();
-}
-
-NSRRenderedPage
-NSRReaderCore::getCurrentPage () const
-{
-	return _currentPage;
-}
-
-int
-NSRReaderCore::getPagesCount () const
-{
-	if (_doc == NULL)
-		return 0;
-
-	return _doc->getPagesCount ();
 }
 
 void
@@ -232,75 +203,19 @@ NSRReaderCore::reloadSettings ()
 		requestThumbnail ();
 }
 
-void
-NSRReaderCore::loadSession (const NSRSession *session)
+int
+NSRReaderCore::getPagesCount () const
 {
-	if (isPageRendering ())
-		return;
+	if (_doc == NULL)
+		return 0;
 
-	if (session == NULL)
-		return;
-
-	QString file = session->getFile ();
-
-	if (!QFile::exists (file))
-		return;
-
-	_renderRequest = NSRRenderRequest ();
-
-	openDocument (file, session->getPassword ());
-
-	if (isDocumentOpened ()) {
-		if (_settings == NULL) {
-			_renderRequest.setInvertColors (false);
-			_renderRequest.setEncoding ("");
-		} else {
-			QString encoding = _settings->isEncodingAutodetection () ? QString ()
-										 : _settings->getTextEncoding ();
-
-			_renderRequest.setInvertColors (_settings->isInvertedColors ());
-			_renderRequest.setAutoCrop (_settings->isAutoCrop ());
-			_renderRequest.setEncoding (encoding);
-		}
-
-		if (_settings != NULL && _settings->isStarting ()) {
-			if ((_settings->isWordWrap () &&
-			    _doc->isDocumentStyleSupported (NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT)) ||
-			    !_doc->isDocumentStyleSupported (NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC))
-				_renderRequest.setTextOnly (true);
-			else
-				_renderRequest.setTextOnly (false);
-		} else
-			_renderRequest.setTextOnly (_doc->getPreferredDocumentStyle () == NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT);
-
-		_renderRequest.setRenderType (NSRRenderRequest::NSR_RENDER_TYPE_PAGE);
-		_renderRequest.setRotation (session->getRotation ());
-		_renderRequest.setZoom (session->getZoomGraphic ());
-		_renderRequest.setZoomToWidth (session->isFitToWidth ());
-		_renderRequest.setScreenWidth (_screenWidth);
-
-
-		loadPage (PAGE_LOAD_CUSTOM, NSRRenderRequest::NSR_RENDER_REASON_NAVIGATION, session->getPage ());
-
-		if (_thumbnailer != NULL) {
-			if (!_doc->getPassword().isEmpty ())
-				_thumbnailer->saveThumbnailEncrypted (_doc->getDocumentPath ());
-			else if (_thumbnailer->isThumbnailOutdated (_doc->getDocumentPath ()))
-				requestThumbnail ();
-		}
-	}
+	return _doc->getPagesCount ();
 }
 
-void
-NSRReaderCore::resetSession ()
+NSRRenderedPage
+NSRReaderCore::getCurrentPage () const
 {
-	if (isPageRendering ())
-		return;
-
-	if (isDocumentOpened ())
-		closeDocument ();
-
-	_renderRequest = NSRRenderRequest ();
+	return _currentPage;
 }
 
 void
@@ -327,7 +242,7 @@ NSRReaderCore::setScreenWidth (int width)
 
 	_screenWidth = width;
 
-	if (isDocumentOpened ())
+	if (isFileOpened ())
 		_renderRequest.setScreenWidth (width);
 }
 
@@ -346,7 +261,7 @@ NSRReaderCore::getZoom () const
 double
 NSRReaderCore::getMinZoom () const
 {
-	if (!isDocumentOpened ())
+	if (!isFileOpened ())
 		return 0;
 
 	return _doc->getMinZoom ();
@@ -355,7 +270,7 @@ NSRReaderCore::getMinZoom () const
 double
 NSRReaderCore::getMaxZoom () const
 {
-	if (!isDocumentOpened ())
+	if (!isFileOpened ())
 		return 0;
 
 	return _doc->getMaxZoom ();
@@ -385,6 +300,12 @@ NSRReaderCore::setZoom (double zoom, NSRRenderRequest::NSRRenderReason reason)
 	loadPage (PAGE_LOAD_CUSTOM, reason, _renderRequest.getNumber ());
 }
 
+NSRAbstractDocument::NSRDocumentRotation
+NSRReaderCore::getRotation () const
+{
+	return _renderRequest.getRotation ();
+}
+
 void
 NSRReaderCore::rotate (RotateDirection dir)
 {
@@ -408,12 +329,6 @@ NSRReaderCore::rotate (RotateDirection dir)
 	loadPage (PAGE_LOAD_CUSTOM, NSRRenderRequest::NSR_RENDER_REASON_ROTATION, _renderRequest.getNumber ());
 }
 
-NSRAbstractDocument::NSRDocumentRotation
-NSRReaderCore::getRotation () const
-{
-	return _renderRequest.getRotation ();
-}
-
 void
 NSRReaderCore::saveCurrentPagePositions (const QPointF& pos,
 					 const QPointF& textPos)
@@ -424,7 +339,7 @@ NSRReaderCore::saveCurrentPagePositions (const QPointF& pos,
 bool
 NSRReaderCore::isTextReflow () const
 {
-	if (!isDocumentOpened ())
+	if (!isFileOpened ())
 		return false;
 
 	return _renderRequest.isTextOnly ();
@@ -433,7 +348,7 @@ NSRReaderCore::isTextReflow () const
 bool
 NSRReaderCore::isTextReflowSwitchSupported () const
 {
-	if (!isDocumentOpened ())
+	if (!isFileOpened ())
 		return false;
 
 	return (_doc->isDocumentStyleSupported (NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC) &&
@@ -455,6 +370,55 @@ NSRReaderCore::switchTextReflow ()
 	}
 
 	_renderRequest.setTextOnly (!_renderRequest.isTextOnly ());
+
+	if (needReload)
+		loadPage (PAGE_LOAD_CUSTOM, NSRRenderRequest::NSR_RENDER_REASON_SETTINGS, _renderRequest.getNumber ());
+}
+
+bool
+NSRReaderCore::isPasswordProtected (const QString& file) const
+{
+	QString	suffix = QFileInfo(file).suffix().toLower ();
+	bool	res = false;
+
+	if (suffix != "pdf")
+		return res;
+
+	NSRAbstractDocument *doc = fileHandlerByPath (file);
+
+	if (doc->getLastError () == NSRAbstractDocument::NSR_DOCUMENT_ERROR_PASSWD)
+		res = true;
+
+	delete doc;
+	return res;
+}
+
+bool
+NSRReaderCore::isInvertedColors () const
+{
+	if (!isFileOpened ())
+		return false;
+
+	return _renderRequest.isInvertColors ();
+}
+
+void
+NSRReaderCore::switchInvertedColors ()
+{
+	if (!isFileOpened () || isPageRendering ())
+		return;
+
+	bool needReload = false;
+
+	_renderRequest.setInvertColors (!_renderRequest.isInvertColors ());
+
+	/* Do not clear text from cache if text mode is remained */
+	if (_renderRequest.isTextOnly ())
+		_cache->removePagesWithImages ();
+	else {
+		_cache->clearStorage ();
+		needReload = true;
+	}
 
 	if (needReload)
 		loadPage (PAGE_LOAD_CUSTOM, NSRRenderRequest::NSR_RENDER_REASON_SETTINGS, _renderRequest.getNumber ());
@@ -541,7 +505,7 @@ NSRReaderCore::onPreloadRenderDone ()
 		return;
 
 	/* We do not need to reset document changed flag because it would be
-	 * done almost immediately in onpreloadThreadFinished() slot */
+	 * done almost immediately in onPreloadThreadFinished() slot */
 	if (_preloadThread->isRenderCanceled ())
 		return;
 
@@ -573,7 +537,7 @@ NSRReaderCore::onZoomThreadFinished ()
 	if (_zoomThread->isRenderCanceled ()) {
 		/* All requests must be canceled on document opening */
 		delete _zoomDoc;
-		_zoomDoc = copyDocument (_doc);
+		_zoomDoc = copyFileHandler (_doc);
 		_zoomDoc->setParent (_zoomThread);
 		_zoomThread->setRenderContext (_zoomDoc);
 		_zoomThread->setRenderCanceled (false);
@@ -592,7 +556,7 @@ NSRReaderCore::onPreloadThreadFinished ()
 	if (_preloadThread->isRenderCanceled ()) {
 		/* All requests must be canceled on document opening */
 		delete _preloadDoc;
-		_preloadDoc = copyDocument (_doc);
+		_preloadDoc = copyFileHandler (_doc);
 		_preloadDoc->setParent (_preloadThread);
 		_preloadThread->setRenderContext (_preloadDoc);
 		_preloadThread->setRenderCanceled (false);
@@ -603,11 +567,101 @@ NSRReaderCore::onPreloadThreadFinished ()
 }
 
 void
+NSRReaderCore::openFile (const QString &path,  const QString& password)
+{
+	closeFile ();
+
+	_doc = fileHandlerByPath (path);
+
+	if (_doc == NULL)
+		return;
+
+	_doc->setParent (_thread);
+	_doc->setPassword (password);
+
+	if (!_doc->isValid ()) {
+		emit errorWhileOpening (_doc->getLastError ());
+		delete _doc;
+		_doc = NULL;
+		return;
+	}
+
+	_thread->setRenderContext (_doc);
+
+	if (_zoomDoc == NULL) {
+		_zoomDoc = copyFileHandler (_doc);
+		_zoomDoc->setParent (_zoomThread);
+		_zoomThread->setRenderContext (_zoomDoc);
+	}
+
+	if (_preloadDoc == NULL) {
+		_preloadDoc = copyFileHandler (_doc);
+		_preloadDoc->setParent (_preloadThread);
+		_preloadThread->setRenderContext (_preloadDoc);
+	}
+
+	emit sessionFileOpened (path);
+}
+
+void
+NSRReaderCore::closeFile ()
+{
+	QString path;
+
+	if (_doc != NULL) {
+		path = _doc->getDocumentPath ();
+		delete _doc;
+		_doc = NULL;
+		_thread->setRenderContext (NULL);
+	}
+
+	/* Check whether we can delete zoom document */
+	if (_zoomDoc != NULL) {
+		if (!_zoomThread->isRunning ()) {
+			delete _zoomDoc;
+			_zoomDoc = NULL;
+			_zoomThread->setRenderContext (NULL);
+		} else {
+			_zoomThread->setRenderCanceled (true);
+			_zoomThread->cancelAllRequests ();
+		}
+	}
+
+	/* Check whether we can delete preload document */
+	if (_preloadDoc != NULL) {
+		if (!_preloadThread->isRunning ()) {
+			delete _preloadDoc;
+			_preloadDoc = NULL;
+			_preloadThread->setRenderContext (NULL);
+		} else {
+			_preloadThread->setRenderCanceled (true);
+			_preloadThread->cancelAllRequests ();
+		}
+	}
+
+	_renderRequest = NSRRenderRequest ();
+	_currentPage = NSRRenderedPage ();
+	_cache->clearStorage ();
+
+	if (!path.isEmpty ())
+		emit sessionFileClosed (path);
+}
+
+bool
+NSRReaderCore::isFileOpened () const
+{
+	if (_doc == NULL)
+		return false;
+
+	return _doc->isValid ();
+}
+
+void
 NSRReaderCore::loadPage (PageLoad				dir,
 			 NSRRenderRequest::NSRRenderReason	reason,
 			 int					page)
 {
-	if (!isDocumentOpened () || (isPageRendering () && reason != NSRRenderRequest::NSR_RENDER_REASON_PRELOAD))
+	if (!isFileOpened () || (isPageRendering () && reason != NSRRenderRequest::NSR_RENDER_REASON_PRELOAD))
 		return;
 
 	int pageToLoad = _renderRequest.getNumber ();
@@ -648,8 +702,6 @@ NSRReaderCore::loadPage (PageLoad				dir,
 	if (reason != NSRRenderRequest::NSR_RENDER_REASON_PRELOAD &&
 	    reason != NSRRenderRequest::NSR_RENDER_REASON_CROP_TO_WIDTH &&
 	    _cache->isPageExists (pageToLoad)) {
-		QString suffix = QFileInfo(_doc->getDocumentPath ()).suffix().toLower ();
-
 		_currentPage = _cache->getPage (pageToLoad);
 		emit pageRendered (pageToLoad);
 		preloadPages ();
@@ -721,14 +773,14 @@ NSRReaderCore::loadPage (PageLoad				dir,
 }
 
 NSRAbstractDocument*
-NSRReaderCore::copyDocument (const NSRAbstractDocument* doc)
+NSRReaderCore::copyFileHandler (const NSRAbstractDocument* doc)
 {
 	NSRAbstractDocument *res;
 
-	if (!isDocumentOpened ())
+	if (!isFileOpened ())
 		return NULL;
 
-	res = documentByPath (doc->getDocumentPath ());
+	res = fileHandlerByPath (doc->getDocumentPath ());
 
 	if (res == NULL)
 		return NULL;
@@ -744,7 +796,7 @@ NSRReaderCore::copyDocument (const NSRAbstractDocument* doc)
 }
 
 NSRAbstractDocument*
-NSRReaderCore::documentByPath (const QString& path) const
+NSRReaderCore::fileHandlerByPath (const QString& path) const
 {
 	NSRAbstractDocument	*res = NULL;
 	QString			suffix = QFileInfo(path).suffix().toLower ();
@@ -762,55 +814,6 @@ NSRReaderCore::documentByPath (const QString& path) const
 		res = new NSRTextDocument (path);
 
 	return res;
-}
-
-bool
-NSRReaderCore::isPasswordProtected (const QString& file) const
-{
-	QString			suffix = QFileInfo(file).suffix().toLower ();
-	bool			res = false;
-
-	if (suffix != "pdf")
-		return res;
-
-	NSRAbstractDocument *doc = documentByPath (file);
-
-	if (doc->getLastError () == NSRAbstractDocument::NSR_DOCUMENT_ERROR_PASSWD)
-		res = true;
-
-	delete doc;
-	return res;
-}
-
-void
-NSRReaderCore::invertColors ()
-{
-	if (!isDocumentOpened () || isPageRendering ())
-		return;
-
-	bool needReload = false;
-
-	_renderRequest.setInvertColors (!_renderRequest.isInvertColors ());
-
-	/* Do not clear text from cache if text mode is remained */
-	if (_renderRequest.isTextOnly ())
-		_cache->removePagesWithImages ();
-	else {
-		_cache->clearStorage ();
-		needReload = true;
-	}
-
-	if (needReload)
-		loadPage (PAGE_LOAD_CUSTOM, NSRRenderRequest::NSR_RENDER_REASON_SETTINGS, _renderRequest.getNumber ());
-}
-
-bool
-NSRReaderCore::isInvertedColors () const
-{
-	if (!isDocumentOpened ())
-		return false;
-
-	return _renderRequest.isInvertColors ();
 }
 
 bool
@@ -838,7 +841,7 @@ NSRReaderCore::isPageRelevant (const NSRRenderedPage& page) const
 void
 NSRReaderCore::preloadPages ()
 {
-	if (!isDocumentOpened ())
+	if (!isFileOpened ())
 		return;
 
 	int pageToLoadNext = qMin (_doc->getPagesCount (), _renderRequest.getNumber () + 1);
@@ -875,7 +878,7 @@ NSRReaderCore::preloadPages ()
 void
 NSRReaderCore::requestThumbnail ()
 {
-	if (!isDocumentOpened () || _thumbnailer == NULL)
+	if (!isFileOpened () || _thumbnailer == NULL)
 		return;
 
 	NSRRenderRequest thumbRequest (1, NSRRenderRequest::NSR_RENDER_REASON_THUMBNAIL);
