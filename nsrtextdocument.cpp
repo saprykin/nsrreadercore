@@ -9,8 +9,6 @@
 #include <QTextCodec>
 
 #define NSR_CORE_TEXT_PAGE_SIZE		5120
-#define NSR_CORE_TEXT_MIN_ZOOM		25.0
-#define NSR_CORE_TEXT_MAX_ZOOM		400.0
 #define NSR_CORE_TEXT_DETECT_CHARS	1024
 
 NSRTextDocument::NSRTextDocument (const QString &file, QObject *parent) :
@@ -19,8 +17,6 @@ NSRTextDocument::NSRTextDocument (const QString &file, QObject *parent) :
 	_wasEncodingDetected (false)
 {
 	QFileInfo info (file);
-
-	NSRAbstractDocument::setTextOnly (true);
 
 	_pagesCount = (int) (ceil ((double) info.size () / NSR_CORE_TEXT_PAGE_SIZE) + 0.5);
 }
@@ -118,25 +114,6 @@ NSRTextDocument::isValid () const
 	return info.exists();
 }
 
-double
-NSRTextDocument::getMaxZoom ()
-{
-	return NSR_CORE_TEXT_MAX_ZOOM;
-}
-
-double
-NSRTextDocument::getMinZoom ()
-{
-	return NSR_CORE_TEXT_MAX_ZOOM;
-}
-
-void
-NSRTextDocument::setTextOnly (bool textOnly)
-{
-	/* This is only a text document */
-	Q_UNUSED (textOnly);
-}
-
 QString
 NSRTextDocument::getText ()
 {
@@ -144,18 +121,6 @@ NSRTextDocument::getText ()
 	_text.clear ();
 
 	return ret;
-}
-
-bool
-NSRTextDocument::isEncodingUsed () const
-{
-	return true;
-}
-
-bool
-NSRTextDocument::isAutoCrop () const
-{
-	return false;
 }
 
 bool
