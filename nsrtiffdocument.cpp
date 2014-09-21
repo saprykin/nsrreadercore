@@ -9,18 +9,18 @@
 NSRTIFFDocument::NSRTIFFDocument (const QString& file, QObject *parent) :
 	NSRAbstractDocument (file, parent),
 	_tiff (NULL),
-	_pageCount (0),
+	_pagesCount (0),
 	_cachedPage (0)
 {
 	if ((_tiff = TIFFOpen (file.toUtf8().data(), "r")) == NULL)
 		return;
 
-	_pageCount = 1;
+	_pagesCount = 1;
 
 	while (TIFFReadDirectory (_tiff))
-		++_pageCount;
+		++_pagesCount;
 
-	if ((_pageCount > 0 && TIFFSetDirectory (_tiff, 0) != 0) || _pageCount == 0) {
+	if ((_pagesCount > 0 && TIFFSetDirectory (_tiff, 0) != 0) || _pagesCount == 0) {
 		uint32 w = 0, h = 0;
 
 		TIFFGetField (_tiff, TIFFTAG_IMAGEWIDTH, &w);
@@ -50,7 +50,7 @@ NSRTIFFDocument::getPagesCount () const
 	if (_tiff == NULL)
 		return 0;
 
-	return _pageCount > 0 ? _pageCount : 1;
+	return _pagesCount > 0 ? _pagesCount : 1;
 }
 
 bool
@@ -70,7 +70,7 @@ NSRTIFFDocument::renderPage (int page)
 	if (_tiff == NULL || page > getPagesCount () || page < 1)
 		return;
 
-	if (_pageCount > 0 && TIFFSetDirectory (_tiff, page - 1) == 0)
+	if (_pagesCount > 0 && TIFFSetDirectory (_tiff, page - 1) == 0)
 		return;
 
 	_image = QImage ();
