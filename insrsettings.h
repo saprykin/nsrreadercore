@@ -1,5 +1,5 @@
-#ifndef INSRSETTINGS_H_
-#define INSRSETTINGS_H_
+#ifndef __INSRSETTINGS_H__
+#define __INSRSETTINGS_H__
 
 /**
  * @file insrsettings.h
@@ -66,4 +66,4 @@ public:
 	virtual bool isStarting () const = 0;
 };
 
-#endif /* INSRSETTINGS_H_ */
+#endif /* __INSRSETTINGS_H__ */

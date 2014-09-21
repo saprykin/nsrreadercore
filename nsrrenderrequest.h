@@ -1,5 +1,5 @@
-#ifndef NSRRENDERREQUEST_H_
-#define NSRRENDERREQUEST_H_
+#ifndef __NSRRENDERREQUEST_H__
+#define __NSRRENDERREQUEST_H__
 
 /**
  * @file nsrrenderrequest.h
@@ -326,4 +326,4 @@ private:
 	bool						_zoomToWidth;	/**< Zoom to width flag		*/
 };
 
-#endif /* NSRRENDERREQUEST_H_ */
+#endif /* __NSRRENDERREQUEST_H__ */

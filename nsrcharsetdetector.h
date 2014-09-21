@@ -1,5 +1,5 @@
-#ifndef NSRCHARSETDETECTOR_H
-#define NSRCHARSETDETECTOR_H
+#ifndef __NSRCHARSETDETECTOR_H__
+#define __NSRCHARSETDETECTOR_H__
 
 /**
  * @file nsrcharsetdetector.h
@@ -118,4 +118,4 @@ private:
 	QString	_charset; /**< Detected charset */
 };
 
-#endif /* NSRCHARSETDETECTOR_H */
+#endif /* __NSRCHARSETDETECTOR_H__ */

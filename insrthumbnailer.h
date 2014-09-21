@@ -1,5 +1,5 @@
-#ifndef INSRTHUMBNAILER_H_
-#define INSRTHUMBNAILER_H_
+#ifndef __INSRTHUMBNAILER_H__
+#define __INSRTHUMBNAILER_H__
 
 /**
  * @file insrthumbnailer.h
@@ -57,4 +57,4 @@ public:
 	virtual int getThumbnailWidth () const = 0;
 };
 
-#endif /* INSRTHUMBNAILER_H_ */
+#endif /* __INSRTHUMBNAILER_H__ */
