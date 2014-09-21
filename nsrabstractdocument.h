@@ -243,7 +243,9 @@ public:
 	 * @return True is inverted colors rendering mode is enabled, false
 	 * otherwise.
 	 */
-	virtual bool isInvertedColors () const {return _invertedColors;}
+	virtual bool isInvertedColors () const {
+		return _invertedColors;
+	}
 
 	/**
 	 * @brief Sets inverted colors rendering mode
