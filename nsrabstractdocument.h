@@ -10,7 +10,7 @@
 #include "nsrreadercore_global.h"
 
 #include <QObject>
-#include <QPixmap>
+#include <QtGui/QPixmap>
 
 #ifdef Q_OS_BLACKBERRY
 #  include <bb/ImageData>
