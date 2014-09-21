@@ -47,7 +47,7 @@ public:
 
 	bool isDocumentStyleSupported (NSRAbstractDocument::NSRDocumentStyle style) const;
 
-	inline NSRAbstractDocument::NSRDocumentStyle getPreferredDocumentStyle () const {
+	NSRAbstractDocument::NSRDocumentStyle getPreferredDocumentStyle () const {
 		return NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT;
 	}
 
