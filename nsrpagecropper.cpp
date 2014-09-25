@@ -174,8 +174,8 @@ NSRPageCropper::findCropPads (unsigned char *data,
 	if (widthLimit > 0 && (width - pads.getLeft () - pads.getRight ()) < widthLimit) {
 		double limitDelta = width - widthLimit;
 
-		double leftPadRatio = pads.getLeft () / (float) (pads.getLeft() + pads.getRight ());
-		double rightPadRatio = pads.getRight () / (float) (pads.getLeft() + pads.getRight ());
+		double leftPadRatio = pads.getLeft () / (float) (pads.getLeft () + pads.getRight ());
+		double rightPadRatio = pads.getRight () / (float) (pads.getLeft () + pads.getRight ());
 
 		pads.setLeft ((int) (leftPadRatio * limitDelta + 0.5));
 		pads.setRight ((int) (rightPadRatio * limitDelta + 0.5));

@@ -64,7 +64,7 @@ public:
 
 	/**
 	 * @brief Sets page scale
-	 * @param scale Page scale, in px.
+	 * @param scale Page scale, in %.
 	 */
 	void setScale (double scale);
 
