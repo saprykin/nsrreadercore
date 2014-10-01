@@ -15,6 +15,7 @@
 /**
  * @class INSRThumbnailer insrthumbnailer.h
  * @brief Interface for thumbnailer
+ * @since 1.4.2
  *
  * #INSRThumbnailer interface represents thumbnailer for opened documents.
  */

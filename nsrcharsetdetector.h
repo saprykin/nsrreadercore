@@ -14,6 +14,7 @@
 /**
  * @class NSRCharsetDetector nsrcharsetdetector.h
  * @brief Charset (encoding) detector class
+ * @since 1.4.2
  *
  * NSRCharsetDetector tries to detect charset of the given text
  * using universalchardet library from Mozilla project, which

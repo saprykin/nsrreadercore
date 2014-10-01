@@ -14,6 +14,7 @@
 /**
  * @class INSRSettings insrsettings.h
  * @brief Interface for rendering settings
+ * @since 1.4.2
  *
  * #INSRSettings interface represents rendering settings.
  */
