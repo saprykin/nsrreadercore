@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 2.8.11)
 project (nsrreadercore C CXX)
 
 if (NOT CMAKE_BUILD_TYPE)
@@ -12,6 +12,8 @@ set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE})
 if (NOT NSR_PLATFORM)
 	string (TOLOWER ${CMAKE_SYSTEM_NAME} NSR_PLATFORM)
 endif()
+
+set (CMAKE_AUTOMOC true)
 
 find_package (Qt4 REQUIRED)
 include (${QT_USE_FILE})
@@ -271,26 +273,23 @@ set (UNIVERSALCHARDET_SOURCES
 	3dparty/universalchardet/nsUTF8Prober.cpp	
 )
 
-set (QT_HEADERS
-	nsrabstractdocument.h
-	nsrdjvudocument.h
-	nsrpagescache.h
-	nsrpopplerdocument.h
-	nsrreadercore.h
-	nsrrenderedpage.h
-	nsrrenderrequest.h
-	nsrrenderthread.h
-	nsrtextdocument.h
-	nsrtiffdocument.h
-)
-
 set (HEADERS
 	insrsettings.h
 	insrthumbnailer.h
+	nsrabstractdocument.h
 	nsrcroppads.h
+	nsrdjvudocument.h
 	nsrpagecropper.h
+	nsrpagescache.h
+	nsrpopplerdocument.h
+	nsrreadercore.h
 	nsrreadercore_global.h
+	nsrrenderedpage.h
+	nsrrenderrequest.h
+	nsrrenderthread.h
 	nsrsession.h
+	nsrtextdocument.h
+	nsrtiffdocument.h
 )
 
 set (DJVU_HEADERS
@@ -514,8 +513,6 @@ set (UNIVERSALCHARDET_HEADERS
 	3dparty/universalchardet/nsUTF8Prober.h
 )
 
-QT4_WRAP_CPP (QT_HEADERS_MOC ${QT_HEADERS})
-
 include_directories (
 	3dparty
 	3dparty/djvu/config/${NSR_PLATFORM}
@@ -536,7 +533,6 @@ add_library (${PROJECT_NAME} SHARED
 	${TIFF_SOURCES}
 	${UNIVERSALCHARDET_SOURCES}
 	${HEADERS}
-	${QT_HEADERS_MOC}
 	${DJVU_HEADERS}
 	${POPPLER_HEADERS}
 	${TIFF_HEADERS}
