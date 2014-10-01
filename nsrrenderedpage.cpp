@@ -2,22 +2,11 @@
 
 #include <QVariant>
 
-NSRRenderedPage::NSRRenderedPage (QObject *parent) :
-	NSRRenderRequest (parent),
+NSRRenderedPage::NSRRenderedPage () :
+	NSRRenderRequest (),
 	_renderedZoom (-1.0),
 	_cached (false)
 {
-}
-
-NSRRenderedPage::NSRRenderedPage (const NSRRenderedPage& page) :
-	NSRRenderRequest (page)
-{
-	_image		= page._image;
-	_text		= page._text;
-	_lastPos	= page._lastPos;
-	_lastTextPos	= page._lastTextPos;
-	_renderedZoom	= page._renderedZoom;
-	_cached		= page._cached;
 }
 
 NSRRenderedPage::NSRRenderedPage (const NSRRenderRequest& req) :
@@ -29,22 +18,6 @@ NSRRenderedPage::NSRRenderedPage (const NSRRenderRequest& req) :
 
 NSRRenderedPage::~NSRRenderedPage ()
 {
-}
-
-NSRRenderedPage&
-NSRRenderedPage::operator = (const NSRRenderedPage& page)
-{
-	if (this != &page) {
-		NSRRenderRequest::operator= (page);
-		_image		= page._image;
-		_text		= page._text;
-		_lastPos	= page._lastPos;
-		_lastTextPos	= page._lastTextPos;
-		_renderedZoom	= page._renderedZoom;
-		_cached		= page._cached;
-	}
-
-	return *this;
 }
 
 bool

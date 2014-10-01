@@ -11,7 +11,6 @@
 #include "nsrabstractdocument.h"
 #include "nsrreadercore_global.h"
 
-#include <QObject>
 #include <QSize>
 #include <QPointF>
 
@@ -21,19 +20,11 @@
  */
 class NSRREADERCORE_SHARED NSRRenderedPage: public NSRRenderRequest
 {
-	Q_OBJECT
 public:
 	/**
-	 * @brief Constructor with parameter
-	 * @param parent Parent object.
+	 * @brief Constructor
 	 */
-	NSRRenderedPage (QObject *parent = 0);
-
-	/**
-	 * @brief Copy constructor
-	 * @param page Page to copy.
-	 */
-	NSRRenderedPage (const NSRRenderedPage& page);
+	NSRRenderedPage ();
 
 	/**
 	 * @brief Constructor from request
@@ -45,13 +36,6 @@ public:
 	 * @brief Destructor
 	 */
 	virtual ~NSRRenderedPage ();
-
-	/**
-	 * @brief Assign operator
-	 * @param page Page to assign.
-	 * @return Self link to object.
-	 */
-	NSRRenderedPage& operator= (const NSRRenderedPage& page);
 
 	/**
 	 * @brief Gets page size

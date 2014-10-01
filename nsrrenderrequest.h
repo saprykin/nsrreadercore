@@ -8,9 +8,9 @@
  */
 
 #include "nsrabstractdocument.h"
+#include "nsrcroppads.h"
 #include "nsrreadercore_global.h"
 
-#include <QObject>
 #include <QString>
 
 #include <qmath.h>
@@ -29,9 +29,8 @@
  * Thumbnails are always rendered with both image and text, with autocrop
  * and inverted colors disabled, zoomed to specified screen width.
  */
-class NSRREADERCORE_SHARED NSRRenderRequest : public QObject
+class NSRREADERCORE_SHARED NSRRenderRequest
 {
-	Q_OBJECT
 	Q_ENUMS (NSRRenderReason)
 	Q_ENUMS (NSRRenderType)
 public:
@@ -43,9 +42,8 @@ public:
 		NSR_RENDER_REASON_ZOOM		= 3,	/**< Zoom operation				*/
 		NSR_RENDER_REASON_ZOOM_TO_WIDTH	= 4,	/**< Zoom to screen width			*/
 		NSR_RENDER_REASON_ROTATION	= 5,	/**< Page rotation				*/
-		NSR_RENDER_REASON_CROP_TO_WIDTH	= 6,	/**< Crop blank edges when zooming to width	*/
-		NSR_RENDER_REASON_PRELOAD	= 7,	/**< Preload page ahead				*/
-		NSR_RENDER_REASON_THUMBNAIL	= 8	/**< Thumbnail rendering			*/
+		NSR_RENDER_REASON_PRELOAD	= 6,	/**< Preload page ahead				*/
+		NSR_RENDER_REASON_THUMBNAIL	= 7	/**< Thumbnail rendering			*/
 	};
 
 	/** Request type */
@@ -55,46 +53,29 @@ public:
 	};
 
 	/**
-	 * @brief Default constructor
-	 * @param parent Parent object.
+	 * @brief Constructor
 	 */
-	NSRRenderRequest (QObject *parent = 0);
+	NSRRenderRequest ();
 
 	/**
 	 * @brief Constructor with page number
 	 * @param number Page number for request.
-	 * @param parent Parent object.
 	 * @since 1.4.0
 	 */
-	NSRRenderRequest (int number, QObject *parent = 0);
+	NSRRenderRequest (int number);
 
 	/**
 	 * @brief Constructor with page number and render reason
 	 * @param number Page number for request.
 	 * @param reason Rendering reason.
-	 * @param parent Parent object.
 	 * @since 1.4.0
 	 */
-	NSRRenderRequest (int number, NSRRenderReason reason, QObject *parent = 0);
+	NSRRenderRequest (int number, NSRRenderReason reason);
 
 	/**
-	 * @brief Copy constructor
-	 * @param req #NSRRenderRequest to copy.
-	 * @since 1.4.0
-	 */
-	NSRRenderRequest (const NSRRenderRequest& req);
-
-	/**
-	 * @brief Default destructor
+	 * @brief Destructor
 	 */
 	virtual ~NSRRenderRequest ();
-
-	/**
-	 * @brief Equal operator overloading
-	 * @param req #NSRRenderRequest to copy data from.
-	 * @since 1.4.0
-	 */
-	virtual NSRRenderRequest& operator= (const NSRRenderRequest& req);
 
 	/**
 	 * @brief Gets text encoding to use when extracting the text
@@ -157,6 +138,18 @@ public:
 	 */
 	inline double getScreenWidth () const {
 		return _screenWidth;
+	}
+
+	/**
+	 * @brief Gets page crop pads
+	 * @return Page crop pads.
+	 * @since 1.4.2
+	 *
+	 * If page crop pads are empty and page crop autodetection flag
+	 * is enabled then crop pads will be calculated automatically.
+	 */
+	inline NSRCropPads getCropPads () const {
+		return _cropPads;
 	}
 
 	/**
@@ -312,8 +305,18 @@ public:
 		_zoomToWidth = zoomToWidth;
 	}
 
+	/**
+	 * @brief Sets page crop pads
+	 * @param pads Page crop pads.
+	 * @since 1.4.2
+	 */
+	inline void setCropPads (const NSRCropPads& pads) {
+		_cropPads = pads;
+	}
+
 private:
 	QString						_encoding;	/**< Text encoding		*/
+	NSRCropPads					_cropPads;	/**< Page crop pads		*/
 	NSRRenderReason					_reason;	/**< Rendering reason		*/
 	NSRRenderType					_type;		/**< Rendering type		*/
 	NSRAbstractDocument::NSRDocumentRotation	_rotation;	/**< Rotation angle, clockwise	*/

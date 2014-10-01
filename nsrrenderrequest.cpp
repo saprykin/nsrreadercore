@@ -2,8 +2,7 @@
 
 #include <QVariant>
 
-NSRRenderRequest::NSRRenderRequest (QObject *parent) :
-	QObject (parent),
+NSRRenderRequest::NSRRenderRequest () :
 	_encoding ("UTF-8"),
 	_reason (NSR_RENDER_REASON_NONE),
 	_type (NSR_RENDER_TYPE_PAGE),
@@ -18,8 +17,7 @@ NSRRenderRequest::NSRRenderRequest (QObject *parent) :
 {
 }
 
-NSRRenderRequest::NSRRenderRequest (int number, QObject *parent) :
-	QObject (parent),
+NSRRenderRequest::NSRRenderRequest (int number) :
 	_encoding ("UTF-8"),
 	_reason (NSR_RENDER_REASON_NONE),
 	_type (NSR_RENDER_TYPE_PAGE),
@@ -34,8 +32,7 @@ NSRRenderRequest::NSRRenderRequest (int number, QObject *parent) :
 {
 }
 
-NSRRenderRequest::NSRRenderRequest (int number, NSRRenderReason reason, QObject *parent) :
-	QObject (parent),
+NSRRenderRequest::NSRRenderRequest (int number, NSRRenderReason reason) :
 	_encoding ("UTF-8"),
 	_reason (reason),
 	_type (NSR_RENDER_TYPE_PAGE),
@@ -50,42 +47,6 @@ NSRRenderRequest::NSRRenderRequest (int number, NSRRenderReason reason, QObject 
 {
 }
 
-NSRRenderRequest::NSRRenderRequest (const NSRRenderRequest& req) :
-	QObject (req.parent ())
-{
-	_encoding	= req._encoding;
-	_reason		= req._reason;
-	_type		= req._type;
-	_zoom		= req._zoom;
-	_rotation	= req._rotation;
-	_screenWidth	= req._screenWidth;
-	_number		= req._number;
-	_autoCrop	= req._autoCrop;
-	_invertColors	= req._invertColors;
-	_textOnly	= req._textOnly;
-	_zoomToWidth	= req._zoomToWidth;
-}
-
 NSRRenderRequest::~NSRRenderRequest ()
 {
-}
-
-NSRRenderRequest&
-NSRRenderRequest::operator = (const NSRRenderRequest& req)
-{
-	if (this != &req) {
-		_encoding	= req._encoding;
-		_reason		= req._reason;
-		_type		= req._type;
-		_zoom		= req._zoom;
-		_rotation	= req._rotation;
-		_screenWidth	= req._screenWidth;
-		_number		= req._number;
-		_autoCrop	= req._autoCrop;
-		_invertColors	= req._invertColors;
-		_textOnly	= req._textOnly;
-		_zoomToWidth	= req._zoomToWidth;
-	}
-
-	return *this;
 }
