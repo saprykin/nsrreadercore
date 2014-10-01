@@ -1,7 +1,7 @@
 #include "nsrpagescache.h"
 
-/* Maximum cache size in bytes (~100 MB by default) */
-#define NSR_CORE_PAGES_CACHE_MAX_STORAGE 104857600
+/* Maximum cache size in bytes (~256 MB by default) */
+#define NSR_CORE_PAGES_CACHE_MAX_STORAGE 268435456
 
 NSRPagesCache::NSRPagesCache (QObject *parent) :
 		QObject (parent),

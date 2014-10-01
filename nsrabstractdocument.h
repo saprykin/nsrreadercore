@@ -21,7 +21,7 @@
 #endif
 
 /** Maximum memroy available for files rendering, bytes */
-#define NSR_CORE_DOCUMENT_MAX_HEAP	(0x6000000 * 0.50)
+#define NSR_CORE_DOCUMENT_MAX_HEAP	(0x6000000)
 
 /** @def NSR_CORE_IMAGE_DATATYPE Rendered page image type */
 #ifdef Q_OS_BLACKBERRY

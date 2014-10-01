@@ -12,7 +12,6 @@
 #include <QString>
 
 #define NSR_CORE_DJVU_MIN_ZOOM	25.0
-#define NSR_CORE_DJVU_MAX_ZOOM	600.0
 
 /* DjVu stuff for text extraction */
 #define S(n,s) (n = miniexp_symbol(s))
@@ -402,16 +401,13 @@ NSRDjVuDocument::getMaxZoom ()
 		return 0;
 
 	if (_cachedPageSize == QSize (0, 0))
-		return NSR_CORE_DJVU_MAX_ZOOM;
+		return _cachedMaxZoom;
 
 	/* Each pixel needs 3 bytes (RGB) of memory */
 	double resFactor = 72.0 / _cachedResolution;
 	double pageSize = _cachedPageSize.width () * _cachedPageSize.height () * 3 * resFactor / 4;
-	_cachedMaxZoom = (sqrt (NSR_CORE_DOCUMENT_MAX_HEAP * 72 * 72 / pageSize) / 72 * 100 + 0.5);
+	_cachedMaxZoom = (sqrt (NSR_CORE_DOCUMENT_MAX_HEAP) * sqrt (72 * 72 / pageSize) / 72 * 100 + 0.5);
 	_cachedMaxZoom = validateMaxZoom (_cachedPageSize * resFactor, _cachedMaxZoom);
-
-	if (_cachedMaxZoom > NSR_CORE_DJVU_MAX_ZOOM)
-		_cachedMaxZoom = NSR_CORE_DJVU_MAX_ZOOM;
 
 	return _cachedMaxZoom;
 }

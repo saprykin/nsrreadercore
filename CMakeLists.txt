@@ -271,7 +271,7 @@ set (UNIVERSALCHARDET_SOURCES
 	3dparty/universalchardet/nsSBCSGroupProber.cpp
 	3dparty/universalchardet/nsSJISProber.cpp
 	3dparty/universalchardet/nsUniversalDetector.cpp
-	3dparty/universalchardet/nsUTF8Prober.cpp	
+	3dparty/universalchardet/nsUTF8Prober.cpp
 )
 
 set (HEADERS

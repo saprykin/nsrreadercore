@@ -140,7 +140,7 @@ NSRPopplerDocument::getMaxZoom ()
 	/* Each pixel needs 4 bytes (RGBA) of memory */
 	double pageSize = _page->getCropWidth () * _page->getCropHeight () * 4;
 	_cachedPageSize = QSize (_page->getCropWidth (), _page->getCropHeight ());
-	_cachedMaxZoom = (sqrt (NSR_CORE_DOCUMENT_MAX_HEAP * 72 * 72 / pageSize ) / 72 * 100 + 0.5);
+	_cachedMaxZoom = (sqrt (NSR_CORE_DOCUMENT_MAX_HEAP) * sqrt (72 * 72 / pageSize ) / 72 * 100 + 0.5);
 	_cachedMaxZoom = validateMaxZoom (_cachedPageSize, _cachedMaxZoom);
 
 	return _cachedMaxZoom;
