@@ -26,6 +26,7 @@ NSRReaderCore::NSRReaderCore (const INSRSettings *	settings,
 	_zoomThread (NULL),
 	_preloadThread (NULL),
 	_cache (NULL),
+	_cropPadsCache (NULL),
 	_pagesLimit (0),
 	_screenWidth (0),
 	_isDestructing (false)
@@ -34,6 +35,7 @@ NSRReaderCore::NSRReaderCore (const INSRSettings *	settings,
 	_zoomThread	= new NSRRenderThread (this);
 	_preloadThread	= new NSRRenderThread (this);
 	_cache		= new NSRPagesCache (this);
+	_cropPadsCache	= new NSRCropPadsCache (this);
 
 	bool ok = connect (_thread, SIGNAL (renderDone ()), this, SLOT (onRenderDone ()));
 	Q_UNUSED (ok);
@@ -282,8 +284,7 @@ NSRReaderCore::setZoom (double zoom, NSRRenderRequest::NSRRenderReason reason)
 	if (isPageRendering () || zoom <= DBL_EPSILON)
 		return;
 
-	bool toWidth = (reason == NSRRenderRequest::NSR_RENDER_REASON_ZOOM_TO_WIDTH ||
-			reason == NSRRenderRequest::NSR_RENDER_REASON_CROP_TO_WIDTH);
+	bool toWidth = (reason == NSRRenderRequest::NSR_RENDER_REASON_ZOOM_TO_WIDTH);
 
 	if (!toWidth && qAbs (_renderRequest.getZoom () - zoom) <= DBL_EPSILON)
 		return;
@@ -291,8 +292,7 @@ NSRReaderCore::setZoom (double zoom, NSRRenderRequest::NSRRenderReason reason)
 	if (_renderRequest.isTextOnly ())
 		return;
 
-	if (reason != NSRRenderRequest::NSR_RENDER_REASON_CROP_TO_WIDTH)
-		_cache->clearStorage ();
+	_cache->clearStorage ();
 
 	_renderRequest.setZoomToWidth (toWidth);
 	_renderRequest.setZoom (zoom);
@@ -435,6 +435,9 @@ NSRReaderCore::onRenderDone ()
 	if (_thread->isRenderCanceled ())
 		return;
 
+	if (page.getCropPads().isDetected () && !_cropPadsCache->isCropPadsExist (page.getNumber ()))
+		_cropPadsCache->addCropPads (page.getNumber (), page.getCropPads ());
+
 	if (!isPageRelevant (page))
 		return;
 
@@ -443,6 +446,9 @@ NSRReaderCore::onRenderDone ()
 	if (_renderRequest.getNumber () == page.getNumber ()) {
 		_renderRequest.setZoom (page.getRenderedZoom ());
 		_currentPage = page;
+
+		if (page.getCropPads().isDetected ())
+			_renderRequest.setCropPads (page.getCropPads ());
 
 		emit needIndicator (false);
 		emit pageRendered (_renderRequest.getNumber ());
@@ -474,6 +480,9 @@ NSRReaderCore::onZoomRenderDone ()
 	if (_zoomThread->isRenderCanceled ())
 		return;
 
+	if (page.getCropPads().isDetected () && !_cropPadsCache->isCropPadsExist (page.getNumber ()))
+		_cropPadsCache->addCropPads (page.getNumber (), page.getCropPads ());
+
 	if (!isPageRelevant (page))
 		return;
 
@@ -487,6 +496,9 @@ NSRReaderCore::onZoomRenderDone ()
 			_zoomThread->setProperty (NSR_CORE_MAIN_RENDER_PROP, false);
 			emit needIndicator (false);
 		}
+
+		if (page.getCropPads().isDetected ())
+			_renderRequest.setCropPads (page.getCropPads ());
 
 		emit pageRendered (_renderRequest.getNumber ());
 		preloadPages ();
@@ -509,6 +521,9 @@ NSRReaderCore::onPreloadRenderDone ()
 	if (_preloadThread->isRenderCanceled ())
 		return;
 
+	if (page.getCropPads().isDetected () && !_cropPadsCache->isCropPadsExist (page.getNumber ()))
+		_cropPadsCache->addCropPads (page.getNumber (), page.getCropPads ());
+
 	if (!isPageRelevant (page))
 		return;
 
@@ -523,6 +538,9 @@ NSRReaderCore::onPreloadRenderDone ()
 			emit needIndicator (false);
 			preloadPages ();
 		}
+
+		if (page.getCropPads().isDetected ())
+			_renderRequest.setCropPads (page.getCropPads ());
 
 		emit pageRendered (_renderRequest.getNumber ());
 	}
@@ -642,6 +660,7 @@ NSRReaderCore::closeFile ()
 	_renderRequest = NSRRenderRequest ();
 	_currentPage = NSRRenderedPage ();
 	_cache->clearStorage ();
+	_cropPadsCache->clearStorage ();
 
 	if (!path.isEmpty ())
 		emit sessionFileClosed (path);
@@ -690,17 +709,20 @@ NSRReaderCore::loadPage (PageLoad				dir,
 		emit pagesLimitPassed ();
 	}
 
-	if (reason != NSRRenderRequest::NSR_RENDER_REASON_PRELOAD)
+	if (reason != NSRRenderRequest::NSR_RENDER_REASON_PRELOAD) {
 		_renderRequest.setNumber (pageToLoad);
+		_renderRequest.setCropPads (_cropPadsCache->getCropPads (pageToLoad));
+	}
 
 	NSRRenderRequest req (_renderRequest);
 	req.setRenderReason (reason);
 
-	if (reason == NSRRenderRequest::NSR_RENDER_REASON_PRELOAD)
+	if (reason == NSRRenderRequest::NSR_RENDER_REASON_PRELOAD) {
 		req.setNumber (pageToLoad);
+		req.setCropPads (_cropPadsCache->getCropPads (pageToLoad));
+	}
 
 	if (reason != NSRRenderRequest::NSR_RENDER_REASON_PRELOAD &&
-	    reason != NSRRenderRequest::NSR_RENDER_REASON_CROP_TO_WIDTH &&
 	    _cache->isPageExists (pageToLoad)) {
 		_currentPage = _cache->getPage (pageToLoad);
 		emit pageRendered (pageToLoad);
@@ -712,8 +734,7 @@ NSRReaderCore::loadPage (PageLoad				dir,
 	NSRRenderRequest::NSRRenderReason reqReason = req.getRenderReason ();
 
 	if (reqReason == NSRRenderRequest::NSR_RENDER_REASON_ZOOM ||
-	    reqReason == NSRRenderRequest::NSR_RENDER_REASON_ZOOM_TO_WIDTH ||
-	    reqReason == NSRRenderRequest::NSR_RENDER_REASON_CROP_TO_WIDTH) {
+	    reqReason == NSRRenderRequest::NSR_RENDER_REASON_ZOOM_TO_WIDTH) {
 		_preloadThread->cancelAllRequests ();
 		_zoomThread->cancelRequests (NSRRenderRequest::NSR_RENDER_TYPE_PAGE);
 

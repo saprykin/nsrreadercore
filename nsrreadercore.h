@@ -13,6 +13,7 @@
 #include "nsrrenderthread.h"
 #include "nsrrenderrequest.h"
 #include "nsrpagescache.h"
+#include "nsrcroppadscache.h"
 #include "nsrsession.h"
 #include "nsrreadercore_global.h"
 
@@ -386,6 +387,7 @@ private:
 	NSRRenderThread	*	_zoomThread;	/**< Zoom render thread		*/
 	NSRRenderThread	*	_preloadThread;	/**< Preload render thread	*/
 	NSRPagesCache *		_cache;		/**< Pages cache		*/
+	NSRCropPadsCache *	_cropPadsCache;	/**< Page crop pads cache	*/
 	NSRRenderedPage		_currentPage;	/**< Last rendered page		*/
 	NSRRenderRequest	_renderRequest;	/**< Session rendering request	*/
 	int			_pagesLimit;	/**< Pages limit		*/

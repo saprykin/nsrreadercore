@@ -22,6 +22,7 @@ set (SOURCES
 	nsrabstractdocument.cpp
 	nsrcharsetdetector.cpp
 	nsrcroppads.cpp
+	nsrcroppadscache.cpp
 	nsrdjvudocument.cpp
 	nsrpagecropper.cpp
 	nsrpagescache.cpp
@@ -278,6 +279,7 @@ set (HEADERS
 	insrthumbnailer.h
 	nsrabstractdocument.h
 	nsrcroppads.h
+	nsrcroppadscache.h
 	nsrdjvudocument.h
 	nsrpagecropper.h
 	nsrpagescache.h
