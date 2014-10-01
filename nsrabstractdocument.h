@@ -7,6 +7,7 @@
  * @brief Base class for supported file type
  */
 
+#include "nsrcroppads.h"
 #include "nsrreadercore_global.h"
 
 #include <QObject>
@@ -272,6 +273,28 @@ public:
 	}
 
 	/**
+	 * @brief Gets page crop pads
+	 * @return Page crop pads.
+	 * @since 1.4.2
+	 *
+	 * Only has meaning if autocrop feature is enabled.
+	 */
+	virtual NSRCropPads getCropPads () const {
+		return _cropPads;
+	}
+
+	/**
+	 * @brief Sets page crop pads
+	 * @param pads Page crop pads.
+	 * @since 1.4.2
+	 *
+	 * Only has meaning if autocrop feature is enabled.
+	 */
+	virtual void setCropPads (const NSRCropPads& pads) {
+		_cropPads = pads;
+	}
+
+	/**
 	 * @brief Gets file password
 	 * @return File password.
 	 */
@@ -354,6 +377,7 @@ protected:
 	double validateMaxZoom (const QSize& pageSize, double zoom) const;
 
 private:
+	NSRCropPads		_cropPads;		/**< Page crop pads		*/
 	QString			_docPath;		/**< File path			*/
 	QString			_password;		/**< File password		*/
 	QString			_encoding;		/**< Text encoding		*/
