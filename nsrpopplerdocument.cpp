@@ -102,7 +102,16 @@ NSRPopplerDocument::renderPage (int page)
 			    _page->getCropHeight () : _page->getCropWidth ();
 
 	if (isZoomToWidth ()) {
-		double wZoom = ((double) getPageWidth () / pageWidth * 100.0);
+		int zoomWidth = getPageWidth ();
+
+		if (isAutoCrop ()) {
+			NSRCropPads pads = getCropPads ();
+			pads.setRotation ((unsigned int) getRotation ());
+
+			zoomWidth = (int) (zoomWidth / (1 - (pads.getLeft () + pads.getRight ())) + 0.5);
+		}
+
+		double wZoom = ((double) zoomWidth / pageWidth * 100.0);
 		setZoomSilent (wZoom);
 	}
 
@@ -176,40 +185,38 @@ NSRPopplerDocument::getCurrentPage ()
 	while (rowBytes % 4)
 		rowBytes += 1;
 
-	NSRCropPads pads;
+	NSRCropPads pads = isAutoCrop () ? getCropPads () : NSRCropPads ();
+	pads.setRotation ((unsigned int) getRotation ());
 
-	if (isAutoCrop ())
-		pads = NSRPageCropper::findCropPads ((unsigned char *) bitmap->getDataPtr (),
-						     NSRPageCropper::NSR_PIXEL_ORDER_RGB,
-						     bw,
-						     bh,
-						     rowBytes,
-						     !isZoomToWidth () ? getPageWidth () : 0);
+	int top    = (int) (bh * pads.getTop () + 0.5);
+	int bottom = (int) (bh * pads.getBottom () + 0.5);
+	int left   = (int) (bw * pads.getLeft () + 0.5);
+	int right  = (int) (bw * pads.getRight () + 0.5);
 
 #ifdef Q_OS_BLACKBERRY
 	bb::ImageData imgData (bb::PixelFormat::RGBX,
-			       bw - pads.getLeft () - pads.getRight (),
-			       bh - pads.getTop () - pads.getBottom ());
+			       bw - left - right,
+			       bh - top - bottom);
 
 	unsigned char *addr = (unsigned char *) imgData.pixels ();
 	int stride = imgData.bytesPerLine ();
 
-	for (int i = pads.getTop (); i < bh - pads.getBottom (); ++i) {
+	for (int i = top; i < bh - bottom; ++i) {
 		unsigned char *inAddr = (unsigned char *) (dataPtr + i * rowBytes);
 
-		for (int j = pads.getLeft (); j < bw - pads.getRight (); ++j) {
+		for (int j = left; j < bw - right; ++j) {
 			if (isInvertedColors ()) {
 				unsigned char meanVal = (unsigned char) (((unsigned int) 255 * 3 - inAddr[j * 3 + 0] -
 												   inAddr[j * 3 + 1] -
 												   inAddr[j * 3 + 2]) / 3);
 
-				addr[(j - pads.getLeft ()) * 4 + 0] = meanVal;
-				addr[(j - pads.getLeft ()) * 4 + 1] = meanVal;
-				addr[(j - pads.getLeft ()) * 4 + 2] = meanVal;
+				addr[(j - left) * 4 + 0] = meanVal;
+				addr[(j - left) * 4 + 1] = meanVal;
+				addr[(j - left) * 4 + 2] = meanVal;
 			} else {
-				addr[(j - pads.getLeft ()) * 4 + 0] = inAddr[j * 3 + 0];
-				addr[(j - pads.getLeft ()) * 4 + 1] = inAddr[j * 3 + 1];
-				addr[(j - pads.getLeft ()) * 4 + 2] = inAddr[j * 3 + 2];
+				addr[(j - left) * 4 + 0] = inAddr[j * 3 + 0];
+				addr[(j - left) * 4 + 1] = inAddr[j * 3 + 1];
+				addr[(j - left) * 4 + 2] = inAddr[j * 3 + 2];
 			}
 		}
 

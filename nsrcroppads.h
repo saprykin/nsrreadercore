@@ -7,8 +7,6 @@
  * @brief Page crop pads
  */
 
-#include "nsrabstractdocument.h"
-
 /**
  * @class NSRCropPads nsrcroppads.h
  * @brief Class for page crop pads
@@ -23,88 +21,92 @@ public:
 	~NSRCropPads ();
 
 	/**
-	 * @brief Gets page scale
-	 * @return Page scale, in %.
+	 * @brief Checks whether pads were detected
+	 * @return True if pads were detected, false otherwise.
+	 * @since 1.4.2
 	 */
-	inline double getScale () const {
-		return _scale;
+	inline bool isDetected () const {
+		return _isDetected;
 	}
 
 	/**
 	 * @brief Gets left pad
-	 * @return Left pad, in px.
+	 * @return Left pad, relative to width.
 	 */
-	inline int getLeft () const {
-		return (int) _left;
+	inline double getLeft () const {
+		return _left;
 	}
 
 	/**
 	 * @brief Gets right pad
-	 * @return Right pad, in px.
+	 * @return Right pad, relative to width.
 	 */
-	inline int getRight () const {
-		return (int) _right;
+	inline double getRight () const {
+		return _right;
 	}
 
 	/**
 	 * @brief Gets top pad
-	 * @return Top pad, in px.
+	 * @return Top pad, relative to height.
 	 */
-	inline int getTop () const {
-		return (int) _top;
+	inline double getTop () const {
+		return _top;
 	}
 
 	/**
 	 * @brief Gets bottom pad
-	 * @return Bottom pad, in px.
+	 * @return Bottom pad, relative to height.
 	 */
-	inline int getBottom () const {
-		return (int) _bottom;
+	inline double getBottom () const {
+		return _bottom;
 	}
 
 	/**
-	 * @brief Sets page scale
-	 * @param scale Page scale, in %.
+	 * @brief Sets detected flag
+	 * @param detected Whether pads were detected.
+	 * @since 1.4.2
 	 */
-	void setScale (double scale);
+	inline void setDetected (bool detected) {
+		_isDetected = detected;
+	}
 
 	/**
 	 * @brief Sets left pad
-	 * @param left Left pad, in px.
+	 * @param left Left pad, relative to width.
 	 */
-	inline void setLeft (int left) {
-		_left = left * _scale;
+	inline void setLeft (double left) {
+		_left = left;
 	}
 
 	/**
 	 * @brief Sets right pad
-	 * @param right Right pad, in px.
+	 * @param right Right pad, relative to width.
 	 */
-	inline void setRight (int right) {
-		_right = right * _scale;
+	inline void setRight (double right) {
+		_right = right;
 	}
 
 	/**
 	 * @brief Sets top pad
-	 * @param top Top pad, in px.
+	 * @param top Top pad, relative to height.
 	 */
-	inline void setTop (int top) {
-		_top = top * _scale;
+	inline void setTop (double top) {
+		_top = top;
 	}
 
 	/**
 	 * @brief Sets bottom pad
-	 * @param bottom Bottom pad, in px.
+	 * @param bottom Bottom pad, relative to height.
 	 */
-	inline void setBottom (int bottom) {
-		_bottom = bottom * _scale;
+	inline void setBottom (double bottom) {
+		_bottom = bottom;
 	}
 
 	/**
 	 * @brief Sets page rotation
 	 * @param rotation Page rotation.
 	 */
-	void setRotation (NSRAbstractDocument::NSRDocumentRotation rotation);
+	void setRotation (unsigned int rotation);
 
 private:
 	/**
@@ -132,12 +134,12 @@ private:
 	 */
 	void mirrorHorizontal ();
 
-	double						_scale;		/**< Page scale	*/
-	double						_left;		/**< Left pad	*/
-	double						_right;		/**< Right pad	*/
-	double						_top;		/**< Top pad	*/
-	double						_bottom;	/**< Bottom pad	*/
-	NSRAbstractDocument::NSRDocumentRotation	_rotation;	/** Clockwise	*/
+	double		_left;		/**< Left pad		*/
+	double		_right;		/**< Right pad		*/
+	double		_top;		/**< Top pad		*/
+	double		_bottom;	/**< Bottom pad		*/
+	unsigned int	_rotation;	/**< Clockwise		*/
+	bool		_isDetected;	/**< Detected flag	*/
 };
 
 #endif /* __NSRCROPPADS_H__ */

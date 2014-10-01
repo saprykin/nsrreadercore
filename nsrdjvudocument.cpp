@@ -349,7 +349,16 @@ NSRDjVuDocument::renderPage (int page)
 	resFactor = 72.0 / _cachedResolution;
 
 	if (isZoomToWidth ()) {
-		double wZoom = ((double) getPageWidth () / ((double) width * resFactor) * 100.0);
+		int zoomWidth = getPageWidth ();
+
+		if (isAutoCrop ()) {
+			NSRCropPads pads = getCropPads ();
+			pads.setRotation ((unsigned int) getRotation ());
+
+			zoomWidth = (int) (zoomWidth / (1 - (pads.getLeft () + pads.getRight ())) + 0.5);
+		}
+
+		double wZoom = ((double) zoomWidth / ((double) width * resFactor) * 100.0);
 		setZoomSilent (wZoom);
 	}
 
@@ -432,40 +441,38 @@ NSRDjVuDocument::getCurrentPage ()
 	if (_imgData == NULL)
 		return NSR_CORE_IMAGE_DATATYPE ();
 
-	NSRCropPads pads;
+	NSRCropPads pads = isAutoCrop () ? getCropPads () : NSRCropPads ();
+	pads.setRotation ((unsigned int) getRotation ());
 
-	if (isAutoCrop ())
-		pads = NSRPageCropper::findCropPads ((unsigned char *) _imgData,
-						     NSRPageCropper::NSR_PIXEL_ORDER_BGR,
-						     _imgSize.width (),
-						     _imgSize.height (),
-						     _imgSize.width () * 3,
-						     !isZoomToWidth () ? getPageWidth () : 0);
+	int top    = (int) (_imgSize.height () * pads.getTop () + 0.5);
+	int bottom = (int) (_imgSize.height () * pads.getBottom () + 0.5);
+	int left   = (int) (_imgSize.width () * pads.getLeft () + 0.5);
+	int right  = (int) (_imgSize.width () * pads.getRight () + 0.5);
 
 #ifdef Q_OS_BLACKBERRY
 	bb::ImageData imgData (bb::PixelFormat::RGBX,
-			       _imgSize.width () - pads.getLeft () - pads.getRight (),
-			       _imgSize.height () - pads.getTop () - pads.getBottom ());
+			       _imgSize.width () - left - right,
+			       _imgSize.height () - top - bottom);
 
 	int rowSize = imgData.bytesPerLine ();
 	unsigned char *image = imgData.pixels ();
 
-	for (int i = pads.getTop (); i < _imgSize.height() - pads.getBottom (); ++i)
-		for (int j = pads.getLeft (); j < _imgSize.width() - pads.getRight (); ++j) {
+	for (int i = top; i < _imgSize.height () - bottom; ++i)
+		for (int j = left; j < _imgSize.width () - right; ++j) {
 			if (isInvertedColors ()) {
 				unsigned char meanVal = (unsigned char) (((unsigned int) 255 * 3 - *(_imgData + i * _imgSize.width () * 3 + j * 3 + 2) -
 												   *(_imgData + i * _imgSize.width () * 3 + j * 3 + 2) -
 												   *(_imgData + i * _imgSize.width () * 3 + j * 3)) / 3);
 
-				*(image + rowSize * (i - pads.getTop ()) + (j - pads.getLeft ()) * 4) = meanVal;
-				*(image + rowSize * (i - pads.getTop ()) + (j - pads.getLeft ()) * 4 + 1) = meanVal;
-				*(image + rowSize * (i - pads.getTop ()) + (j - pads.getLeft ()) * 4 + 2) = meanVal;
+				*(image + rowSize * (i - top) + (j - left) * 4) = meanVal;
+				*(image + rowSize * (i - top) + (j - left) * 4 + 1) = meanVal;
+				*(image + rowSize * (i - top) + (j - left) * 4 + 2) = meanVal;
 			} else {
-				*(image + rowSize * (i - pads.getTop ()) + (j - pads.getLeft ()) * 4) =
+				*(image + rowSize * (i - top) + (j - left) * 4) =
 						*(_imgData + i * _imgSize.width () * 3 + j * 3 + 2);
-				*(image + rowSize * (i - pads.getTop ()) + (j - pads.getLeft ()) * 4 + 1) =
+				*(image + rowSize * (i - top) + (j - left) * 4 + 1) =
 						*(_imgData + i * _imgSize.width () * 3 + j * 3 + 1);
-				*(image + rowSize * (i - pads.getTop ()) + (j - pads.getLeft ()) * 4 + 2) =
+				*(image + rowSize * (i - top) + (j - left) * 4 + 2) =
 						*(_imgData + i * _imgSize.width () * 3 + j * 3);
 			}
 		}

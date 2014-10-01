@@ -1,5 +1,4 @@
 #include "nsrtiffdocument.h"
-#include "nsrpagecropper.h"
 
 #include <qmath.h>
 
@@ -12,7 +11,7 @@ NSRTIFFDocument::NSRTIFFDocument (const QString& file, QObject *parent) :
 	_pagesCount (0),
 	_cachedPage (0)
 {
-	if ((_tiff = TIFFOpen (file.toUtf8().data(), "r")) == NULL)
+	if ((_tiff = TIFFOpen (file.toUtf8().data (), "r")) == NULL)
 		return;
 
 	_pagesCount = 1;
@@ -86,7 +85,16 @@ NSRTIFFDocument::renderPage (int page)
 			    getRotation () == NSRAbstractDocument::NSR_DOCUMENT_ROTATION_270) ? h : w;
 
 	if (isZoomToWidth ()) {
-		double wZoom = ((double) getPageWidth () / pageWidth * 100.0);
+		int zoomWidth = getPageWidth ();
+
+		if (isAutoCrop ()) {
+			NSRCropPads pads = getCropPads ();
+			pads.setRotation ((unsigned int) getRotation ());
+
+			zoomWidth = (int) (zoomWidth / (1 - (pads.getLeft () + pads.getRight ())) + 0.5);
+		}
+
+		double wZoom = ((double) zoomWidth / pageWidth * 100.0);
 		setZoomSilent (wZoom);
 	}
 
@@ -100,9 +108,6 @@ NSRTIFFDocument::renderPage (int page)
 		trans.scale (scale, scale);
 		trans.rotate ((int) getRotation ());
 		_image = _origImage.transformed (trans);
-
-		if (isAutoCrop ())
-			updateCropPads ();
 
 		return;
 	}
@@ -155,17 +160,6 @@ NSRTIFFDocument::renderPage (int page)
 
 		trans.scale (scale, scale);
 		trans.rotate ((int) getRotation ());
-
-		if (isAutoCrop ()) {
-			_pads = NSRPageCropper::findCropPads ((unsigned char *) img->bits (),
-							      NSRPageCropper::NSR_PIXEL_ORDER_ARGB,
-							      img->width (),
-							      img->height (),
-							      img->bytesPerLine (),
-							      !isZoomToWidth () ? getPageWidth () : 0);
-			updateCropPads ();
-		} else
-			_pads = NSRCropPads ();
 
 		if (_origImage.byteCount () > NSR_CORE_DOCUMENT_MAX_HEAP / (2 + scale * scale)) {
 			_image = img->transformed (trans);
@@ -223,9 +217,17 @@ NSRTIFFDocument::getCurrentPage ()
 		return NSR_CORE_IMAGE_DATATYPE ();
 
 #ifdef Q_OS_BLACKBERRY
+	NSRCropPads pads = isAutoCrop () ? getCropPads () : NSRCropPads ();
+	pads.setRotation ((unsigned int) getRotation ());
+
+	int top    = (int) (_image.height () * pads.getTop () + 0.5);
+	int bottom = (int) (_image.height () * pads.getBottom () + 0.5);
+	int left   = (int) (_image.width () * pads.getLeft () + 0.5);
+	int right  = (int) (_image.width () * pads.getRight () + 0.5);
+
 	bb::ImageData imgData (bb::PixelFormat::RGBX,
-			       _image.width () - _pads.getLeft () - _pads.getRight (),
-			       _image.height () - _pads.getTop () - _pads.getBottom ());
+			       _image.width () - left - right,
+			       _image.height () - top - bottom);
 
 	unsigned char *addr = (unsigned char *) imgData.pixels ();
 	int stride = imgData.bytesPerLine ();
@@ -234,22 +236,22 @@ NSRTIFFDocument::getCurrentPage ()
 	int rowBytes = _image.bytesPerLine ();
 	unsigned char *dataPtr = _image.bits ();
 
-	for (int i = _pads.getTop (); i < bh - _pads.getBottom (); ++i) {
+	for (int i = top; i < bh - bottom; ++i) {
 		unsigned char *inAddr = (unsigned char *) (dataPtr + i * rowBytes);
 
-		for (int j = _pads.getLeft (); j < bw - _pads.getRight (); ++j) {
+		for (int j = left; j < bw - right; ++j) {
 			if (isInvertedColors ()) {
 				unsigned char meanVal = (unsigned char) (((unsigned int) 255 * 3 - inAddr[j * 4 + 2] -
 												   inAddr[j * 4 + 1] -
 												   inAddr[j * 4 + 0]) / 3);
 
-				addr[(j - _pads.getLeft ()) * 4 + 0] = meanVal;
-				addr[(j - _pads.getLeft ()) * 4 + 1] = meanVal;
-				addr[(j - _pads.getLeft ()) * 4 + 2] = meanVal;
+				addr[(j - left) * 4 + 0] = meanVal;
+				addr[(j - left) * 4 + 1] = meanVal;
+				addr[(j - left) * 4 + 2] = meanVal;
 			} else {
-				addr[(j - _pads.getLeft ()) * 4 + 0] = inAddr[j * 4 + 2];
-				addr[(j - _pads.getLeft ()) * 4 + 1] = inAddr[j * 4 + 1];
-				addr[(j - _pads.getLeft ()) * 4 + 2] = inAddr[j * 4 + 0];
+				addr[(j - left) * 4 + 0] = inAddr[j * 4 + 2];
+				addr[(j - left) * 4 + 1] = inAddr[j * 4 + 1];
+				addr[(j - left) * 4 + 2] = inAddr[j * 4 + 0];
 			}
 		}
 
@@ -267,15 +269,6 @@ bool
 NSRTIFFDocument::isDocumentStyleSupported (NSRAbstractDocument::NSRDocumentStyle style) const
 {
 	return (style == NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC);
-}
-
-void
-NSRTIFFDocument::updateCropPads ()
-{
-	double scale = getZoom () / 100.0;
-
-	_pads.setScale (scale);
-	_pads.setRotation (getRotation ());
 }
 
 /* The following code was taken from the Qt TIFF handler plugin with some modifications */

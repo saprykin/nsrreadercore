@@ -8,7 +8,6 @@
  */
 
 #include "nsrabstractdocument.h"
-#include "nsrcroppads.h"
 
 #include "tiff/tiffio.h"
 
@@ -63,11 +62,6 @@ public:
 
 private:
 	/**
-	 * @brief Updates crop pads
-	 */
-	void updateCropPads ();
-
-	/**
 	 * @brief Rotates image right and mirrors horizontal
 	 * @param[in, out] image Image to transform and transformed one.
 	 * @param[out] buf Pointer to image data buffer.
@@ -81,7 +75,6 @@ private:
 	 */
 	void rotateRightMirrorVertical (QImage ** image, char **buf);
 
-	NSRCropPads		_pads;			/**< Page crop pads		*/
 	QImage			_origImage;		/**< Original rendered image	*/
 	QImage			_image;			/**< Transformed original image	*/
 	QSize			_cachedPageSize;	/**< Cached page size		*/

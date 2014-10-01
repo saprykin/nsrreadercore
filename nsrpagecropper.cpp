@@ -34,6 +34,11 @@ NSRPageCropper::findCropPads (unsigned char *data,
 	int maxWCrop = (int) (width * NSR_CORE_CROP_MAX_PAD_PERCENT);
 	int maxHCrop = (int) (height * NSR_CORE_CROP_MAX_PAD_PERCENT);
 
+	int top    = 0;
+	int bottom = 0;
+	int left   = 0;
+	int right  = 0;
+
 	switch (order) {
 	case NSR_PIXEL_ORDER_RGB:
 	case NSR_PIXEL_ORDER_BGR:
@@ -85,10 +90,10 @@ NSRPageCropper::findCropPads (unsigned char *data,
 		}
 
 		if (badCount > NSR_CORE_CROP_PIXEL_THRESHOLD) {
-			pads.setTop (row + 1);
+			top = (row + 1);
 			break;
 		} else if (row == maxHCrop - 1)
-			pads.setTop (row + 1);
+			top = (row + 1);
 
 		dataPtr += stride;
 	}
@@ -111,10 +116,10 @@ NSRPageCropper::findCropPads (unsigned char *data,
 		}
 
 		if (badCount > NSR_CORE_CROP_PIXEL_THRESHOLD) {
-			pads.setBottom (height - row - 1);
+			bottom = (height - row - 1);
 			break;
 		} else if (row == height - maxHCrop)
-			pads.setBottom (height - row - 1);
+			bottom = (height - row - 1);
 
 		dataPtr -= stride;
 	}
@@ -136,10 +141,10 @@ NSRPageCropper::findCropPads (unsigned char *data,
 				++badCount;		}
 
 		if (badCount > NSR_CORE_CROP_PIXEL_THRESHOLD) {
-			pads.setLeft (col + 1);
+			left = (col + 1);
 			break;
 		} else if (col == maxWCrop - 1)
-			pads.setLeft (col + 1);
+			left = (col + 1);
 	}
 
 	/* Finally, find right crop pad */
@@ -160,26 +165,32 @@ NSRPageCropper::findCropPads (unsigned char *data,
 		}
 
 		if (badCount > NSR_CORE_CROP_PIXEL_THRESHOLD) {
-			pads.setRight (width - col - 1);
+			right = (width - col - 1);
 			break;
 		} else if (col == width - maxWCrop)
-			pads.setRight (width - col - 1);
+			right = (width - col - 1);
 	}
 
-	pads.setTop (qMax (pads.getTop () - 5, 0));
-	pads.setRight (qMax (pads.getRight () - 5, 0));
-	pads.setBottom (qMax (pads.getBottom () - 5, 0));
-	pads.setLeft (qMax (pads.getLeft () - 5, 0));
+	top    = (qMax (top - 5, 0));
+	right  = (qMax (right - 5, 0));
+	bottom = (qMax (bottom - 5, 0));
+	left   = (qMax (left - 5, 0));
 
-	if (widthLimit > 0 && (width - pads.getLeft () - pads.getRight ()) < widthLimit) {
+	if (widthLimit > 0 && (width - left - right) < widthLimit) {
 		double limitDelta = width - widthLimit;
 
-		double leftPadRatio = pads.getLeft () / (float) (pads.getLeft () + pads.getRight ());
-		double rightPadRatio = pads.getRight () / (float) (pads.getLeft () + pads.getRight ());
+		double leftPadRatio = left / (double) (left + right);
+		double rightPadRatio = right / (double) (left + right);
 
-		pads.setLeft ((int) (leftPadRatio * limitDelta + 0.5));
-		pads.setRight ((int) (rightPadRatio * limitDelta + 0.5));
+		left  = (int) (leftPadRatio * limitDelta + 0.5);
+		right = (int) (rightPadRatio * limitDelta + 0.5);
 	}
+
+	pads.setTop ((double) top / height);
+	pads.setBottom ((double) bottom / height);
+	pads.setLeft ((double) left / width);
+	pads.setRight ((double) right / width);
+	pads.setDetected (true);
 
 	return pads;
 }
