@@ -142,6 +142,13 @@ private:
 	 */
 	void prepareRenderContext (const NSRRenderRequest& req);
 
+	/**
+	 * @brief Preapres render context for crop pads detection
+	 * @param req Render request.
+	 * @since 1.4.2
+	 */
+	void prepareRenderContextForCrop (const NSRRenderRequest& req);
+
 	NSRAbstractDocument		*_doc;			/**< File handler for render	*/
 	NSRRenderRequest		_currentRequest;	/**< Current render request	*/
 	QList<NSRRenderRequest>		_requestedPages;	/**< List of waiting requests	*/

@@ -1,6 +1,9 @@
 #include "nsrrenderthread.h"
+#include "nsrpagecropper.h"
 
 #include <QMutexLocker>
+
+#define NSR_RENDER_THREAD_CROP_WIDTH	256
 
 NSRRenderThread::NSRRenderThread (QObject *parent) :
 	QThread (parent),
@@ -123,16 +126,32 @@ NSRRenderThread::prepareRenderContext (const NSRRenderRequest& req)
 	if (_doc == NULL || !_doc->isValid ())
 		return;
 
-	if (req.isZoomToWidth () && req.getRenderReason () != NSRRenderRequest::NSR_RENDER_REASON_CROP_TO_WIDTH)
+	if (req.isZoomToWidth ()) {
 		_doc->setZoomToWidth (true);
-	else
+	} else
 		_doc->setZoom (req.getZoom ());
 
 	_doc->setPageWidth (req.getScreenWidth ());
 	_doc->setTextOnly (req.isTextOnly ());
 	_doc->setInvertedColors (req.isInvertColors ());
 	_doc->setAutoCrop (req.isAutoCrop ());
+	_doc->setCropPads (req.getCropPads ());
 	_doc->setRotation (req.getRotation ());
+	_doc->setEncoding (req.getEncoding ());
+}
+
+void
+NSRRenderThread::prepareRenderContextForCrop (const NSRRenderRequest& req)
+{
+	if (_doc == NULL || !_doc->isValid ())
+		return;
+
+	_doc->setZoomToWidth (true);
+	_doc->setPageWidth (NSR_RENDER_THREAD_CROP_WIDTH);
+	_doc->setTextOnly (false);
+	_doc->setInvertedColors (req.isInvertColors ());
+	_doc->setAutoCrop (false);
+	_doc->setRotation (NSRAbstractDocument::NSR_DOCUMENT_ROTATION_0);
 	_doc->setEncoding (req.getEncoding ());
 }
 
@@ -159,6 +178,24 @@ NSRRenderThread::run ()
 			return;
 
 		setCurrentRequest (page);
+
+		if (!page.isTextOnly() && page.isAutoCrop ()) {
+			if (!page.getCropPads().isDetected ()) {
+				prepareRenderContextForCrop (page);
+
+				_doc->renderPage (page.getNumber ());
+
+				bb::ImageData imgData = _doc->getCurrentPage ();
+				NSRCropPads pads = NSRPageCropper::findCropPads (imgData.pixels (),
+										 NSRPageCropper::NSR_PIXEL_ORDER_RGBA,
+										 imgData.width (),
+										 imgData.height (),
+										 imgData.bytesPerLine (),
+										 0);
+				page.setCropPads (pads);
+			}
+		}
+
 		prepareRenderContext (page);
 
 		/* Render image only if we are in graphic mode */
