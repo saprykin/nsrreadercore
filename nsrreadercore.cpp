@@ -444,7 +444,9 @@ NSRReaderCore::onRenderDone ()
 	_cache->addPage (page);
 
 	if (_renderRequest.getNumber () == page.getNumber ()) {
-		_renderRequest.setZoom (page.getRenderedZoom ());
+		if (!_renderRequest.isTextOnly ())
+			_renderRequest.setZoom (page.getRenderedZoom ());
+
 		_currentPage = page;
 
 		if (page.getCropPads().isDetected ())
@@ -489,7 +491,9 @@ NSRReaderCore::onZoomRenderDone ()
 	_cache->addPage (page);
 
 	if (_renderRequest.getNumber () == page.getNumber ()) {
-		_renderRequest.setZoom (page.getRenderedZoom ());
+		if (!_renderRequest.isTextOnly ())
+			_renderRequest.setZoom (page.getRenderedZoom ());
+
 		_currentPage = page;
 
 		if (_zoomThread->property(NSR_CORE_MAIN_RENDER_PROP).toBool ()) {
@@ -530,7 +534,9 @@ NSRReaderCore::onPreloadRenderDone ()
 	_cache->addPage (page);
 
 	if (_renderRequest.getNumber () == page.getNumber ()) {
-		_renderRequest.setZoom (page.getRenderedZoom ());
+		if (!_renderRequest.isTextOnly ())
+			_renderRequest.setZoom (page.getRenderedZoom ());
+
 		_currentPage = page;
 
 		if (_preloadThread->property(NSR_CORE_MAIN_RENDER_PROP).toBool ()) {
