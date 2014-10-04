@@ -187,7 +187,7 @@
 /* #undef JPEG_DUAL_MODE_8_12 */
 
 /* Support JPEG compression (requires IJG JPEG library) */
-/* #undef JPEG_SUPPORT */
+#define JPEG_SUPPORT 1
 
 /* 12bit libjpeg primary include file with path */
 /* #undef LIBJPEG_12_PATH */
