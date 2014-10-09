@@ -520,6 +520,7 @@ include_directories (
 	3dparty/djvu/config/${NSR_PLATFORM}
 	3dparty/poppler/config/${NSR_PLATFORM}
 	3dparty/tiff/config/${NSR_PLATFORM}
+	3dparty/tiff
 	3dparty/poppler
 	3dparty/poppler/goo
 	3dparty/poppler/poppler
