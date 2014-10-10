@@ -131,9 +131,10 @@ NSRReaderCore::loadSession (const NSRSession *session)
 		loadPage (PAGE_LOAD_CUSTOM, NSRRenderRequest::NSR_RENDER_REASON_NAVIGATION, session->getPage ());
 
 		if (_thumbnailer != NULL) {
-			if (!_doc->getPassword().isEmpty ())
+			if (!_doc->getPassword().isEmpty ()) {
 				_thumbnailer->saveThumbnailEncrypted (_doc->getDocumentPath ());
-			else if (_thumbnailer->isThumbnailOutdated (_doc->getDocumentPath ()))
+				emit thumbnailRendered ();
+			} else if (_thumbnailer->isThumbnailOutdated (_doc->getDocumentPath ()))
 				requestThumbnail ();
 		}
 	}
