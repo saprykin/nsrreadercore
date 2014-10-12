@@ -97,9 +97,11 @@ NSRPopplerDocument::renderPage (int page)
 		return;
 	}
 
-	double pageWidth = (getRotation () == NSRAbstractDocument::NSR_DOCUMENT_ROTATION_90 ||
-			    getRotation () == NSRAbstractDocument::NSR_DOCUMENT_ROTATION_270) ?
-			    _page->getCropHeight () : _page->getCropWidth ();
+	bool isLandscape = (qAbs (_page->getRotate ()) % 180) == 90;
+
+	double pageWidth = (((getRotation () % 180) == 90 & !isLandscape) ||
+			    ((getRotation () % 180) == 0 & isLandscape)) ?
+				_page->getCropHeight () : _page->getCropWidth ();
 
 	if (isZoomToWidth ()) {
 		int zoomWidth = getPageWidth ();
