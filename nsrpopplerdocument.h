@@ -41,11 +41,9 @@ public:
 
 	/* Reimplemented from NSRAbstractDocument */
 	int getPagesCount () const;
-	void renderPage (int page);
+	NSRRenderInfo renderPage (int page);
 	NSR_CORE_IMAGE_DATATYPE getCurrentPage ();
 	bool isValid () const;
-	double getMaxZoom ();
-	double getMinZoom ();
 	QString getText ();
 	bool isDocumentStyleSupported (NSRAbstractDocument::NSRDocumentStyle style) const;
 	NSRAbstractDocument::NSRDocumentStyle getPreferredDocumentStyle () const {
@@ -72,14 +70,11 @@ private:
 	static QMutex	_mutex;			/**< Mutex for global config	*/
 	static int	_refcount;		/**< Reference count for config	*/
 
-	QSize		_cachedPageSize;	/**< Cached page size		*/
 	QString		_text;			/**< Page text			*/
 	PDFDoc		*_doc;			/**< PDF file handler		*/
 	Catalog		*_catalog;		/**< PDF catalog		*/
 	Page		*_page;			/**< PDF page			*/
 	SplashOutputDev *_dev;			/**< PDF rendering device	*/
-	double		_cachedMinZoom;		/**< Cached min zoom		*/
-	double		_cachedMaxZoom;		/**< Cached max zoom		*/
 };
 
 #endif /* __NSRPOPPLERDOCUMENT_H__ */

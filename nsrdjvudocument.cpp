@@ -194,10 +194,6 @@ fmt_convert_pixmap (GPixmap *pm, char *buffer, int rowsize)
  */
 NSRDjVuDocument::NSRDjVuDocument (const QString& file, QObject *parent) :
 	NSRAbstractDocument (file, parent),
-	_cachedPageSize (QSize (0, 0)),
-	_cachedMinZoom (NSR_CORE_DJVU_MIN_ZOOM),
-	_cachedMaxZoom (100.0),
-	_cachedResolution (72),
 	_pagesCount (0),
 	_imgData (NULL)
 {
@@ -228,15 +224,16 @@ NSRDjVuDocument::isValid () const
 	return (_doc != NULL);
 }
 
-void
+NSRRenderInfo
 NSRDjVuDocument::renderPage (int page)
 {
-	int	rot;
-	int	tmp;
-	double	resFactor;
+	NSRRenderInfo	rinfo;
+	double		resFactor;
+	int		rot;
+	int		tmp;
 
 	if (_doc == NULL || page > getPagesCount () || page < 1)
-		return;
+		return rinfo;
 
 	clearRenderedData ();
 
@@ -304,13 +301,15 @@ NSRDjVuDocument::renderPage (int page)
 		}
 
 		_text = processText (ans);
-		return;
+
+		rinfo.setSuccessRender (true);
+		return rinfo;
 	}
 
 	GP<DjVuImage> img = _doc->get_page (page - 1, true, NULL);
 
 	if (img == NULL)
-		return;
+		return rinfo;
 
 	int width = img->get_width ();
 	int height = img->get_height ();
@@ -342,10 +341,20 @@ NSRDjVuDocument::renderPage (int page)
 	if (img->get_info () != NULL)
 		img->set_rotate (rot);
 
-	_cachedPageSize = QSize (width, height);
-	_cachedResolution = img->get_dpi ();
+	resFactor = 72.0 / img->get_dpi ();
 
-	resFactor = 72.0 / _cachedResolution;
+	double minZoom, maxZoom;
+
+	/* Each pixel needs 3 bytes (RGB) of memory */
+	double pageSize = width * height * 3 * resFactor;
+
+	maxZoom = (sqrt (NSR_CORE_DOCUMENT_MAX_HEAP) * sqrt (72 * 72 / pageSize * 4) / 72 * 100 + 0.5);
+
+	if (pageSize > NSR_CORE_DOCUMENT_MAX_HEAP)
+		minZoom = maxZoom;
+	else
+		minZoom = (maxZoom / 10) > NSR_CORE_DJVU_MIN_ZOOM ? NSR_CORE_DJVU_MIN_ZOOM
+								  : maxZoom / 10;
 
 	if (isZoomToWidth ()) {
 		int zoomWidth = getPageWidth ();
@@ -361,17 +370,17 @@ NSRDjVuDocument::renderPage (int page)
 		setZoomSilent (wZoom);
 	}
 
-	if (getZoom () < getMinZoom ())
-		setZoomSilent (getMinZoom ());
+	if (getZoom () < minZoom)
+		setZoomSilent (minZoom);
 
-	setZoomSilent (validateMaxZoom (_cachedPageSize * resFactor, getZoom ()));
+	setZoomSilent (validateMaxZoom (QSize (width, height) * resFactor, getZoom ()));
 
 	GRect grect (0, 0,
 		    (int) ((double) width * getZoom () / 100.0 * resFactor),
 		    (int) ((double) height * getZoom () / 100.0 * resFactor));
 
 	if (grect.xmax * grect.ymax * 3 > NSR_CORE_DOCUMENT_MAX_HEAP)
-		return;
+		return rinfo;
 
 	_imgData = new char[grect.xmax * grect.ymax * 3];
 	int rowSize = grect.xmax * 3;
@@ -392,43 +401,12 @@ NSRDjVuDocument::renderPage (int page)
 		memset (_imgData, 0xFF, rowSize * grect.ymax);
 
 	_imgSize = QSize (grect.xmax, grect.ymax);
-}
 
-double
-NSRDjVuDocument::getMaxZoom ()
-{
-	if (_doc == NULL)
-		return 0;
+	rinfo.setMinZoom (minZoom);
+	rinfo.setMaxZoom (maxZoom);
+	rinfo.setSuccessRender (true);
 
-	if (_cachedPageSize == QSize (0, 0))
-		return _cachedMaxZoom;
-
-	/* Each pixel needs 3 bytes (RGB) of memory */
-	double resFactor = 72.0 / _cachedResolution;
-	double pageSize = _cachedPageSize.width () * _cachedPageSize.height () * 3 * resFactor / 4;
-	_cachedMaxZoom = (sqrt (NSR_CORE_DOCUMENT_MAX_HEAP) * sqrt (72 * 72 / pageSize) / 72 * 100 + 0.5);
-	_cachedMaxZoom = validateMaxZoom (_cachedPageSize * resFactor, _cachedMaxZoom);
-
-	return _cachedMaxZoom;
-}
-
-double
-NSRDjVuDocument::getMinZoom ()
-{
-	if (_cachedPageSize == QSize (0, 0))
-		return NSR_CORE_DJVU_MIN_ZOOM;
-
-	/* Each pixel needs 3 bytes (RGB) of memory */
-	double pageSize = _cachedPageSize.width () * _cachedPageSize.height ()
-			  * 3 * 72 / _cachedResolution;
-
-	if (pageSize > NSR_CORE_DOCUMENT_MAX_HEAP)
-		_cachedMinZoom = getMaxZoom ();
-	else
-		_cachedMinZoom = (getMaxZoom () / 10) > NSR_CORE_DJVU_MIN_ZOOM ? NSR_CORE_DJVU_MIN_ZOOM
-									       : getMaxZoom () / 10;
-
-	return _cachedMinZoom;
+	return rinfo;
 }
 
 NSR_CORE_IMAGE_DATATYPE
@@ -499,64 +477,6 @@ NSRDjVuDocument::isDocumentStyleSupported (NSRAbstractDocument::NSRDocumentStyle
 {
 	return (style == NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC ||
 		style == NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT);
-}
-
-QSize
-NSRDjVuDocument::getPageSize (int page)
-{
-	int h = 0, w = 0;
-
-	if (page < 1)
-		return QSize (0, 0);
-
-	GP<DjVuFile> file = _doc->get_djvu_file (page - 1);
-
-	if (file == NULL)
-		return QSize (0, 0);
-
-	const GP<ByteStream> pbs (file->get_djvu_bytestream (false, false));
-	const GP<IFFByteStream> iff (IFFByteStream::create (pbs));
-
-	GUTF8String chkid;
-
-	if (!iff->get_chunk (chkid))
-		return QSize (0, 0);
-
-	if (chkid == "FORM:DJVU") {
-		while (iff->get_chunk (chkid) && chkid != "INFO")
-			iff->close_chunk ();
-
-		if (chkid == "INFO") {
-			GP<ByteStream> gbs = iff->get_bytestream ();
-			GP<DjVuInfo> dinfo = DjVuInfo::create ();
-
-			dinfo->decode (*gbs);
-			int rot = dinfo->orientation;
-
-			w = (rot&1) ? dinfo->height : dinfo->width;
-			h = (rot&1) ? dinfo->width : dinfo->height;
-		}
-	} else if (chkid == "FORM:BM44" || chkid == "FORM:PM44") {
-		while (iff->get_chunk (chkid) && chkid != "BM44" && chkid != "PM44")
-			iff->close_chunk ();
-
-		if (chkid == "BM44" || chkid == "PM44") {
-			GP<ByteStream> gbs = iff->get_bytestream ();
-
-			if (gbs->read8 () == 0) {
-				gbs->read24 ();
-				unsigned char xhi = gbs->read8 ();
-				unsigned char xlo = gbs->read8 ();
-				unsigned char yhi = gbs->read8 ();
-				unsigned char ylo = gbs->read8 ();
-
-				w = (xhi << 8) + xlo;
-				h = (yhi << 8) + ylo;
-			}
-		}
-	}
-
-	return QSize (w * 72 / _cachedResolution, h * 72 / _cachedResolution);
 }
 
 void

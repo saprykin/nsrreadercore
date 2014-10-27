@@ -8,6 +8,7 @@
  */
 
 #include "nsrcroppads.h"
+#include "nsrrenderinfo.h"
 #include "nsrreadercore_global.h"
 
 #include <QObject>
@@ -87,7 +88,7 @@ public:
 	 * @brief Renders page internally
 	 * @param page Page number to render, starts from 1.
 	 */
-	virtual void renderPage (int page)			= 0;
+	virtual NSRRenderInfo renderPage (int page)		= 0;
 
 	/**
 	 * @brief Gets last rendered page image
@@ -102,18 +103,6 @@ public:
 	 * otherwise.
 	 */
 	virtual bool isValid ()	const				= 0;
-
-	/**
-	 * @brief Gets maximum available zoom for file
-	 * @return Maximum available zoom for file, in %.
-	 */
-	virtual double getMaxZoom ()				= 0;
-
-	/**
-	 * @brief Gets minimum available zoom for file
-	 * @return Minimum available zoom for file, in %.
-	 */
-	virtual double getMinZoom ()				= 0;
 
 	/**
 	 * @brief Checks whether file supports given representing style

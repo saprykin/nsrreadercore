@@ -68,11 +68,6 @@ NSRAbstractDocument::setEncoding (const QString &enc)
 void
 NSRAbstractDocument::setZoom (double zoom)
 {
-	if (zoom > getMaxZoom ())
-		zoom = getMaxZoom ();
-	else if (zoom < getMinZoom ())
-		zoom = getMinZoom ();
-
 	_zoom = zoom;
 	_zoomToWidth = false;
 }

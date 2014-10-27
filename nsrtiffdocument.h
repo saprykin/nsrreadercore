@@ -33,11 +33,9 @@ public:
 
 	/* Reimplemented from NSRAbstractDocument */
 	int getPagesCount () const;
-	void renderPage (int page);
+	NSRRenderInfo renderPage (int page);
 	NSR_CORE_IMAGE_DATATYPE getCurrentPage ();
 	bool isValid () const;
-	double getMaxZoom ();
-	double getMinZoom ();
 	bool isDocumentStyleSupported (NSRAbstractDocument::NSRDocumentStyle style) const;
 
 	NSRAbstractDocument::NSRDocumentStyle getPreferredDocumentStyle () const {
@@ -77,7 +75,6 @@ private:
 
 	QImage			_origImage;		/**< Original rendered image	*/
 	QImage			_image;			/**< Transformed original image	*/
-	QSize			_cachedPageSize;	/**< Cached page size		*/
 	TIFF			*_tiff;			/**< File handler		*/
 	int			_pagesCount;		/**< Pages count		*/
 	int			_cachedPage;		/**< Cached page number		*/

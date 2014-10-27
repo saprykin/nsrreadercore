@@ -44,11 +44,9 @@ public:
 
 	/* Reimplemented from NSRAbstractDocument */
 	int getPagesCount () const;
-	void renderPage (int page);
+	NSRRenderInfo renderPage (int page);
 	NSR_CORE_IMAGE_DATATYPE getCurrentPage ();
 	bool isValid () const;
-	double getMaxZoom ();
-	double getMinZoom ();
 	QString getText ();
 	bool isDocumentStyleSupported (NSRAbstractDocument::NSRDocumentStyle style) const;
 	NSRAbstractDocument::NSRDocumentStyle getPreferredDocumentStyle () const {
@@ -72,24 +70,13 @@ public:
 	}
 
 private:
-	/**
-	 * @brief Gets page size
-	 * @param page Page number.
-	 * @return Page size, in px.
-	 */
-	QSize getPageSize (int page);
-
 	/** Clears rendered data */
 	void clearRenderedData ();
 
 	GP<DjVuFileCache>	_cache;			/**< File cache			*/
 	GP<DjVuDocument>	_doc;			/**< DjVu file handler		*/
-	QSize			_cachedPageSize;	/**< Cached page size		*/
 	QSize			_imgSize;		/**< Rendered image size	*/
 	QString			_text;			/**< Page text			*/
-	double			_cachedMinZoom;		/**< Cached min zoom		*/
-	double			_cachedMaxZoom;		/**< Cached max zoom		*/
-	int			_cachedResolution;	/**< Cached page resolution	*/
 	int			_pagesCount;		/**< Pages count		*/
 	char			*_imgData;		/**< Rendered image data	*/
 };

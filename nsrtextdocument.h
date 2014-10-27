@@ -33,17 +33,9 @@ public:
 
 	/* Reimplemented from NSRAbstractDocument */
 	int getPagesCount () const;
-	void renderPage (int page);
+	NSRRenderInfo renderPage (int page);
 	NSR_CORE_IMAGE_DATATYPE getCurrentPage ();
 	bool isValid ()	const;
-
-	double getMaxZoom () {
-		return 100.0;
-	}
-
-	double getMinZoom () {
-		return 100.0;
-	}
 
 	bool isDocumentStyleSupported (NSRAbstractDocument::NSRDocumentStyle style) const;
 

@@ -31,14 +31,16 @@ NSRTextDocument::getPagesCount () const
 	return _pagesCount;
 }
 
-void
+NSRRenderInfo
 NSRTextDocument::renderPage (int page)
 {
+	NSRRenderInfo rinfo;
+
 	if (page < 1 || page > getPagesCount ())
-		return;
+		return rinfo;
 
 	if (!isValid ())
-		return;
+		return rinfo;
 
 	_text = QString ();
 
@@ -65,7 +67,7 @@ NSRTextDocument::renderPage (int page)
 
 		if ((bytesRead = in.readRawData (ba.data (), NSR_CORE_TEXT_PAGE_SIZE + NSR_CORE_TEXT_PAGE_SIZE / 2)) == -1) {
 			data.close ();
-			return;
+			return rinfo;
 		}
 
 		ba.truncate (bytesRead);
@@ -98,6 +100,10 @@ NSRTextDocument::renderPage (int page)
 
 		data.close ();
 	}
+
+	rinfo.setSuccessRender (true);
+
+	return rinfo;
 }
 
 NSR_CORE_IMAGE_DATATYPE

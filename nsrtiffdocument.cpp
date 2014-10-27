@@ -3,7 +3,6 @@
 #include <qmath.h>
 
 #define NSR_CORE_TIFF_MIN_ZOOM	25.0
-#define NSR_CORE_TIFF_MAX_ZOOM	100.0
 
 NSRTIFFDocument::NSRTIFFDocument (const QString& file, QObject *parent) :
 	NSRAbstractDocument (file, parent),
@@ -18,15 +17,6 @@ NSRTIFFDocument::NSRTIFFDocument (const QString& file, QObject *parent) :
 
 	while (TIFFReadDirectory (_tiff))
 		++_pagesCount;
-
-	if ((_pagesCount > 0 && TIFFSetDirectory (_tiff, 0) != 0) || _pagesCount == 0) {
-		uint32 w = 0, h = 0;
-
-		TIFFGetField (_tiff, TIFFTAG_IMAGEWIDTH, &w);
-		TIFFGetField (_tiff, TIFFTAG_IMAGELENGTH, &h);
-
-		_cachedPageSize = QSize (w, h);
-	}
 }
 
 NSRTIFFDocument::~NSRTIFFDocument ()
@@ -58,19 +48,20 @@ NSRTIFFDocument::isValid () const
 	return (_tiff != NULL);
 }
 
-void
+NSRRenderInfo
 NSRTIFFDocument::renderPage (int page)
 {
-	uint32	w = 0, h = 0;
-	size_t	npixels;
-	char	*imgBuf;
-	QImage	*img;
+	NSRRenderInfo	rinfo;
+	uint32		w = 0, h = 0;
+	size_t		npixels;
+	char *		imgBuf;
+	QImage *	img;
 
 	if (_tiff == NULL || page > getPagesCount () || page < 1)
-		return;
+		return rinfo;
 
 	if (_pagesCount > 0 && TIFFSetDirectory (_tiff, page - 1) == 0)
-		return;
+		return rinfo;
 
 	_image = QImage ();
 
@@ -79,10 +70,23 @@ NSRTIFFDocument::renderPage (int page)
 	npixels = w * h;
 
 	if (npixels * sizeof (uint32) > NSR_CORE_DOCUMENT_MAX_HEAP)
-		return;
+		return rinfo;
 
 	double pageWidth = (getRotation () == NSRAbstractDocument::NSR_DOCUMENT_ROTATION_90 ||
 			    getRotation () == NSRAbstractDocument::NSR_DOCUMENT_ROTATION_270) ? h : w;
+
+	double minZoom, maxZoom;
+
+	/* Each pixel needs 4 bytes (RGBA) of memory */
+	double pageSize = npixels * 4;
+
+	maxZoom = validateMaxZoom (QSize (w, h), sqrt (NSR_CORE_DOCUMENT_MAX_HEAP / pageSize - 1) * 100 + 0.5);
+
+	if (pageSize > NSR_CORE_DOCUMENT_MAX_HEAP)
+		minZoom = maxZoom;
+	else
+		minZoom = (maxZoom / 10) > NSR_CORE_TIFF_MIN_ZOOM ? NSR_CORE_TIFF_MIN_ZOOM
+								  : maxZoom / 10;
 
 	if (isZoomToWidth ()) {
 		int zoomWidth = getPageWidth ();
@@ -98,8 +102,11 @@ NSRTIFFDocument::renderPage (int page)
 		setZoomSilent (wZoom);
 	}
 
-	if (getZoom () < getMinZoom ())
-		setZoomSilent (getMinZoom ());
+	if (getZoom () < minZoom)
+		setZoomSilent (minZoom);
+
+	rinfo.setMinZoom (minZoom);
+	rinfo.setMaxZoom (maxZoom);
 
 	if (_cachedPage == page && !_origImage.isNull ()) {
 		double scale = getZoom () / 100.0;
@@ -109,7 +116,9 @@ NSRTIFFDocument::renderPage (int page)
 		trans.rotate ((int) getRotation ());
 		_image = _origImage.transformed (trans);
 
-		return;
+		rinfo.setSuccessRender (true);
+
+		return rinfo;
 	}
 
 	_origImage = QImage ();
@@ -177,37 +186,10 @@ NSRTIFFDocument::renderPage (int page)
 			_cachedPage = page;
 		}
 	}
-}
 
-double
-NSRTIFFDocument::getMaxZoom ()
-{
-	if (_tiff == NULL)
-		return 0;
+	rinfo.setSuccessRender (true);
 
-	if (_cachedPageSize == QSize (0, 0))
-		return NSR_CORE_TIFF_MAX_ZOOM;
-
-	/* Each pixel needs 4 bytes (RGBA) of memory */
-	double pageSize = _cachedPageSize.width () * _cachedPageSize.height () * 4;
-
-	return validateMaxZoom (_cachedPageSize, sqrt (NSR_CORE_DOCUMENT_MAX_HEAP / pageSize - 1) * 100 + 0.5);
-}
-
-double
-NSRTIFFDocument::getMinZoom ()
-{
-	if (_cachedPageSize == QSize (0, 0))
-		return NSR_CORE_TIFF_MIN_ZOOM;
-
-	/* Each pixel needs 4 bytes (RGBA) of memory */
-	double pageSize = _cachedPageSize.width () * _cachedPageSize.height () * 4;
-
-	if (pageSize > NSR_CORE_DOCUMENT_MAX_HEAP)
-		return getMaxZoom ();
-	else
-		return (getMaxZoom () / 10) > NSR_CORE_TIFF_MIN_ZOOM ? NSR_CORE_TIFF_MIN_ZOOM
-								     : getMaxZoom () / 10;
+	return rinfo;
 }
 
 NSR_CORE_IMAGE_DATATYPE

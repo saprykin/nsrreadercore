@@ -14,13 +14,10 @@ QMutex NSRPopplerDocument::_mutex;
 
 NSRPopplerDocument::NSRPopplerDocument (const QString& file, QObject *parent) :
 	NSRAbstractDocument (file, parent),
-	_cachedPageSize (QSize (0, 0)),
 	_doc (NULL),
 	_catalog (NULL),
 	_page (NULL),
-	_dev (NULL),
-	_cachedMinZoom (NSR_CORE_PDF_MIN_ZOOM),
-	_cachedMaxZoom (100.0)
+	_dev (NULL)
 {
 	_mutex.lock ();
 
@@ -68,13 +65,14 @@ NSRPopplerDocument::isValid () const
 	return (_doc != NULL && _doc->isOk ());
 }
 
-void
+NSRRenderInfo
 NSRPopplerDocument::renderPage (int page)
 {
-	double dpix, dpiy;
+	NSRRenderInfo	rinfo;
+	double		dpix, dpiy;
 
 	if (_doc == NULL || page > getPagesCount () || page < 1)
-		return;
+		return rinfo;
 
 	_page = _catalog->getPage (page);
 
@@ -94,7 +92,9 @@ NSRPopplerDocument::renderPage (int page)
 		delete text;
 		delete dev;
 
-		return;
+		rinfo.setSuccessRender (true);
+
+		return rinfo;
 	}
 
 	bool isLandscape = (qAbs (_page->getRotate ()) % 180) == 90;
@@ -102,6 +102,19 @@ NSRPopplerDocument::renderPage (int page)
 	double pageWidth = (((getRotation () % 180) == 90 & !isLandscape) ||
 			    ((getRotation () % 180) == 0 & isLandscape)) ?
 				_page->getCropHeight () : _page->getCropWidth ();
+
+	double minZoom, maxZoom;
+
+	/* Each pixel needs 4 bytes (RGBA) of memory */
+	double pageSize = _page->getCropWidth () * _page->getCropHeight () * 4;
+
+	maxZoom = (sqrt (NSR_CORE_DOCUMENT_MAX_HEAP) * sqrt (72 * 72 / pageSize) / 72 * 100 + 0.5);
+
+	if (pageSize > NSR_CORE_DOCUMENT_MAX_HEAP)
+		minZoom = maxZoom;
+	else
+		minZoom = (maxZoom / 10) > NSR_CORE_PDF_MIN_ZOOM ? NSR_CORE_PDF_MIN_ZOOM
+								 : maxZoom / 10;
 
 	if (isZoomToWidth ()) {
 		int zoomWidth = getPageWidth ();
@@ -117,8 +130,8 @@ NSRPopplerDocument::renderPage (int page)
 		setZoomSilent (wZoom);
 	}
 
-	if (getZoom () < getMinZoom ())
-		setZoomSilent (getMinZoom ());
+	if (getZoom () < minZoom)
+		setZoomSilent (minZoom);
 
 	setZoomSilent (validateMaxZoom (QSize (_page->getCropWidth (), _page->getCropHeight ()), getZoom ()));
 
@@ -128,47 +141,12 @@ NSRPopplerDocument::renderPage (int page)
 	dpiy = 72.0 * getZoom () / 100.0;
 
 	_page->display (_dev, dpix, dpiy, (int) getRotation (), gFalse, gFalse, gTrue, NULL, NULL, NULL, NULL);
-}
 
-double
-NSRPopplerDocument::getMaxZoom ()
-{
-	if (_page == NULL)
-		return 0;
+	rinfo.setMinZoom (minZoom);
+	rinfo.setMaxZoom (maxZoom);
+	rinfo.setSuccessRender (true);
 
-	if (QSize (_page->getCropWidth (), _page->getCropHeight ()) == _cachedPageSize)
-		return _cachedMaxZoom;
-
-	/* Each pixel needs 4 bytes (RGBA) of memory */
-	double pageSize = _page->getCropWidth () * _page->getCropHeight () * 4;
-	_cachedPageSize = QSize (_page->getCropWidth (), _page->getCropHeight ());
-	_cachedMaxZoom = (sqrt (NSR_CORE_DOCUMENT_MAX_HEAP) * sqrt (72 * 72 / pageSize ) / 72 * 100 + 0.5);
-	_cachedMaxZoom = validateMaxZoom (_cachedPageSize, _cachedMaxZoom);
-
-	return _cachedMaxZoom;
-}
-
-double
-NSRPopplerDocument::getMinZoom ()
-{
-	if (_page == NULL)
-		return 0;
-
-	if (QSize (_page->getCropWidth (), _page->getCropHeight ()) == _cachedPageSize)
-		return _cachedMinZoom;
-
-	/* Each pixel needs 4 bytes (RGBA) of memory */
-	double pageSize = _page->getCropWidth () * _page->getCropHeight () * 4;
-
-	if (pageSize > NSR_CORE_DOCUMENT_MAX_HEAP)
-		_cachedMinZoom = getMaxZoom ();
-	else
-		_cachedMinZoom = (getMaxZoom () / 10) > NSR_CORE_PDF_MIN_ZOOM ? NSR_CORE_PDF_MIN_ZOOM
-									      : getMaxZoom () / 10;
-
-	_cachedPageSize = QSize (_page->getCropWidth (), _page->getCropHeight ());
-
-	return _cachedMinZoom;
+	return rinfo;
 }
 
 NSR_CORE_IMAGE_DATATYPE
