@@ -29,6 +29,7 @@ set (SOURCES
 	nsrpopplerdocument.cpp
 	nsrreadercore.cpp
 	nsrrenderedpage.cpp
+	nsrrenderinfo.cpp
 	nsrrenderrequest.cpp
 	nsrrenderthread.cpp
 	nsrsession.cpp
@@ -287,6 +288,7 @@ set (HEADERS
 	nsrreadercore.h
 	nsrreadercore_global.h
 	nsrrenderedpage.h
+	nsrrenderinfo.h
 	nsrrenderrequest.h
 	nsrrenderthread.h
 	nsrsession.h
