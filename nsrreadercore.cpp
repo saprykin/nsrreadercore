@@ -261,24 +261,6 @@ NSRReaderCore::getZoom () const
 	return _renderRequest.getZoom ();
 }
 
-double
-NSRReaderCore::getMinZoom () const
-{
-	if (!isFileOpened ())
-		return 0;
-
-	return _doc->getMinZoom ();
-}
-
-double
-NSRReaderCore::getMaxZoom () const
-{
-	if (!isFileOpened ())
-		return 0;
-
-	return _doc->getMaxZoom ();
-}
-
 void
 NSRReaderCore::setZoom (double zoom, NSRRenderRequest::NSRRenderReason reason)
 {

@@ -156,18 +156,6 @@ public:
 	double getZoom () const;
 
 	/**
-	 * @brief Gets minimum available zoom for current session
-	 * @return Minimum available zoom for current session.
-	 */
-	double getMinZoom () const;
-
-	/**
-	 * @brief Gets maximum available zoom for current session
-	 * @return Maximum available zoom for current session.
-	 */
-	double getMaxZoom () const;
-
-	/**
 	 * @brief Sets zoom for current session
 	 * @param zoom Zoom value, in %.
 	 * @param reason Rendering reason.
