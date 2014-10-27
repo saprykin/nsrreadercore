@@ -5,6 +5,8 @@
 NSRRenderedPage::NSRRenderedPage () :
 	NSRRenderRequest (),
 	_renderedZoom (-1.0),
+	_minRenderZoom (-1.0),
+	_maxRenderZoom (-1.0),
 	_cached (false)
 {
 }
@@ -12,6 +14,8 @@ NSRRenderedPage::NSRRenderedPage () :
 NSRRenderedPage::NSRRenderedPage (const NSRRenderRequest& req) :
 	NSRRenderRequest (req),
 	_renderedZoom (-1.0),
+	_minRenderZoom (-1.0),
+	_maxRenderZoom (-1.0),
 	_cached (false)
 {
 }

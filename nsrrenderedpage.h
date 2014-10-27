@@ -88,6 +88,24 @@ public:
 	}
 
 	/**
+	 * @brief Gets min page zoom value
+	 * @return Min zoom value, in %.
+	 * @since 1.4.3
+	 */
+	inline double getMinRenderZoom () const {
+		return _minRenderZoom;
+	}
+
+	/**
+	 * @brief Gets max page zoom value
+	 * @return Max zoom value, in %.
+	 * @since 1.4.3
+	 */
+	inline double getMaxRenderZoom () const {
+		return _maxRenderZoom;
+	}
+
+	/**
 	 * @brief Checks whether page was taken from cache
 	 * @return True if page was taken from cache, false otherwise.
 	 */
@@ -150,6 +168,24 @@ public:
 	}
 
 	/**
+	 * @brief Sets page min zoom value
+	 * @param minZoom Page min zoom value, in %.
+	 * @since 1.4.3
+	 */
+	inline void setMinRenderZoom (double minZoom) {
+		_minRenderZoom = minZoom;
+	}
+
+	/**
+	 * @brief Sets page max zoom value
+	 * @param maxZoom Page max zoom value, in %.
+	 * @since 1.4.3
+	 */
+	inline void setMaxRenderZoom (double maxZoom) {
+		_maxRenderZoom = maxZoom;
+	}
+
+	/**
 	 * @brief Marks page as cached
 	 * @param cached Whether page is cached.
 	 */
@@ -163,6 +199,8 @@ private:
 	QPointF			_lastPos;	/**< Last image scroll position	*/
 	QPointF			_lastTextPos;	/**< Last text view position	*/
 	double			_renderedZoom;	/**< Page zoom value		*/
+	double			_minRenderZoom;	/**< Page min zoom value	*/
+	double			_maxRenderZoom;	/**< Page max zoom value	*/
 	bool			_cached;	/**< Cache flag			*/
 };
 
