@@ -2,7 +2,13 @@
 
 #include <QTextCodec>
 
-static QSize maxPageSize = QSize (4000, 4000);
+#ifdef Q_OS_BLACKBERRY
+#  define NSR_CORE_MAX_PAGE_WIDTH	4000
+#  define NSR_CORE_MAX_PAGE_HEIGHT	4000
+#else
+#  define NSR_CORE_MAX_PAGE_WIDTH	2000
+#  define NSR_CORE_MAX_PAGE_HEIGHT	2000
+#endif
 
 NSRAbstractDocument::NSRAbstractDocument (const QString& file, QObject *parent) :
 	QObject (parent),
@@ -121,12 +127,12 @@ NSRAbstractDocument::processText (const QString &text)
 double
 NSRAbstractDocument::validateMaxZoom (const QSize& pageSize, double zoom) const
 {
-	if (pageSize.width () * zoom / 100.0 <= maxPageSize.width () &&
-	    pageSize.height () * zoom / 100.0 <= maxPageSize.height ())
+	if (pageSize.width () * zoom / 100.0 <= NSR_CORE_MAX_PAGE_WIDTH &&
+	    pageSize.height () * zoom / 100.0 <= NSR_CORE_MAX_PAGE_HEIGHT)
 		return zoom;
 
-	double scale = qMin (maxPageSize.width () / (double) pageSize.width (),
-			     maxPageSize.height () / (double) pageSize.height ());
+	double scale = qMin (NSR_CORE_MAX_PAGE_WIDTH / (double) pageSize.width (),
+			     NSR_CORE_MAX_PAGE_HEIGHT / (double) pageSize.height ());
 
 	return scale * 100.0;
 }
