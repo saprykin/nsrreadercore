@@ -200,9 +200,12 @@ NSRRenderThread::run ()
 
 		/* Render image only if we are in graphic mode */
 		if (!_doc->isTextOnly ()) {
-			_doc->renderPage (page.getNumber ());
+			NSRRenderInfo rinfo = _doc->renderPage (page.getNumber ());
+
 			page.setImage (_doc->getCurrentPage ());
 			page.setRenderedZoom (_doc->getZoom ());
+			page.setMinRenderZoom (rinfo.getMinZoom ());
+			page.setMaxRenderZoom (rinfo.getMaxZoom ());
 		}
 
 		if (isRenderCanceled ()) {
