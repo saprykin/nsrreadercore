@@ -16,6 +16,8 @@
 /**
  * @class NSRPagesCache nsrpagescache.h
  * @brief Class for rendered pages cache
+ *
+ * By default cache size is limited to 100 MB.
  */
 class NSRPagesCache : public QObject
 {
@@ -45,6 +47,31 @@ public:
 	 * @return Cached page is exists, empty page otherwise.
 	 */
 	NSRRenderedPage getPage (int number) const;
+
+	/**
+	 * @brief Gets used memory for pages cache
+	 * @return Used memory for pages cache, bytes.
+	 * @since 1.4.3
+	 */
+	inline qint64 getUsedMemory () const {
+		return _usedMemory;
+	}
+
+	/**
+	 * @brief Gets max memory allowed for pages cache
+	 * @return Max memory allowed for pages cache, bytes.
+	 * @since 1.4.3
+	 */
+	inline qint64 getMaxMemory () const {
+		return _maxMemory;
+	}
+
+	/**
+	 * @brief Sets max memory allowed fior pages cache
+	 * @param maxMemory Max memory allowed for pages cache, bytes.
+	 * @since 1.4.3
+	 */
+	void setMaxMemory (qint64 maxMemory);
 
 	/**
 	 * @brief Adds page into cache
@@ -86,9 +113,10 @@ public:
 	void removePagesWithImages ();
 
 private:
-	QHash<int, NSRRenderedPage>	_hash;		/**< Pages cache		*/
-	QList<int>			_pages;		/**< Pages numbers		*/
-	qint64				_usedMemory;	/**< Memory used by pages	*/
+	QHash<int, NSRRenderedPage>	_hash;		/**< Pages cache			*/
+	QList<int>			_pages;		/**< Pages numbers			*/
+	qint64				_usedMemory;	/**< Memory used by pages, bytes	*/
+	qint64				_maxMemory;	/**< Max memory allowed, bytes		*/
 };
 
 #endif /* __NSRPAGESCACHE_H__ */

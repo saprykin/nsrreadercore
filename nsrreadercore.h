@@ -238,6 +238,20 @@ public:
 		_pagesLimit = limit;
 	}
 
+	/**
+	 * @brief Gets pages cache size
+	 * @return Pages cache size, bytes.
+	 * @since 1.4.3
+	 */
+	qint64 getCacheSize () const;
+
+	/**
+	 * @brief Sets pages cache size
+	 * @param cacheSize Pages cache size, bytes.
+	 * @since 1.4.3
+	 */
+	void setCacheSize (qint64 cacheSize);
+
 Q_SIGNALS:
 	/**
 	 * @brief Page rendered

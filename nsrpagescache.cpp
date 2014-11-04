@@ -1,11 +1,12 @@
 #include "nsrpagescache.h"
 
-/* Maximum cache size in bytes (~100 MB by default) */
+/* Maximum cache size in bytes by default (100 MB) */
 #define NSR_CORE_PAGES_CACHE_MAX_STORAGE 104857600
 
 NSRPagesCache::NSRPagesCache (QObject *parent) :
 		QObject (parent),
-		_usedMemory (0)
+		_usedMemory (0),
+		_maxMemory (NSR_CORE_PAGES_CACHE_MAX_STORAGE)
 {
 }
 
@@ -13,7 +14,6 @@ NSRPagesCache::~NSRPagesCache ()
 {
 	_hash.clear ();
 	_pages.clear ();
-	_usedMemory = 0;
 }
 
 bool
@@ -28,6 +28,21 @@ NSRPagesCache::getPage (int number) const
 	return _hash.value (number);
 }
 
+void NSRPagesCache::setMaxMemory (qint64 maxMemory)
+{
+	if (maxMemory < 0 || maxMemory == _maxMemory)
+		return;
+
+	while (_usedMemory > _maxMemory && !_pages.isEmpty ()) {
+		int deqPage = _pages.takeFirst ();
+
+		NSRRenderedPage rpage = _hash.take (deqPage);
+
+		_usedMemory -= (rpage.getSize().width () * rpage.getSize().height () * 4 +
+				rpage.getText().size () * 2);
+	}
+}
+
 void
 NSRPagesCache::addPage (const NSRRenderedPage& page)
 {
@@ -40,14 +55,13 @@ NSRPagesCache::addPage (const NSRRenderedPage& page)
 	newSize = page.getSize().width () * page.getSize().height () * 4 +
 		  page.getText().size () * 2;
 
-	if (newSize > NSR_CORE_PAGES_CACHE_MAX_STORAGE)
+	if (newSize > _maxMemory)
 		return;
 
 	_hash.take (page.getNumber ());
 	_pages.removeAll (page.getNumber ());
 
-	while (_usedMemory + newSize > NSR_CORE_PAGES_CACHE_MAX_STORAGE &&
-	       !_pages.isEmpty ()) {
+	while ((_usedMemory + newSize) > _maxMemory && !_pages.isEmpty ()) {
 		if (qAbs (page.getNumber () - _pages.first ()) <
 		    qAbs (page.getNumber () - _pages.last ()))
 			deqPage = _pages.takeLast ();
