@@ -110,7 +110,7 @@ pagetext_sub (const GP<DjVuTXT> &txt, DjVuTXT::Zone &zone, DjVuTXT::ZoneType det
 
 	bool gather = zone.children.isempty ();
 
-	for (GPosition pos=zone.children; pos; ++pos)
+	for (GPosition pos = zone.children; pos; ++pos)
 		if (zone.children[pos].ztype > detail)
 			gather = true;
 
@@ -118,13 +118,13 @@ pagetext_sub (const GP<DjVuTXT> &txt, DjVuTXT::Zone &zone, DjVuTXT::ZoneType det
 		const char *data = (const char *) (txt->textUTF8) + zone.text_start;
 		int length = zone.text_length;
 
-		if (length > 0 && data[length-1] == zone_names[zinfo].separator)
+		if (length > 0 && data[length - 1] == zone_names[zinfo].separator)
 			length -= 1;
 
 		a = miniexp_substring (data, length);
 		p = miniexp_cons (a, p);
 	} else {
-		for (GPosition pos=zone.children; pos; ++pos) {
+		for (GPosition pos = zone.children; pos; ++pos) {
 			a = pagetext_sub (txt, zone.children[pos], detail);
 			p = miniexp_cons (a, p);
 		}
@@ -251,6 +251,7 @@ NSRDjVuDocument::renderPage (int page)
 		S(seps[5], zone_names[5].name);
 		S(seps[6], zone_names[6].name);
 
+		ptext = miniexp_nil;
 		GP<DjVuFile> file = _doc->get_djvu_file (page - 1);
 
 		if (file != NULL) {
@@ -265,6 +266,13 @@ NSRDjVuDocument::renderPage (int page)
 				if (txt != NULL)
 					ptext = pagetext_sub (txt, txt->page_zone, DjVuTXT::CHARACTER);
 			}
+		}
+
+		if (ptext == miniexp_nil) {
+			_text = QString ();
+
+			rinfo.setSuccessRender (true);
+			return rinfo;
 		}
 
 		ptext = flatten_hiddentext (ptext);
