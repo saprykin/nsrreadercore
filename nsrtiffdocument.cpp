@@ -80,7 +80,7 @@ NSRTIFFDocument::renderPage (int page)
 	/* Each pixel needs 4 bytes (RGBA) of memory */
 	double pageSize = npixels * 4;
 
-	maxZoom = validateMaxZoom (QSize (w, h), 100.0);
+	maxZoom = sqrt (NSR_CORE_DOCUMENT_MAX_HEAP / (double) pageSize) * 100.0;
 
 	if (pageSize > NSR_CORE_DOCUMENT_MAX_HEAP)
 		minZoom = maxZoom;
@@ -104,6 +104,8 @@ NSRTIFFDocument::renderPage (int page)
 
 	if (getZoom () < minZoom)
 		setZoomSilent (minZoom);
+
+	setZoomSilent (validateMaxZoom (QSize (w, h), getZoom ()));
 
 	rinfo.setMinZoom (minZoom);
 	rinfo.setMaxZoom (maxZoom);
