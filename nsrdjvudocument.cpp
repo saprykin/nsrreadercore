@@ -356,7 +356,8 @@ NSRDjVuDocument::renderPage (int page)
 	/* Each pixel needs 3 bytes (RGB) of memory */
 	double pageSize = width * height * 3 * resFactor;
 
-	maxZoom = (sqrt (NSR_CORE_DOCUMENT_MAX_HEAP) * sqrt (72 * 72 / pageSize * 4) / 72 * 100 + 0.5);
+	maxZoom = qMin (sqrt (NSR_CORE_DOCUMENT_MAX_HEAP) * sqrt (72 * 72 / pageSize * 4) / 72 * 100 + 0.5,
+			getMaxZoom (QSize (width, height) * resFactor));
 
 	if (pageSize > NSR_CORE_DOCUMENT_MAX_HEAP)
 		minZoom = maxZoom;

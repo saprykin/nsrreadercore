@@ -131,6 +131,11 @@ NSRAbstractDocument::validateMaxZoom (const QSize& pageSize, double zoom) const
 	    pageSize.height () * zoom / 100.0 <= NSR_CORE_MAX_PAGE_HEIGHT)
 		return zoom;
 
+	return getMaxZoom (pageSize);
+}
+
+double NSRAbstractDocument::getMaxZoom (const QSize &pageSize) const
+{
 	double scale = qMin (NSR_CORE_MAX_PAGE_WIDTH / (double) pageSize.width (),
 			     NSR_CORE_MAX_PAGE_HEIGHT / (double) pageSize.height ());
 

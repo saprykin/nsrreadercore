@@ -80,7 +80,8 @@ NSRTIFFDocument::renderPage (int page)
 	/* Each pixel needs 4 bytes (RGBA) of memory */
 	double pageSize = npixels * 4;
 
-	maxZoom = sqrt (NSR_CORE_DOCUMENT_MAX_HEAP / (double) pageSize) * 100.0;
+	maxZoom = qMin (sqrt (NSR_CORE_DOCUMENT_MAX_HEAP / (double) pageSize) * 100.0,
+			getMaxZoom (QSize (w, h)));
 
 	if (pageSize > NSR_CORE_DOCUMENT_MAX_HEAP)
 		minZoom = maxZoom;

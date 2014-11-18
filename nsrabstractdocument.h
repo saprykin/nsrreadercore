@@ -365,6 +365,14 @@ protected:
 	 */
 	double validateMaxZoom (const QSize& pageSize, double zoom) const;
 
+	/**
+	 * @brief Gets max zoom available for given page size
+	 * @param pageSize Page size.
+	 * @return Max zoom value available, in %.
+	 * @since 1.4.3
+	 */
+	double getMaxZoom (const QSize& pageSize) const;
+
 private:
 	NSRCropPads		_cropPads;		/**< Page crop pads		*/
 	QString			_docPath;		/**< File path			*/

@@ -108,7 +108,8 @@ NSRPopplerDocument::renderPage (int page)
 	/* Each pixel needs 4 bytes (RGBA) of memory */
 	double pageSize = _page->getCropWidth () * _page->getCropHeight () * 4;
 
-	maxZoom = (sqrt (NSR_CORE_DOCUMENT_MAX_HEAP) * sqrt (72 * 72 / pageSize) / 72 * 100 + 0.5);
+	maxZoom = qMin (sqrt (NSR_CORE_DOCUMENT_MAX_HEAP) * sqrt (72 * 72 / pageSize) / 72 * 100 + 0.5,
+			getMaxZoom (QSize (_page->getCropWidth (), _page->getCropHeight ())));
 
 	if (pageSize > NSR_CORE_DOCUMENT_MAX_HEAP)
 		minZoom = maxZoom;
