@@ -1,5 +1,6 @@
 cmake_minimum_required (VERSION 2.8.11)
 project (nsrreadercore C CXX)
+enable_language (ASM_NASM)
 
 if (NOT CMAKE_BUILD_TYPE)
 	set (CMAKE_BUILD_TYPE "Debug")
@@ -14,6 +15,9 @@ if (NOT NSR_PLATFORM)
 endif()
 
 set (CMAKE_AUTOMOC true)
+
+# Enable SIMD instructions for JPEG decoding
+set (LIBJPEGTURBO_WITH_SIMD true)
 
 find_package (Qt4 REQUIRED)
 include (${QT_USE_FILE})
@@ -275,6 +279,181 @@ set (UNIVERSALCHARDET_SOURCES
 	3dparty/universalchardet/nsUTF8Prober.cpp
 )
 
+set (LIBJPEGTURBO_SOURCES
+	3dparty/libjpeg-turbo/jaricom.c
+	3dparty/libjpeg-turbo/jcapimin.c
+	3dparty/libjpeg-turbo/jcapistd.c
+	3dparty/libjpeg-turbo/jcarith.c
+	3dparty/libjpeg-turbo/jccoefct.c
+	3dparty/libjpeg-turbo/jccolor.c
+	3dparty/libjpeg-turbo/jcdctmgr.c
+	3dparty/libjpeg-turbo/jchuff.c
+	3dparty/libjpeg-turbo/jcinit.c
+	3dparty/libjpeg-turbo/jcmainct.c
+	3dparty/libjpeg-turbo/jcmarker.c
+	3dparty/libjpeg-turbo/jcmaster.c
+	3dparty/libjpeg-turbo/jcomapi.c
+	3dparty/libjpeg-turbo/jcparam.c
+	3dparty/libjpeg-turbo/jcphuff.c
+	3dparty/libjpeg-turbo/jcprepct.c
+	3dparty/libjpeg-turbo/jcsample.c
+	3dparty/libjpeg-turbo/jctrans.c
+	3dparty/libjpeg-turbo/jdapimin.c
+	3dparty/libjpeg-turbo/jdapistd.c
+	3dparty/libjpeg-turbo/jdarith.c
+	3dparty/libjpeg-turbo/jdatadst.c
+	3dparty/libjpeg-turbo/jdatasrc.c
+	3dparty/libjpeg-turbo/jdcoefct.c
+	3dparty/libjpeg-turbo/jdcolor.c
+	3dparty/libjpeg-turbo/jddctmgr.c
+	3dparty/libjpeg-turbo/jdhuff.c
+	3dparty/libjpeg-turbo/jdinput.c
+	3dparty/libjpeg-turbo/jdmainct.c
+	3dparty/libjpeg-turbo/jdmarker.c
+	3dparty/libjpeg-turbo/jdmaster.c
+	3dparty/libjpeg-turbo/jdmerge.c
+	3dparty/libjpeg-turbo/jdphuff.c
+	3dparty/libjpeg-turbo/jdpostct.c
+	3dparty/libjpeg-turbo/jdsample.c
+	3dparty/libjpeg-turbo/jdtrans.c
+	3dparty/libjpeg-turbo/jerror.c
+	3dparty/libjpeg-turbo/jfdctflt.c
+	3dparty/libjpeg-turbo/jfdctfst.c
+	3dparty/libjpeg-turbo/jfdctint.c
+	3dparty/libjpeg-turbo/jidctflt.c
+	3dparty/libjpeg-turbo/jidctfst.c
+	3dparty/libjpeg-turbo/jidctint.c
+	3dparty/libjpeg-turbo/jidctred.c
+	3dparty/libjpeg-turbo/jquant1.c
+	3dparty/libjpeg-turbo/jquant2.c
+	3dparty/libjpeg-turbo/jutils.c
+	3dparty/libjpeg-turbo/jmemmgr.c
+	3dparty/libjpeg-turbo/jmemnobs.c
+)
+
+if (LIBJPEGTURBO_WITH_SIMD)
+	if (CMAKE_SYSTEM_PROCESSOR MATCHES "arm")
+		set (SIMD_ARM true)
+	elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "x86")
+		if (CMAKE_SIZEOF_VOID_P MATCHES 8)
+			set (SIMD_X86_64 true)
+		else()
+			set (SIMD_I386 true)
+		endif()
+	endif()
+
+	if (CMAKE_SYSTEM_NAME MATCHES "Windows")
+		set (CMAKE_ASM_NASM_FLAGS "${CMAKE_ASM_NASM_FLAGS} -i${CMAKE_SOURCE_DIR}/win/")
+
+		if (SIMD_X86_64)
+				set (CMAKE_ASM_NASM_OBJECT_FORMAT win64)
+		else()
+				set (CMAKE_ASM_NASM_OBJECT_FORMAT win32)
+		endif()
+	else()
+		if (SIMD_X86_64)
+				set (CMAKE_ASM_NASM_OBJECT_FORMAT elf64)
+		else()
+				set (CMAKE_ASM_NASM_OBJECT_FORMAT elf)
+		endif()
+	endif()
+
+	add_definitions (-DWITH_SIMD)
+
+	if (SIMD_X86_64)
+		set (LIBJPEGTURBO_SOURCES ${LIBJPEGTURBO_SOURCES} 3dparty/libjpeg-turbo/simd/jsimd_x86_64.c)
+
+		set (LIBJPEGTURBO_SOURCES ${LIBJPEGTURBO_SOURCES}
+			3dparty/libjpeg-turbo/simd/jfsseflt-64.asm
+			3dparty/libjpeg-turbo/simd/jccolss2-64.asm
+			3dparty/libjpeg-turbo/simd/jdcolss2-64.asm
+			3dparty/libjpeg-turbo/simd/jcgrass2-64.asm
+			3dparty/libjpeg-turbo/simd/jcsamss2-64.asm
+			3dparty/libjpeg-turbo/simd/jdsamss2-64.asm
+			3dparty/libjpeg-turbo/simd/jdmerss2-64.asm
+			3dparty/libjpeg-turbo/simd/jcqnts2i-64.asm
+			3dparty/libjpeg-turbo/simd/jfss2fst-64.asm
+			3dparty/libjpeg-turbo/simd/jfss2int-64.asm
+			3dparty/libjpeg-turbo/simd/jiss2red-64.asm
+			3dparty/libjpeg-turbo/simd/jiss2int-64.asm
+			3dparty/libjpeg-turbo/simd/jiss2fst-64.asm
+			3dparty/libjpeg-turbo/simd/jcqnts2f-64.asm
+			3dparty/libjpeg-turbo/simd/jiss2flt-64.asm
+		)
+
+		message (STATUS "Building libjpeg-turbo with x86_64 SIMD acceleration")
+	elseif (SIMD_I386)
+		set (LIBJPEGTURBO_SOURCES ${LIBJPEGTURBO_SOURCES} 3dparty/libjpeg-turbo/simd/jsimd_i386.c)
+
+		set (LIBJPEGTURBO_SOURCES ${LIBJPEGTURBO_SOURCES}
+			3dparty/libjpeg-turbo/simd/jsimdcpu.asm
+			3dparty/libjpeg-turbo/simd/jccolmmx.asm
+			3dparty/libjpeg-turbo/simd/jcgrammx.asm
+			3dparty/libjpeg-turbo/simd/jdcolmmx.asm
+			3dparty/libjpeg-turbo/simd/jcsammmx.asm
+			3dparty/libjpeg-turbo/simd/jdsammmx.asm
+			3dparty/libjpeg-turbo/simd/jdmermmx.asm
+			3dparty/libjpeg-turbo/simd/jcqntmmx.asm
+			3dparty/libjpeg-turbo/simd/jfmmxfst.asm
+			3dparty/libjpeg-turbo/simd/jfmmxint.asm
+			3dparty/libjpeg-turbo/simd/jimmxred.asm
+			3dparty/libjpeg-turbo/simd/jimmxint.asm
+			3dparty/libjpeg-turbo/simd/jimmxfst.asm
+			3dparty/libjpeg-turbo/simd/jcqnt3dn.asm
+			3dparty/libjpeg-turbo/simd/jf3dnflt.asm
+			3dparty/libjpeg-turbo/simd/ji3dnflt.asm
+			3dparty/libjpeg-turbo/simd/jcqntsse.asm
+			3dparty/libjpeg-turbo/simd/jfsseflt.asm
+			3dparty/libjpeg-turbo/simd/jisseflt.asm
+			3dparty/libjpeg-turbo/simd/jccolss2.asm
+			3dparty/libjpeg-turbo/simd/jcgrass2.asm
+			3dparty/libjpeg-turbo/simd/jdcolss2.asm
+			3dparty/libjpeg-turbo/simd/jcsamss2.asm
+			3dparty/libjpeg-turbo/simd/jdsamss2.asm
+			3dparty/libjpeg-turbo/simd/jdmerss2.asm
+			3dparty/libjpeg-turbo/simd/jcqnts2i.asm
+			3dparty/libjpeg-turbo/simd/jfss2fst.asm
+			3dparty/libjpeg-turbo/simd/jfss2int.asm
+			3dparty/libjpeg-turbo/simd/jiss2red.asm
+			3dparty/libjpeg-turbo/simd/jiss2int.asm
+			3dparty/libjpeg-turbo/simd/jiss2fst.asm
+			3dparty/libjpeg-turbo/simd/jcqnts2f.asm
+			3dparty/libjpeg-turbo/simd/jiss2flt.asm
+		)
+
+		message (STATUS "Building libjpeg-turbo with i386 SIMD acceleration")
+	elseif (SIMD_ARM)
+		set (LIBJPEGTURBO_SOURCES ${LIBJPEGTURBO_SOURCES}
+			3dparty/libjpeg-turbo/simd/jsimd_arm.c
+			3dparty/libjpeg-turbo/simd/jsimd_arm_neon.S
+		)
+
+		message (STATUS "Building libjpeg-turbo with NEON SIMD acceleration")
+	endif()
+
+	set (CMAKE_ASM_NASM_FLAGS "-i${CMAKE_SOURCE_DIR}/3dparty/libjpeg-turbo/simd/ -i${CMAKE_BINARY_DIR}/")
+
+	if (NOT CMAKE_SYSTEM_NAME MATCHES "Windows")
+		EXECUTE_PROCESS (
+			OUTPUT_FILE ${CMAKE_BINARY_DIR}/jsimdcfg.inc
+			COMMAND cpp -I${CMAKE_BINARY_DIR}
+				-I${CMAKE_BINARY_DIR}/simd
+				-I${CMAKE_SOURCE_DIR}/3dparty/libjpeg-turbo/config/${NSR_PLATFORM}
+				${CMAKE_SOURCE_DIR}/3dparty/libjpeg-turbo/simd/jsimdcfg.inc.h
+			COMMAND egrep "^[\;%]|^\ %"
+			COMMAND sed "s%_cpp_protection_%%"
+			COMMAND sed "s@% define@%define@g"
+		)
+	endif()
+
+	if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+		set (CMAKE_ASM_NASM_FLAGS "${CMAKE_ASM_NASM_FLAGS} -g")
+	endif()
+else()
+	set (LIBJPEGTURBO_SOURCES ${LIBJPEGTURBO_SOURCES} jsimd_none.c)
+	message (STATUS "Building libjpeg-turbo without SIMD acceleration")
+endif()
+
 set (HEADERS
 	insrsettings.h
 	insrthumbnailer.h
@@ -517,11 +696,30 @@ set (UNIVERSALCHARDET_HEADERS
 	3dparty/universalchardet/nsUTF8Prober.h
 )
 
+set (LIBJPEGTURBO_HEADERS
+	3dparty/libjpeg-turbo/config/${NSR_PLATFORM}/config-jpeg.h
+	3dparty/libjpeg-turbo/config/${NSR_PLATFORM}/jconfig.h
+	3dparty/libjpeg-turbo/jchuff.h
+	3dparty/libjpeg-turbo/jdct.h
+	3dparty/libjpeg-turbo/jdhuff.h
+	3dparty/libjpeg-turbo/jerror.h
+	3dparty/libjpeg-turbo/jinclude.h
+	3dparty/libjpeg-turbo/jmemsys.h
+	3dparty/libjpeg-turbo/jmorecfg.h
+	3dparty/libjpeg-turbo/jpegcomp.h
+	3dparty/libjpeg-turbo/jpegint.h
+	3dparty/libjpeg-turbo/jpeglib.h
+	3dparty/libjpeg-turbo/jsimd.h
+	3dparty/libjpeg-turbo/jsimddct.h
+	3dparty/libjpeg-turbo/jversion.h
+)
+
 include_directories (
 	3dparty
 	3dparty/djvu/config/${NSR_PLATFORM}
 	3dparty/poppler/config/${NSR_PLATFORM}
 	3dparty/tiff/config/${NSR_PLATFORM}
+	3dparty/libjpeg-turbo/config/${NSR_PLATFORM}
 	3dparty/tiff
 	3dparty/poppler
 	3dparty/poppler/goo
@@ -537,11 +735,13 @@ add_library (${PROJECT_NAME} SHARED
 	${POPPLER_SOURCES}
 	${TIFF_SOURCES}
 	${UNIVERSALCHARDET_SOURCES}
+	${LIBJPEGTURBO_SOURCES}
 	${HEADERS}
 	${DJVU_HEADERS}
 	${POPPLER_HEADERS}
 	${TIFF_HEADERS}
 	${UNIVERSALCHARDET_HEADERS}
+	${LIBJPEGTURBO_HEADERS}
 )
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
