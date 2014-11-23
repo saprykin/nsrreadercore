@@ -6,6 +6,7 @@ if (NOT CMAKE_BUILD_TYPE)
 	set (CMAKE_BUILD_TYPE "Debug")
 endif()
 
+set (CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE})
 set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE})
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE})
@@ -21,6 +22,18 @@ set (LIBJPEGTURBO_WITH_SIMD true)
 
 find_package (Qt4 REQUIRED)
 include (${QT_USE_FILE})
+
+add_subdirectory (3dparty/djvu)
+
+foreach (DJVU_FILE ${DJVU_SOURCES})
+	set (DJVU_FILE "3dparty/djvu/${DJVU_FILE}")
+	set (THIRDPARTY_SOURCES ${THIRDPARTY_SOURCES} ${DJVU_FILE})
+endforeach()
+
+foreach (DJVU_FILE ${DJVU_HEADERS})
+	set (DJVU_FILE "3dparty/djvu/${DJVU_FILE}")
+	set (THIRDPARTY_HEADERS ${THIRDPARTY_HEADERS} ${DJVU_FILE})
+endforeach()
 
 set (SOURCES
 	nsrabstractdocument.cpp
@@ -39,66 +52,6 @@ set (SOURCES
 	nsrsession.cpp
 	nsrtextdocument.cpp
 	nsrtiffdocument.cpp
-)
-
-set (DJVU_SOURCES
-	3dparty/djvu/Arrays.cpp
-	3dparty/djvu/atomic.cpp
-	3dparty/djvu/BSByteStream.cpp
-	3dparty/djvu/BSEncodeByteStream.cpp
-	3dparty/djvu/ByteStream.cpp
-	3dparty/djvu/DataPool.cpp
-	3dparty/djvu/ddjvuapi.cpp
-	3dparty/djvu/debug.cpp
-	3dparty/djvu/DjVmDir.cpp
-	3dparty/djvu/DjVmDir0.cpp
-	3dparty/djvu/DjVmDoc.cpp
-	3dparty/djvu/DjVmNav.cpp
-	3dparty/djvu/DjVuAnno.cpp
-	3dparty/djvu/DjVuDocEditor.cpp
-	3dparty/djvu/DjVuDocument.cpp
-	3dparty/djvu/DjVuDumpHelper.cpp
-	3dparty/djvu/DjVuErrorList.cpp
-	3dparty/djvu/DjVuFile.cpp
-	3dparty/djvu/DjVuFileCache.cpp
-	3dparty/djvu/DjVuGlobal.cpp
-	3dparty/djvu/DjVuGlobalMemory.cpp
-	3dparty/djvu/DjVuImage.cpp
-	3dparty/djvu/DjVuInfo.cpp
-	3dparty/djvu/DjVuMessage.cpp
-	3dparty/djvu/DjVuMessageLite.cpp
-	3dparty/djvu/DjVuNavDir.cpp
-	3dparty/djvu/DjVuPalette.cpp
-	3dparty/djvu/DjVuPort.cpp
-	3dparty/djvu/DjVuText.cpp
-	3dparty/djvu/DjVuToPS.cpp
-	3dparty/djvu/GBitmap.cpp
-	3dparty/djvu/GContainer.cpp
-	3dparty/djvu/GException.cpp
-	3dparty/djvu/GIFFManager.cpp
-	3dparty/djvu/GMapAreas.cpp
-	3dparty/djvu/GOS.cpp
-	3dparty/djvu/GPixmap.cpp
-	3dparty/djvu/GRect.cpp
-	3dparty/djvu/GScaler.cpp
-	3dparty/djvu/GSmartPointer.cpp
-	3dparty/djvu/GString.cpp
-	3dparty/djvu/GThreads.cpp
-	3dparty/djvu/GUnicode.cpp
-	3dparty/djvu/GURL.cpp
-	3dparty/djvu/IFFByteStream.cpp
-	3dparty/djvu/IW44EncodeCodec.cpp
-	3dparty/djvu/IW44Image.cpp
-	3dparty/djvu/JB2EncodeCodec.cpp
-	3dparty/djvu/JB2Image.cpp
-	3dparty/djvu/JPEGDecoder.cpp
-	3dparty/djvu/miniexp.cpp
-	3dparty/djvu/MMRDecoder.cpp
-	3dparty/djvu/MMX.cpp
-	3dparty/djvu/UnicodeByteStream.cpp
-	3dparty/djvu/XMLParser.cpp
-	3dparty/djvu/XMLTags.cpp
-	3dparty/djvu/ZPCodec.cpp
 )
 
 set (POPPLER_SOURCES
@@ -475,63 +428,6 @@ set (HEADERS
 	nsrtiffdocument.h
 )
 
-set (DJVU_HEADERS
-	3dparty/djvu/config/${NSR_PLATFORM}/config-djvu.h
-	3dparty/djvu/Arrays.h
-	3dparty/djvu/atomic.h
-	3dparty/djvu/BSByteStream.h
-	3dparty/djvu/ByteStream.h
-	3dparty/djvu/DataPool.h
-	3dparty/djvu/ddjvuapi.h
-	3dparty/djvu/debug.h
-	3dparty/djvu/DjVmDir.h
-	3dparty/djvu/DjVmDir0.h
-	3dparty/djvu/DjVmDoc.h
-	3dparty/djvu/DjVmNav.h
-	3dparty/djvu/DjVuAnno.h
-	3dparty/djvu/DjVuDocEditor.h
-	3dparty/djvu/DjVuDocument.h
-	3dparty/djvu/DjVuDumpHelper.h
-	3dparty/djvu/DjVuErrorList.h
-	3dparty/djvu/DjVuFile.h
-	3dparty/djvu/DjVuFileCache.h
-	3dparty/djvu/DjVuGlobal.h
-	3dparty/djvu/DjVuImage.h
-	3dparty/djvu/DjVuInfo.h
-	3dparty/djvu/DjVuMessage.h
-	3dparty/djvu/DjVuMessageLite.h
-	3dparty/djvu/DjVuNavDir.h
-	3dparty/djvu/DjVuPalette.h
-	3dparty/djvu/DjVuPort.h
-	3dparty/djvu/DjVuText.h
-	3dparty/djvu/DjVuToPS.h
-	3dparty/djvu/GBitmap.h
-	3dparty/djvu/GContainer.h
-	3dparty/djvu/GException.h
-	3dparty/djvu/GIFFManager.h
-	3dparty/djvu/GMapAreas.h
-	3dparty/djvu/GOS.h
-	3dparty/djvu/GPixmap.h
-	3dparty/djvu/GRect.h
-	3dparty/djvu/GScaler.h
-	3dparty/djvu/GSmartPointer.h
-	3dparty/djvu/GString.h
-	3dparty/djvu/GThreads.h
-	3dparty/djvu/GURL.h
-	3dparty/djvu/IFFByteStream.h
-	3dparty/djvu/IW44Image.h
-	3dparty/djvu/JB2Image.h
-	3dparty/djvu/JPEGDecoder.h
-	3dparty/djvu/miniexp.h
-	3dparty/djvu/MMRDecoder.h
-	3dparty/djvu/MMX.h
-	3dparty/djvu/Template.h
-	3dparty/djvu/UnicodeByteStream.h
-	3dparty/djvu/XMLParser.h
-	3dparty/djvu/XMLTags.h
-	3dparty/djvu/ZPCodec.h
-)
-
 set (POPPLER_HEADERS
 	3dparty/poppler/config/${NSR_PLATFORM}/config-pdf.h
 	3dparty/poppler/fofi/FoFiBase.h
@@ -716,7 +612,6 @@ set (LIBJPEGTURBO_HEADERS
 
 include_directories (
 	3dparty
-	3dparty/djvu/config/${NSR_PLATFORM}
 	3dparty/poppler/config/${NSR_PLATFORM}
 	3dparty/tiff/config/${NSR_PLATFORM}
 	3dparty/libjpeg-turbo/config/${NSR_PLATFORM}
@@ -725,19 +620,21 @@ include_directories (
 	3dparty/poppler/goo
 	3dparty/poppler/poppler
 	3dparty/universalchardet
+	${DJVU_INCLUDES}
+	${CMAKE_BINARY_DIR}
 	${PROJECT_SOURCE_DIR}
 	${NSR_INCLUDE_DIRECTORIES}
 )
 
 add_library (${PROJECT_NAME} SHARED
 	${SOURCES}
-	${DJVU_SOURCES}
+	${THIRDPARTY_SOURCES}
 	${POPPLER_SOURCES}
 	${TIFF_SOURCES}
 	${UNIVERSALCHARDET_SOURCES}
 	${LIBJPEGTURBO_SOURCES}
 	${HEADERS}
-	${DJVU_HEADERS}
+	${THIRDPARTY_HEADERS}
 	${POPPLER_HEADERS}
 	${TIFF_HEADERS}
 	${UNIVERSALCHARDET_HEADERS}
@@ -762,6 +659,7 @@ set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${NSR_CXX
 
 target_link_libraries (${PROJECT_NAME}
 	${QT_LIBRARIES}
+	${DJVU_LIBRARIES}
 	png
 	jpeg
 	curl

@@ -1,0 +1,203 @@
+#ifndef __CONFIG_DJVU_H__
+#define __CONFIG_DJVU_H__
+
+/* Version string. */
+#define DJVULIBRE_VERSION "@DJVU_VERSION@"
+
+/* Directory datadir. */
+#define DIR_DATADIR "/usr/pkg/share"
+
+/* Define to 1 if bool is a built-in type. */
+#cmakedefine HAVE_BOOL 1
+
+/* Define to 1 if cothreads are available. */
+/* #undef HAVE_COTHREAD */
+
+/* Define to 1 if libgcc contains the cothread patch. */
+/* #undef HAVE_COTHREAD_PATCH */
+
+/* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'. */
+#cmakedefine HAVE_DIRENT_H 1
+
+/* Define to 1 if the compiler supports exceptions. */
+#cmakedefine HAVE_EXCEPTIONS 1
+
+/* Define to 1 if you have the `getpwuid' function. */
+#cmakedefine HAVE_GETPWUID 1
+
+/* Define to 1 if you have the iconv function. */
+#cmakedefine HAVE_ICONV 1
+
+/* Define to 1 if you have the <iconv.h> header file. */
+#cmakedefine HAVE_ICONV_H 1
+
+/* Define to 1 if the compiler supports intel atomic builtins. */
+#cmakedefine HAVE_INTEL_ATOMIC_BUILTINS 1
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#cmakedefine HAVE_INTTYPES_H 1
+
+/* Define to 1 if you have the `iswspace' function. */
+#cmakedefine HAVE_ISWSPACE 1
+
+/* Define to 1 if you have the IJG JPEG library. */
+#define HAVE_JPEG 1
+
+/* Define to 1 if the system has the type `long long int'. */
+#cmakedefine HAVE_LONG_LONG_INT 1
+
+/* Define to 1 if the system has the type `mbstate_t'. */
+#cmakedefine HAVE_MBSTATE_T 1
+
+/* Define to 1 if the compiler supports member templates. */
+#cmakedefine HAVE_MEMBER_TEMPLATES 1
+
+/* Define to 1 if you have a working `mmap' system call. */
+#cmakedefine HAVE_MMAP 1
+
+/* Define to 1 if the compiler implements namespaces. */
+#cmakedefine HAVE_NAMESPACES 1
+
+/* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
+#cmakedefine HAVE_NDIR_H 1
+
+/* Define to 1 if pthreads are available. */
+#cmakedefine HAVE_PTHREAD 1
+
+/* Define to 1 if the compiler comes with standard includes. */
+#cmakedefine HAVE_STDINCLUDES 1
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#cmakedefine HAVE_STDINT_H 1
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#cmakedefine HAVE_STDLIB_H 1
+
+/* Define to 1 if you have the `strerror' function. */
+#cmakedefine HAVE_STRERROR 1
+
+/* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'. */
+#cmakedefine HAVE_SYS_DIR_H 1
+
+/* Define to 1 if you have the <sys/ipc.h> header file. */
+#cmakedefine HAVE_SYS_IPC_H 1
+
+/* Define to 1 if you have the <sys/mman.h> header file. */
+#cmakedefine HAVE_SYS_MMAN_H 1
+
+/* Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'. */
+#cmakedefine HAVE_SYS_NDIR_H 1
+
+/* Define to 1 if you have the <sys/shm.h> header file. */
+#cmakedefine HAVE_SYS_SHM_H 1
+
+/* Define to 1 if you have libtiff. */
+#define HAVE_TIFF 1
+
+/* Define to 1 if the compiler recognizes typename. */
+#cmakedefine HAVE_TYPENAME 1
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#cmakedefine HAVE_UNISTD_H 1
+
+/* Define to 1 if you have the `vsnprintf' function. */
+#cmakedefine HAVE_VSNPRINTF 1
+
+/* Define to 1 if you have the <wchar.h> header file. */
+#cmakedefine HAVE_WCHAR_H 1
+
+/* Define to 1 if the system has the type `wchar_t'. */
+#cmakedefine HAVE_WCHAR_T 1
+
+/* Define to 1 if you have the `wcrtomb' function. */
+#cmakedefine HAVE_WCRTOMB 1
+
+/* Define to 1 if you have the <wctype.h> header file. */
+#cmakedefine HAVE_WCTYPE_H 1
+
+/* Define to 1 to use g++ pragmas interface/implementation. */
+/* #undef NEED_GNUG_PRAGMAS */
+
+/* Define to the version of this package. */
+#define PACKAGE_VERSION "@DJVU_VERSION@"
+
+/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
+#cmakedefine TIME_WITH_SYS_TIME 1
+
+/* Number of bits in a file offset, on hosts where this is settable. */
+#cmakedefine _FILE_OFFSET_BITS @_FILE_OFFSET_BITS@
+
+/* Define to 1 to make fseeko visible on some hosts (e.g. glibc 2.2). */
+#cmakedefine _LARGEFILE_SOURCE 1
+
+/* Define to 1 for large files, on AIX-style hosts. */
+#cmakedefine _LARGE_FILES 1
+
+/* - Miscellaneous */
+#define AUTOCONF 1
+
+#if defined (__CYGWIN32__) || !defined (WIN32)
+#  define UNIX 1
+#endif
+
+/* BOOL */
+#if !defined (HAVE_BOOL) && !defined (bool)
+#  define bool  char
+#  define true  1
+#  define false 0
+#endif
+
+/* WCHAR etc. */
+#if !defined (HAVE_WCHAR_T)
+#  define HAS_WCHAR 0
+#  define HAS_WCTYPE 0
+#  define HAS_MBSTATE 0
+#else
+#  define HAS_WCHAR 1
+#  if defined (HAVE_WCTYPE_H) && defined (HAVE_ISWSPACE)
+#    define HAS_WCTYPE 1
+#  endif
+#  if defined (HAVE_MBSTATE_T) && defined (HAVE_WCRTOMB)
+#    define HAS_MBSTATE 1
+#  endif
+#endif
+
+/* ICONV */
+#if defined (HAVE_ICONV_H) && defined (HAVE_ICONV)
+#  define HAS_ICONV 1
+#else
+#  define HAS_ICONV 0
+#endif
+
+/* I18N MESSAGES HELL */
+#define HAS_CTRL_C_IN_ERR_MSG 1
+
+/* CONTAINERS */
+#ifndef HAVE_MEMBER_TEMPLATES
+#  define GCONTAINER_NO_MEMBER_TEMPLATES 1
+#endif
+
+#ifndef HAVE_TYPENAME
+#  define GCONTAINER_NO_TYPENAME 1
+#endif
+
+/* COTHREAD */
+#ifdef HAVE_COTHREAD
+#  ifndef HAVE_COTHREAD_PATCH
+#    define NO_LIBGCC_HOOKS 1
+#  endif
+#endif
+
+/* JPEG */
+#ifdef HAVE_JPEG
+#  define NEED_JPEG_DECODER 1
+#endif
+
+/* MMAP */
+#if defined (HAVE_MMAP) && defined (HAVE_SYS_MMAN_H)
+#  define HAS_MEMMAP 1
+#else
+#  define HAS_MEMMAP 0
+#endif
+
+#endif /* __CONFIG_DJVU_H__ */
