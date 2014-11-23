@@ -94,6 +94,9 @@ set (NSR_CXX_FLAGS_MINSIZEREL "${NSR_QCC_FLAGS} -lang-c++ ${NSR_BASE_FLAGS} ${NS
 set (NSR_CXX_FLAGS_RELEASE "${NSR_QCC_FLAGS} -lang-c++ ${NSR_BASE_FLAGS} ${NSR_CPU_FLAGS} -O2 -fstack-protector-strong -fvisibility=hidden -Os")
 set (NSR_CXX_FLAGS_RELWITHDEBINFO "${NSR_QCC_FLAGS} -lang-c++ ${NSR_BASE_FLAGS} ${NSR_CPU_FLAGS} -O2 -g -fstack-protector-strong -fvisibility=hidden")
 
+set (NSR_C_FLAGS_CHECK ${NSR_QCC_FLAGS})
+set (NSR_CXX_FLAGS_CHECK "${NSR_QCC_FLAGS} -lang-c++")
+
 set (NSR_INCLUDE_DIRECTORIES "${QNX_TARGET}/usr/include" "${QNX_TARGET}/usr/include/freetype2")
 
 set (NSR_PLATFORM_BASE_DEFINES "-DQT_NO_IMPORT_QT47_QML -DQ_OS_BLACKBERRY -DQT_DECLARATIVE_DEBUG -DQT_DECLARATIVE_LIB -DQT_XML_LIB -DQT_CORE_LIB -DQT_SHARED")
