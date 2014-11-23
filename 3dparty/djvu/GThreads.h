@@ -14,7 +14,7 @@
 //C- but WITHOUT ANY WARRANTY; without even the implied warranty of
 //C- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //C- GNU General Public License for more details.
-//C- 
+//C-
 //C- DjVuLibre-3.5 is derived from the DjVu(r) Reference Library from
 //C- Lizardtech Software.  Lizardtech Software has authorized us to
 //C- replace the original DjVu(r) Reference Library notice by the following
@@ -35,16 +35,16 @@
 //C- | The computer code originally released by LizardTech under this
 //C- | license and unmodified by other parties is deemed "the LIZARDTECH
 //C- | ORIGINAL CODE."  Subject to any third party intellectual property
-//C- | claims, LizardTech grants recipient a worldwide, royalty-free, 
-//C- | non-exclusive license to make, use, sell, or otherwise dispose of 
-//C- | the LIZARDTECH ORIGINAL CODE or of programs derived from the 
-//C- | LIZARDTECH ORIGINAL CODE in compliance with the terms of the GNU 
-//C- | General Public License.   This grant only confers the right to 
-//C- | infringe patent claims underlying the LIZARDTECH ORIGINAL CODE to 
-//C- | the extent such infringement is reasonably necessary to enable 
-//C- | recipient to make, have made, practice, sell, or otherwise dispose 
-//C- | of the LIZARDTECH ORIGINAL CODE (or portions thereof) and not to 
-//C- | any greater extent that may be necessary to utilize further 
+//C- | claims, LizardTech grants recipient a worldwide, royalty-free,
+//C- | non-exclusive license to make, use, sell, or otherwise dispose of
+//C- | the LIZARDTECH ORIGINAL CODE or of programs derived from the
+//C- | LIZARDTECH ORIGINAL CODE in compliance with the terms of the GNU
+//C- | General Public License.   This grant only confers the right to
+//C- | infringe patent claims underlying the LIZARDTECH ORIGINAL CODE to
+//C- | the extent such infringement is reasonably necessary to enable
+//C- | recipient to make, have made, practice, sell, or otherwise dispose
+//C- | of the LIZARDTECH ORIGINAL CODE (or portions thereof) and not to
+//C- | any greater extent that may be necessary to utilize further
 //C- | modifications or combinations.
 //C- |
 //C- | The LIZARDTECH ORIGINAL CODE is provided "AS IS" WITHOUT WARRANTY
@@ -76,17 +76,17 @@
     the following values:
     \begin{description}
     \item[-DTHREADMODEL=NOTHREADS] Dummy implementation.  This is a
-          good choice when the multithreading features are not required,
-          because it minimizes the portability problems.  This is currently
-          the default when compiling under Unix.
+	  good choice when the multithreading features are not required,
+	  because it minimizes the portability problems.  This is currently
+	  the default when compiling under Unix.
     \item[-DTHREADMODEL=WINTHREADS] Windows implementation.
-          This is the default when compiling under Windows.
+	  This is the default when compiling under Windows.
     \item[-DTHREADMODEL=POSIXTHREADS] Posix implementation.
-          This implementation also supports DCE threads. The behavior of
-          the code is subject to the quality of the system implementation of
-          Posix threads.
+	  This implementation also supports DCE threads. The behavior of
+	  the code is subject to the quality of the system implementation of
+	  Posix threads.
     \end{description}
-    
+
     @memo
     Portable threads
     @author
@@ -108,13 +108,17 @@
 #define POSIXTHREADS  10
 #define WINTHREADS    11
 
-#define THREADMODEL POSIXTHREADS
-
 // Known platforms
 #ifndef THREADMODEL
-#if defined(WIN32)
-#define THREADMODEL WINTHREADS
-#endif
+#  if defined (WIN32)
+#    define THREADMODEL WINTHREADS
+#  else
+#    if defined (HAVE_PTHREAD)
+#      define THREADMODEL POSIXTHREADS
+#    else
+#      define THREADMODEL NOTHREADS
+#    endif
+#  endif
 #endif
 
 // Exception emulation is not thread safe
@@ -177,7 +181,7 @@ namespace DJVU {
     Several static member functions control the thread scheduler.  Function
     \Ref{GThread::yield} relinquishes the processor to another thread.
     Function \Ref{GThread::select} (#COTHREADS# only) provides a thread-aware
-    replacement for the well-known unix system call #select#.  
+    replacement for the well-known unix system call #select#.
 
     {\bf Note} --- Both the copy constructor and the copy operator are declared
     as private members. It is therefore not possible to make multiple copies
@@ -186,7 +190,7 @@ namespace DJVU {
 class GThread {
 public:
   /** Constructs a new thread object.  Memory is allocated for the
-      thread, but the thread is not started. 
+      thread, but the thread is not started.
       Argument #stacksize# is used by the #COTHREADS# model only for
       specifying the amount of memory needed for the processor stack. A
       negative value will be replaced by a suitable default value of 128Kb.
@@ -242,14 +246,14 @@ private:
     Communications of the ACM, 17(10), 1974).  This mechanism provides the
     basic mutual exclusion (mutex) and thread notification facilities
     (condition variables).
-    
+
     Only one thread can own the monitor at a given time.  Functions
     \Ref{enter} and \Ref{leave} can be used to acquire and release the
     monitor. This mutual exclusion provides an efficient way to protect
     segment of codes ({\em critical sections}) which should not be
     simultaneously executed by two threads. Class \Ref{GMonitorLock} provides
     a convenient way to do this effectively.
-    
+
     When the thread owning the monitor calls function \Ref{wait}, the monitor
     is released and the thread starts waiting until another thread calls
     function \Ref{signal} or \Ref{broadcast}.  When the thread wakes-up, it
@@ -257,7 +261,7 @@ private:
     thread must acquire the monitor before calling functions #signal# and
     #broadcast#, the signaled thread will not be able to re-acquire the
     monitor until the signaling thread(s) releases the monitor.
-    
+
     {\bf Note} --- Both the copy constructor and the copy operator are declared
     as private members. It is therefore not possible to make multiple copies
     of instances of this class, as implied by the class semantic. */
@@ -312,7 +316,7 @@ private:
   pthread_t locker;
   pthread_mutex_t mutex;
   pthread_cond_t cond;
-#endif  
+#endif
 private:
   // Disable default members
   GMonitor(const GMonitor&);
@@ -357,23 +361,23 @@ inline void GMonitor::broadcast() {}
     exception was thrown.
     \begin{verbatim}
       {      -- protected scope
-         static GMonitor theMonitor;
-         GMonitorLock lock(&theMonitor)
-         ... -- protected code
+	 static GMonitor theMonitor;
+	 GMonitorLock lock(&theMonitor)
+	 ... -- protected code
       }
-    \end{verbatim} 
+    \end{verbatim}
     This construct will do nothing when passed a null pointer.
 */
-class GMonitorLock 
+class GMonitorLock
 {
 private:
   GMonitor *gsec;
 public:
   /** Constructor. Enters the monitor #gsec#. */
-  GMonitorLock(GMonitor *gsec) : gsec(gsec) 
+  GMonitorLock(GMonitor *gsec) : gsec(gsec)
     { if (gsec) gsec->enter(); };
   /** Destructor. Leaves the associated monitor. */
-  ~GMonitorLock() 
+  ~GMonitorLock()
     { if (gsec) gsec->leave(); };
 };
 
@@ -438,8 +442,8 @@ public:
 };
 
 inline
-GSafeFlags::GSafeFlags(long xflags) 
-  : flags(xflags) 
+GSafeFlags::GSafeFlags(long xflags)
+  : flags(xflags)
 {
 }
 
@@ -480,27 +484,27 @@ GSafeFlags::operator&=(long mask)
 
 // -- these classes are no longer documented.
 
-class GCriticalSection : protected GMonitor 
+class GCriticalSection : protected GMonitor
 {
 public:
-  void lock() 
+  void lock()
     { GMonitor::enter(); };
-  void unlock() 
+  void unlock()
     { GMonitor::leave(); };
 };
 
-class GEvent : protected GMonitor 
+class GEvent : protected GMonitor
 {
 private:
   int status;
 public:
-  GEvent() 
+  GEvent()
     : status(0) { };
-  void set() 
+  void set()
     { if (!status) { enter(); status=1; signal(); leave(); } };
-  void wait() 
+  void wait()
     { enter(); if (!status) GMonitor::wait(); status=0; leave(); };
-  void wait(int timeout) 
+  void wait(int timeout)
     { enter(); if (!status) GMonitor::wait(timeout); status=0; leave(); };
 };
 
@@ -509,9 +513,9 @@ class GCriticalSectionLock
 private:
   GCriticalSection *gsec;
 public:
-  GCriticalSectionLock(GCriticalSection *gsec) : gsec(gsec) 
+  GCriticalSectionLock(GCriticalSection *gsec) : gsec(gsec)
     { if (gsec) gsec->lock(); };
-  ~GCriticalSectionLock() 
+  ~GCriticalSectionLock()
     { if (gsec) gsec->unlock(); };
 };
 
