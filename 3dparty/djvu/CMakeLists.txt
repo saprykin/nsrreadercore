@@ -18,7 +18,7 @@ check_include_files (unistd.h			HAVE_UNISTD_H)
 check_include_files (wchar.h			HAVE_WCHAR_H)
 check_include_files (wctype.h			HAVE_WCTYPE_H)
 
-set (CMAKE_REQUIRED_FLAGS ${NSR_C_FLAGS_CHECK}) 
+set (CMAKE_REQUIRED_FLAGS ${NSR_C_FLAGS_CHECK})
 
 check_function_exists (getpwuid			HAVE_GETPWUID)
 check_function_exists (iswspace 		HAVE_ISWSPACE)
@@ -72,7 +72,7 @@ NSR_CHECK_DIRSYMBOL_EXISTS ("ndir.h" 		HAVE_NDIR_H)
 NSR_CHECK_DIRSYMBOL_EXISTS ("sys/ndir.h"	HAVE_SYS_NDIR_H)
 NSR_CHECK_DIRSYMBOL_EXISTS ("sys/dir.h"		HAVE_SYS_DIR_H)
 
-set (CMAKE_REQUIRED_FLAGS ${NSR_CXX_FLAGS_CHECK}) 
+set (CMAKE_REQUIRED_FLAGS ${NSR_CXX_FLAGS_CHECK})
 
 check_cxx_source_compiles (
 	"int main () {
@@ -153,9 +153,11 @@ check_c_source_compiles (
 	#include <time.h>
 	int main () {
 		return 0;
-	}" 
+	}"
 	TIME_WITH_SYS_TIME
 )
+
+set (CMAKE_REQUIRED_FLAGS "")
 
 find_package (Threads)
 
@@ -164,7 +166,7 @@ if (Threads_FOUND)
 		set (HAVE_PTHREAD true)
 	endif()
 
-	set (DJVU_LIBRARIES ${DJVU_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} PARENT_SCOPE)
+	set (DJVU_LIBRARIES ${DJVU_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
 configure_file (config-djvu.h.in ${CMAKE_BINARY_DIR}/config-djvu.h)
@@ -227,7 +229,6 @@ set (DJVU_SOURCES
 	XMLParser.cpp
 	XMLTags.cpp
 	ZPCodec.cpp
-	PARENT_SCOPE
 )
 
 set (DJVU_HEADERS
@@ -284,5 +285,10 @@ set (DJVU_HEADERS
 	XMLParser.h
 	XMLTags.h
 	ZPCodec.h
-	PARENT_SCOPE
 )
+
+set (DJVU_DEFINITIONS "${DJVU_DEFINITIONS} -DHAVE_CONFIG_H" PARENT_SCOPE)
+set (DJVU_INCLUDES ${DJVU_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR} PARENT_SCOPE)
+set (DJVU_SOURCES ${DJVU_SOURCES} PARENT_SCOPE)
+set (DJVU_HEADERS ${DJVU_HEADERS} PARENT_SCOPE)
+set (DJVU_LIBRARIES ${DJVU_LIBRARIES} PARENT_SCOPE)
