@@ -25,7 +25,7 @@
 /* Define to 1 if you have the `getpwuid' function. */
 #cmakedefine HAVE_GETPWUID 1
 
-/* Define to 1 if you have the iconv function. */
+/* Define to 1 if you have the `iconv' function. */
 #cmakedefine HAVE_ICONV 1
 
 /* Define to 1 if you have the <iconv.h> header file. */

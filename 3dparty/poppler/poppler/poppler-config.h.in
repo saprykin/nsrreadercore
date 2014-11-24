@@ -62,7 +62,7 @@
 #cmakedefine HAVE_DIRENT_H 1
 #endif
 
-/* Defines if gettimeofday is available on your system */
+/* Define to 1 if `gettimeofday' is available on your system */
 #ifndef HAVE_GETTIMEOFDAY
 #cmakedefine HAVE_GETTIMEOFDAY 1
 #endif
