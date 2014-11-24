@@ -47,7 +47,7 @@ if (Iconv_FOUND)
 endif (Iconv_FOUND)
 
 mark_as_advanced (
-  Iconv_INCLUDE_DIR
-  Iconv_LIBRARIES
-  Iconv_SECOND_ARGUMENT_IS_CONST
+	Iconv_INCLUDE_DIR
+	Iconv_LIBRARIES
+	Iconv_SECOND_ARGUMENT_IS_CONST
 )
