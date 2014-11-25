@@ -1,6 +1,3 @@
-#ifndef __CONFIG_PDF_H__
-#define __CONFIG_PDF_H__
-
 /* Define if building universal (internal helper macro) */
 #cmakedefine AC_APPLE_UNIVERSAL_BUILD 1
 
@@ -167,5 +164,3 @@
 
 /* Define for large files, on AIX-style hosts. */
 #cmakedefine _LARGE_FILES 1
-
-#endif /* __CONFIG_PDF_H__ */
