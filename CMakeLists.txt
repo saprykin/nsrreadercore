@@ -25,6 +25,7 @@ include (${QT_USE_FILE})
 
 add_subdirectory (3dparty/djvu)
 add_subdirectory (3dparty/poppler)
+add_subdirectory (3dparty/tiff)
 
 foreach (DJVU_FILE ${DJVU_SOURCES})
 	set (DJVU_FILE "3dparty/djvu/${DJVU_FILE}")
@@ -46,6 +47,16 @@ foreach (POPPLER_FILE ${POPPLER_HEADERS})
 	set (THIRDPARTY_HEADERS ${THIRDPARTY_HEADERS} ${POPPLER_FILE})
 endforeach()
 
+foreach (TIFF_FILE ${TIFF_SOURCES})
+	set (TIFF_FILE "3dparty/tiff/${TIFF_FILE}")
+	set (THIRDPARTY_SOURCES ${THIRDPARTY_SOURCES} ${TIFF_FILE})
+endforeach()
+
+foreach (TIFF_FILE ${TIFF_HEADERS})
+	set (TIFF_FILE "3dparty/tiff/${TIFF_FILE}")
+	set (THIRDPARTY_HEADERS ${THIRDPARTY_HEADERS} ${TIFF_FILE})
+endforeach()
+
 set (SOURCES
 	nsrabstractdocument.cpp
 	nsrcharsetdetector.cpp
@@ -63,49 +74,6 @@ set (SOURCES
 	nsrsession.cpp
 	nsrtextdocument.cpp
 	nsrtiffdocument.cpp
-)
-
-set (TIFF_SOURCES
-	3dparty/tiff/tif_aux.c
-	3dparty/tiff/tif_close.c
-	3dparty/tiff/tif_codec.c
-	3dparty/tiff/tif_color.c
-	3dparty/tiff/tif_compress.c
-	3dparty/tiff/tif_dir.c
-	3dparty/tiff/tif_dirinfo.c
-	3dparty/tiff/tif_dirread.c
-	3dparty/tiff/tif_dirwrite.c
-	3dparty/tiff/tif_dumpmode.c
-	3dparty/tiff/tif_error.c
-	3dparty/tiff/tif_extension.c
-	3dparty/tiff/tif_fax3.c
-	3dparty/tiff/tif_fax3sm.c
-	3dparty/tiff/tif_flush.c
-	3dparty/tiff/tif_getimage.c
-	3dparty/tiff/tif_jbig.c
-	3dparty/tiff/tif_jpeg_12.c
-	3dparty/tiff/tif_jpeg.c
-	3dparty/tiff/tif_luv.c
-	3dparty/tiff/tif_lzma.c
-	3dparty/tiff/tif_lzw.c
-	3dparty/tiff/tif_next.c
-	3dparty/tiff/tif_ojpeg.c
-	3dparty/tiff/tif_open.c
-	3dparty/tiff/tif_packbits.c
-	3dparty/tiff/tif_pixarlog.c
-	3dparty/tiff/tif_predict.c
-	3dparty/tiff/tif_print.c
-	3dparty/tiff/tif_read.c
-	3dparty/tiff/tif_stream.cxx
-	3dparty/tiff/tif_strip.c
-	3dparty/tiff/tif_swab.c
-	3dparty/tiff/tif_thunder.c
-	3dparty/tiff/tif_tile.c
-	3dparty/tiff/tif_unix.c
-	3dparty/tiff/tif_version.c
-	3dparty/tiff/tif_warning.c
-	3dparty/tiff/tif_write.c
-	3dparty/tiff/tif_zip.c
 )
 
 set (UNIVERSALCHARDET_SOURCES
@@ -332,20 +300,6 @@ set (HEADERS
 	nsrtiffdocument.h
 )
 
-set (TIFF_HEADERS
-	3dparty/tiff/config/${NSR_PLATFORM}/tif_config.h
-	3dparty/tiff/config/${NSR_PLATFORM}/tiffconf.h
-	3dparty/tiff/t4.h
-	3dparty/tiff/tif_dir.h
-	3dparty/tiff/tif_fax3.h
-	3dparty/tiff/tif_predict.h
-	3dparty/tiff/tiff.h
-	3dparty/tiff/tiffio.h
-	3dparty/tiff/tiffiop.h
-	3dparty/tiff/tiffvers.h
-	3dparty/tiff/uvcode.h
-)
-
 set (UNIVERSALCHARDET_HEADERS
 	3dparty/universalchardet/CharDistribution.h
 	3dparty/universalchardet/JpCntx.h
@@ -388,12 +342,11 @@ set (LIBJPEGTURBO_HEADERS
 
 include_directories (
 	3dparty
-	3dparty/tiff/config/${NSR_PLATFORM}
 	3dparty/libjpeg-turbo/config/${NSR_PLATFORM}
-	3dparty/tiff
 	3dparty/universalchardet
 	${DJVU_INCLUDES}
 	${POPPLER_INCLUDES}
+	${TIFF_INCLUDES}
 	${CMAKE_BINARY_DIR}
 	${PROJECT_SOURCE_DIR}
 	${NSR_INCLUDE_DIRECTORIES}
@@ -402,12 +355,10 @@ include_directories (
 add_library (${PROJECT_NAME} SHARED
 	${SOURCES}
 	${THIRDPARTY_SOURCES}
-	${TIFF_SOURCES}
 	${UNIVERSALCHARDET_SOURCES}
 	${LIBJPEGTURBO_SOURCES}
 	${HEADERS}
 	${THIRDPARTY_HEADERS}
-	${TIFF_HEADERS}
 	${UNIVERSALCHARDET_HEADERS}
 	${LIBJPEGTURBO_HEADERS}
 )
@@ -418,7 +369,7 @@ else()
 	add_definitions (${NSR_PLATFORM_DEFINES_RELEASE})
 endif()
 
-add_definitions ("${DJVU_DEFINITIONS} ${POPPLER_DEFINITIONS}")
+add_definitions ("${DJVU_DEFINITIONS} ${POPPLER_DEFINITIONS} ${TIFF_DEFINITIONS}")
 
 set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${NSR_C_FLAGS_DEBUG}")
 set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${NSR_C_FLAGS_RELEASE}")
@@ -435,6 +386,7 @@ target_link_libraries (${PROJECT_NAME}
 	${NSR_LIBRARIES}
 	${DJVU_LIBRARIES}
 	${POPPLER_LIBRARIES}
+	${TIFF_LIBRARIES}
 	jpeg
 )
 

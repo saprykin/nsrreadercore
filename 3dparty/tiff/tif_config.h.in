@@ -1,0 +1,232 @@
+/* Define if building universal (internal helper macro). */
+#cmakedefine AC_APPLE_UNIVERSAL_BUILD 1
+
+/* Support CCITT Group 3 & 4 algorithms. */
+#cmakedefine CCITT_SUPPORT 1
+
+/* Pick up YCbCr subsampling info from the JPEG data stream to support files
+   lacking the tag (default enabled). */
+#cmakedefine CHECK_JPEG_YCBCR_SUBSAMPLING 1
+
+/* Enable partial strip reading for large strips (experimental). */
+#cmakedefine CHUNKY_STRIP_READ_SUPPORT 1
+
+/* Support C++ stream API (requires C++ compiler). */
+#cmakedefine CXX_SUPPORT 1
+
+/* Treat extra sample as alpha (default enabled). The RGBA interface will
+   treat a fourth sample with no EXTRASAMPLE_ value as being ASSOCALPHA. Many
+   packages produce RGBA files but don't mark the alpha properly. */
+#cmakedefine DEFAULT_EXTRASAMPLE_AS_ALPHA 1
+
+/* Enable deferred strip/tile offset/size loading (experimental). */
+#cmakedefine DEFER_STRILE_LOAD 1
+
+/* Define to 1 if you have the <assert.h> header file. */
+#cmakedefine HAVE_ASSERT_H 1
+
+/* Define to 1 if you have the <fcntl.h> header file. */
+#cmakedefine HAVE_FCNTL_H 1
+
+/* Define as 0 or 1 according to the floating point format suported by the
+   machine. */
+#cmakedefine HAVE_IEEEFP 1
+
+/* Define to 1 if you have the <io.h> header file. */
+#cmakedefine HAVE_IO_H 1
+
+/* Define to 1 if you have the `jbg_newlen' function. */
+#cmakedefine HAVE_JBG_NEWLEN 1
+
+/* Define to 1 if you have the `mmap' function. */
+#cmakedefine HAVE_MMAP 1
+
+/* Define to 1 if you have the <search.h> header file. */
+#cmakedefine HAVE_SEARCH_H 1
+
+/* Define to 1 if you have the <string.h> header file. */
+#cmakedefine HAVE_STRING_H 1
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#cmakedefine HAVE_SYS_TYPES_H 1
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#cmakedefine HAVE_UNISTD_H 1
+
+/* Native cpu byte order: 1 if big-endian (Motorola) or 0 if little-endian 
+   (Intel). */
+#define HOST_BIGENDIAN @HOST_BIGENDIAN@
+
+/* Set the native cpu bit order (FILLORDER_LSB2MSB or FILLORDER_MSB2LSB). */
+#define HOST_FILLORDER @TIFF_HOST_FILLORDER@
+
+/* Support ISO JBIG compression (requires JBIG-KIT library). */
+#cmakedefine JBIG_SUPPORT 1
+
+/* 8/12 bit libjpeg dual mode enabled. */
+#cmakedefine JPEG_DUAL_MODE_8_12 1
+
+/* Support JPEG compression (requires IJG JPEG library). */
+#cmakedefine JPEG_SUPPORT 1
+
+/* 12bit libjpeg primary include file with path. */
+#cmakedefine LIBJPEG_12_PATH "@TIFF_LIBJPEG_PATH@"
+
+/* Support LogLuv high dynamic range encoding. */
+#cmakedefine LOGLUV_SUPPORT 1
+
+/* Support LZMA2 compression. */
+#cmakedefine LZMA_SUPPORT 1
+
+/* Support LZW algorithm. */
+#cmakedefine LZW_SUPPORT 1
+
+/* Support Microsoft Document Imaging format. */
+#cmakedefine MDI_SUPPORT 1
+
+/* Support NeXT 2-bit RLE algorithm. */
+#cmakedefine NEXT_SUPPORT 1
+
+/* Support Old JPEG compresson (read-only). */
+#cmakedefine OJPEG_SUPPORT 1
+
+/* Define to the version of this package. */
+#define PACKAGE_VERSION "@TIFF_VERSION@"
+
+/* Support Macintosh PackBits algorithm. */
+#cmakedefine PACKBITS_SUPPORT 1
+
+/* Support Pixar log-format algorithm (requires Zlib). */
+#cmakedefine PIXARLOG_SUPPORT 1
+
+/* The size of `signed int', as computed by sizeof. */
+#cmakedefine SIZEOF_SIGNED_INT @SIZEOF_SIGNED_INT@
+
+/* The size of `signed long', as computed by sizeof. */
+#cmakedefine SIZEOF_SIGNED_LONG @SIZEOF_SIGNED_LONG@
+
+/* The size of `signed long long', as computed by sizeof. */
+#cmakedefine SIZEOF_SIGNED_LONG_LONG @SIZEOF_SIGNED_LONG_LONG@
+
+/* The size of `signed short', as computed by sizeof. */
+#cmakedefine SIZEOF_SIGNED_SHORT @SIZEOF_SIGNED_SHORT@
+
+/* The size of `unsigned char *', as computed by sizeof. */
+#cmakedefine SIZEOF_UNSIGNED_CHAR_P @SIZEOF_UNSIGNED_CHAR_P@
+
+/* The size of `unsigned int', as computed by sizeof. */
+#cmakedefine SIZEOF_UNSIGNED_INT @SIZEOF_UNSIGNED_INT@
+
+/* The size of `unsigned long', as computed by sizeof. */
+#cmakedefine SIZEOF_UNSIGNED_LONG @SIZEOF_UNSIGNED_LONG@
+
+/* The size of `unsigned long long', as computed by sizeof. */
+#cmakedefine SIZEOF_UNSIGNED_LONG_LONG @SIZEOF_UNSIGNED_LONG_LONG@
+
+/* The size of `unsigned short', as computed by sizeof. */
+#cmakedefine SIZEOF_UNSIGNED_SHORT @SIZEOF_UNSIGNED_SHORT@ 
+
+/* Support strip chopping (whether or not to convert single-strip uncompressed
+   images to mutiple strips of specified size to reduce memory usage). */
+#cmakedefine STRIPCHOP_DEFAULT @STRIPCHOP_DEFAULT@
+
+/* Default size of the strip in bytes (when strip chopping enabled). */
+#cmakedefine STRIP_SIZE_DEFAULT @STRIP_SIZE_DEFAULT@
+
+/* Enable SubIFD tag (330) support. Unused define? */
+#cmakedefine SUBIFD_SUPPORT 1
+
+/* Support ThunderScan 4-bit RLE algorithm. */
+#cmakedefine THUNDER_SUPPORT 1
+
+/* Signed 16-bit type. */
+#cmakedefine TIFF_INT16_T @TIFF_INT16_T@
+
+/* Signed 32-bit type formatter. */
+#cmakedefine TIFF_INT32_FORMAT "@TIFF_INT32_FORMAT@"
+
+/* Signed 32-bit type. */
+#cmakedefine TIFF_INT32_T @TIFF_INT32_T@
+
+/* Signed 64-bit type formatter. */
+#cmakedefine TIFF_INT64_FORMAT "@TIFF_INT64_FORMAT@"
+
+/* Signed 64-bit type. */
+#cmakedefine TIFF_INT64_T @TIFF_INT64_T@
+
+/* Signed 8-bit type. */
+#cmakedefine TIFF_INT8_T @TIFF_INT8_T@
+
+/* Pointer difference type formatter. */
+#cmakedefine TIFF_PTRDIFF_FORMAT "@TIFF_PTRDIFF_FORMAT@"
+
+/* Pointer difference type. */
+#cmakedefine TIFF_PTRDIFF_T @TIFF_PTRDIFF_T@
+
+/* Signed size type formatter. */
+#cmakedefine TIFF_SSIZE_FORMAT "@TIFF_SSIZE_FORMAT@"
+
+/* Signed size type. */
+#cmakedefine TIFF_SSIZE_T @TIFF_SSIZE_T@
+
+/* Unsigned 16-bit type. */
+#cmakedefine TIFF_UINT16_T @TIFF_UINT16_T@
+
+/* Unsigned 32-bit type formatter. */
+#cmakedefine TIFF_UINT32_FORMAT "@TIFF_UINT32_FORMAT@"
+
+/* Unsigned 32-bit type. */
+#cmakedefine TIFF_UINT32_T @TIFF_UINT32_T@
+
+/* Unsigned 64-bit type formatter. */
+#cmakedefine TIFF_UINT64_FORMAT "@TIFF_UINT64_FORMAT@"
+
+/* Unsigned 64-bit type. */
+#cmakedefine TIFF_UINT64_T @TIFF_UINT64_T@
+
+/* Unsigned 8-bit type. */
+#cmakedefine TIFF_UINT8_T @TIFF_UINT8_T@
+
+/* Define to use win32 IO system. */
+#cmakedefine USE_WIN32_FILEIO 1
+
+/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
+   significant byte first (like Motorola and SPARC, unlike Intel). */
+#if defined AC_APPLE_UNIVERSAL_BUILD
+# if defined __BIG_ENDIAN__
+#  define WORDS_BIGENDIAN 1
+# endif
+#else
+# ifndef WORDS_BIGENDIAN
+#cmakedefine WORDS_BIGENDIAN 1
+# endif
+#endif
+
+/* Support Deflate compression. */
+#cmakedefine ZIP_SUPPORT 1
+
+/* Enable large inode numbers on Mac OS X 10.5.  */
+#ifndef _DARWIN_USE_64_BIT_INODE
+# define _DARWIN_USE_64_BIT_INODE 1
+#endif
+
+/* Number of bits in a file offset, on hosts where this is settable. */
+#cmakedefine _FILE_OFFSET_BITS @_FILE_OFFSET_BITS@
+
+/* Define to 1 to make fseeko visible on some hosts (e.g. glibc 2.2). */
+#cmakedefine _LARGEFILE_SOURCE 1
+
+/* Define for large files, on AIX-style hosts. */
+#cmakedefine _LARGE_FILES 1
+
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+#cmakedefine inline @TIFF_INLINE_MODIFIER@
+#endif
+
+/* Define if <sys/types.h> does not define. */
+#cmakedefine off_t @TIFF_OFF_T@
+
+/* Define if <sys/types.h> does not define. */
+#cmakedefine size_t @TIFF_SIZE_T@
