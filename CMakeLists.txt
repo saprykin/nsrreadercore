@@ -26,6 +26,7 @@ include (${QT_USE_FILE})
 add_subdirectory (3dparty/djvu)
 add_subdirectory (3dparty/poppler)
 add_subdirectory (3dparty/tiff)
+add_subdirectory (3dparty/universalchardet)
 
 foreach (DJVU_FILE ${DJVU_SOURCES})
 	set (DJVU_FILE "3dparty/djvu/${DJVU_FILE}")
@@ -57,6 +58,16 @@ foreach (TIFF_FILE ${TIFF_HEADERS})
 	set (THIRDPARTY_HEADERS ${THIRDPARTY_HEADERS} ${TIFF_FILE})
 endforeach()
 
+foreach (UNIVERSALCHARDET_FILE ${UNIVERSALCHARDET_SOURCES})
+	set (UNIVERSALCHARDET_FILE "3dparty/universalchardet/${UNIVERSALCHARDET_FILE}")
+	set (THIRDPARTY_SOURCES ${THIRDPARTY_SOURCES} ${UNIVERSALCHARDET_FILE})
+endforeach()
+
+foreach (UNIVERSALCHARDET_FILE ${UNIVERSALCHARDET_HEADERS})
+	set (UNIVERSALCHARDET_FILE "3dparty/universalchardet/${UNIVERSALCHARDET_FILE}")
+	set (THIRDPARTY_HEADERS ${THIRDPARTY_HEADERS} ${UNIVERSALCHARDET_FILE})
+endforeach()
+
 set (SOURCES
 	nsrabstractdocument.cpp
 	nsrcharsetdetector.cpp
@@ -74,34 +85,6 @@ set (SOURCES
 	nsrsession.cpp
 	nsrtextdocument.cpp
 	nsrtiffdocument.cpp
-)
-
-set (UNIVERSALCHARDET_SOURCES
-	3dparty/universalchardet/CharDistribution.cpp
-	3dparty/universalchardet/JpCntx.cpp
-	3dparty/universalchardet/LangBulgarianModel.cpp
-	3dparty/universalchardet/LangCyrillicModel.cpp
-	3dparty/universalchardet/LangGreekModel.cpp
-	3dparty/universalchardet/LangHebrewModel.cpp
-	3dparty/universalchardet/LangHungarianModel.cpp
-	3dparty/universalchardet/LangThaiModel.cpp
-	3dparty/universalchardet/nsBig5Prober.cpp
-	3dparty/universalchardet/nsCharSetProber.cpp
-	3dparty/universalchardet/nsEscCharsetProber.cpp
-	3dparty/universalchardet/nsEscSM.cpp
-	3dparty/universalchardet/nsEUCJPProber.cpp
-	3dparty/universalchardet/nsEUCKRProber.cpp
-	3dparty/universalchardet/nsEUCTWProber.cpp
-	3dparty/universalchardet/nsGB2312Prober.cpp
-	3dparty/universalchardet/nsHebrewProber.cpp
-	3dparty/universalchardet/nsLatin1Prober.cpp
-	3dparty/universalchardet/nsMBCSGroupProber.cpp
-	3dparty/universalchardet/nsMBCSSM.cpp
-	3dparty/universalchardet/nsSBCharSetProber.cpp
-	3dparty/universalchardet/nsSBCSGroupProber.cpp
-	3dparty/universalchardet/nsSJISProber.cpp
-	3dparty/universalchardet/nsUniversalDetector.cpp
-	3dparty/universalchardet/nsUTF8Prober.cpp
 )
 
 set (LIBJPEGTURBO_SOURCES
@@ -300,28 +283,6 @@ set (HEADERS
 	nsrtiffdocument.h
 )
 
-set (UNIVERSALCHARDET_HEADERS
-	3dparty/universalchardet/CharDistribution.h
-	3dparty/universalchardet/JpCntx.h
-	3dparty/universalchardet/nsBig5Prober.h
-	3dparty/universalchardet/nsCharSetProber.h
-	3dparty/universalchardet/nsCodingStateMachine.h
-	3dparty/universalchardet/nsEscCharsetProber.h
-	3dparty/universalchardet/nsEUCJPProber.h
-	3dparty/universalchardet/nsEUCKRProber.h
-	3dparty/universalchardet/nsEUCTWProber.h
-	3dparty/universalchardet/nsGB2312Prober.h
-	3dparty/universalchardet/nsHebrewProber.h
-	3dparty/universalchardet/nsLatin1Prober.h
-	3dparty/universalchardet/nsMBCSGroupProber.h
-	3dparty/universalchardet/nsPkgInt.h
-	3dparty/universalchardet/nsSBCharSetProber.h
-	3dparty/universalchardet/nsSBCSGroupProber.h
-	3dparty/universalchardet/nsSJISProber.h
-	3dparty/universalchardet/nsUniversalDetector.h
-	3dparty/universalchardet/nsUTF8Prober.h
-)
-
 set (LIBJPEGTURBO_HEADERS
 	3dparty/libjpeg-turbo/config/${NSR_PLATFORM}/config-jpeg.h
 	3dparty/libjpeg-turbo/config/${NSR_PLATFORM}/jconfig.h
@@ -343,10 +304,10 @@ set (LIBJPEGTURBO_HEADERS
 include_directories (
 	3dparty
 	3dparty/libjpeg-turbo/config/${NSR_PLATFORM}
-	3dparty/universalchardet
 	${DJVU_INCLUDES}
 	${POPPLER_INCLUDES}
 	${TIFF_INCLUDES}
+	${UNIVERSALCHARDET_INCLUDES}
 	${CMAKE_BINARY_DIR}
 	${PROJECT_SOURCE_DIR}
 	${NSR_INCLUDE_DIRECTORIES}
@@ -355,11 +316,9 @@ include_directories (
 add_library (${PROJECT_NAME} SHARED
 	${SOURCES}
 	${THIRDPARTY_SOURCES}
-	${UNIVERSALCHARDET_SOURCES}
 	${LIBJPEGTURBO_SOURCES}
 	${HEADERS}
 	${THIRDPARTY_HEADERS}
-	${UNIVERSALCHARDET_HEADERS}
 	${LIBJPEGTURBO_HEADERS}
 )
 
@@ -369,7 +328,11 @@ else()
 	add_definitions (${NSR_PLATFORM_DEFINES_RELEASE})
 endif()
 
-add_definitions ("${DJVU_DEFINITIONS} ${POPPLER_DEFINITIONS} ${TIFF_DEFINITIONS}")
+add_definitions ("${DJVU_DEFINITIONS}
+	${POPPLER_DEFINITIONS}
+	${TIFF_DEFINITIONS}
+	${UNIVERSALCHARDET_DEFINITIONS}"
+)
 
 set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${NSR_C_FLAGS_DEBUG}")
 set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${NSR_C_FLAGS_RELEASE}")
@@ -387,6 +350,7 @@ target_link_libraries (${PROJECT_NAME}
 	${DJVU_LIBRARIES}
 	${POPPLER_LIBRARIES}
 	${TIFF_LIBRARIES}
+	${UNIVERSALCHARDET_LIBRARIES}
 	jpeg
 )
 
