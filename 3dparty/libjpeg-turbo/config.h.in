@@ -1,0 +1,70 @@
+/* Support arithmetic encoding. */
+#cmakedefine C_ARITH_CODING_SUPPORTED 1
+
+/* Support arithmetic decoding. */
+#cmakedefine D_ARITH_CODING_SUPPORTED 1
+
+/* Define to 1 if your compiler supports prototypes. */
+#cmakedefine HAVE_PROTOTYPES 1
+
+/* Define to 1 if you have the <stddef.h> header file. */
+#cmakedefine HAVE_STDDEF_H 1
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#cmakedefine HAVE_STDLIB_H 1
+
+/* Define to 1 if the system has the type `unsigned char'. */
+#cmakedefine HAVE_UNSIGNED_CHAR 1
+
+/* Define to 1 if the system has the type `unsigned short'. */
+#cmakedefine HAVE_UNSIGNED_SHORT 1
+
+/* Compiler does not support pointers to undefined structures. */
+#cmakedefine INCOMPLETE_TYPES_BROKEN 1
+
+/* libjpeg API version. */
+#define JPEG_LIB_VERSION @JPEG_LIB_VERSION@
+
+/* Support in-memory source/destination managers. */
+#cmakedefine MEM_SRCDST_SUPPORTED 1
+
+/* Define to 1 if you have BSD-like `bzero' and `bcopy'. */
+#cmakedefine NEED_BSD_STRINGS 1
+
+/* Define to 1 if you need short function names. */
+#cmakedefine NEED_SHORT_EXTERNAL_NAMES 1
+
+/* Define to 1 if you have <sys/types.h> */
+#cmakedefine NEED_SYS_TYPES_H 1
+
+/* Define to the version of this package. */
+#define PACKAGE_VERSION "@LIBJPEGTURBO_VERSION@"
+
+/* Define to 1 if shift is unsigned. */
+#cmakedefine RIGHT_SHIFT_IS_UNSIGNED 1
+
+/* Use accelerated SIMD routines. */
+#cmakedefine WITH_SIMD 1
+
+/* Define to 1 if you have custom `inline' modifier. */
+#cmakedefine HAVE_CUSTOM_INLINE 1
+
+/* Define to 1 if you have custom `size_t' type. */
+#cmakedefine HAVE_CUSTOM_SIZE_T 1
+
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+#  ifdef HAVE_CUSTOM_INLINE
+#    define inline @JPEG_C_INLINE@
+#  endif
+#endif
+
+#ifndef INLINE
+#  define INLINE @JPEG_C_INLINE_FORCE@
+#endif
+
+/* Define if <sys/types.h> does not define. */
+#ifdef HAVE_CUSTOM_SIZE_T
+#  define size_t @JPEG_SIZE_T@
+#endif

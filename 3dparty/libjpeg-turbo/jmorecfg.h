@@ -12,6 +12,13 @@
  * optimizations.  Most users will not need to touch this file.
  */
 
+#include <limits.h>
+
+#if CHAR_MIN == 0
+#  ifndef __CHAR_UNSIGNED__
+#    define __CHAR_UNSIGNED__ 1
+#  endif
+#endif
 
 /*
  * Define BITS_IN_JSAMPLE as either
