@@ -187,8 +187,17 @@
 /* Unsigned 8-bit type. */
 #cmakedefine TIFF_UINT8_T @TIFF_UINT8_T@
 
-/* Define to use win32 IO system. */
+/* Define to 1 to use win32 IO system. */
 #cmakedefine USE_WIN32_FILEIO 1
+
+/* Define to 1 if you have custom `inline' definition. */
+#cmakedefine HAVE_CUSTOM_INLINE 1
+
+/* Define to 1 if you have custom `off_t' type. */
+#cmakedefine HAVE_CUSTOM_OFF_T 1
+
+/* Define to 1 if you have custom `size_t' type. */
+#cmakedefine HAVE_CUSTOM_SIZE_T 1
 
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */
@@ -222,11 +231,17 @@
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
 #ifndef __cplusplus
-#cmakedefine inline @TIFF_INLINE_MODIFIER@
+#  ifdef HAVE_CUSTOM_INLINE
+#    define inline @TIFF_INLINE_MODIFIER@
+#  endif
 #endif
 
 /* Define if <sys/types.h> does not define. */
-#cmakedefine off_t @TIFF_OFF_T@
+#ifdef HAVE_CUSTOM_OFF_T
+#  define off_t @TIFF_OFF_T@
+#endif
 
 /* Define if <sys/types.h> does not define. */
-#cmakedefine size_t @TIFF_SIZE_T@
+#ifdef HAVE_CUSTOM_SIZE_T
+#  define size_t @TIFF_SIZE_T@
+#endif
