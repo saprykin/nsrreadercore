@@ -32,12 +32,12 @@
   ###
   #
   # This file provides a NSR_CHECK_C_INLINE macro that detects what keyword,
-  # if any, is used for inlining C functions.  This check is similar to
-  # autoconf's AC_C_INLINE macro.  The macro tests the inline keyword
-  # (c99), then __inline__ (c89), and then __inline.  When it finds one
+  # if any, is used for inlining C functions. This check is similar to
+  # autoconf's AC_C_INLINE macro. The macro tests the inline keyword
+  # (c99), then __inline__ (c89), and then __inline. When it finds one
   # that works, it will cache it to HAVE_INLINE and return it in the
-  # provided RESULT variable.  If none work, it will set HAVE_INLINE and
-  # RESULT to an empty string.  Individual tests are also stored in the
+  # provided RESULT variable. If none work, it will set HAVE_INLINE and
+  # RESULT to an empty string. Individual tests are also stored in the
   # cache as HAVE_${INLINE}_KEYWORD variables.
   #
   # Common usage:
@@ -67,17 +67,18 @@ macro (NSR_CHECK_C_INLINE RESULT)
 				set (PRE_CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
 				set (CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -Dinline=${INLINE}")
 
-				check_c_source_compiles ("typedef int foo_t;
-										static inline foo_t static_foo () {
-											return 0;
-										}
-										foo_t foo () {
-											return 0;
-										}
-										int main () {
-											return 0;
-										}"
-										HAVE_INLINE_KEYWORD
+				check_c_source_compiles ("
+					typedef int foo_t;
+					static inline foo_t static_foo () {
+						return 0;
+					}
+					foo_t foo () {
+						return 0;
+					}
+					int main () {
+						return 0;
+					}"
+					HAVE_INLINE_KEYWORD
 				)
 
 				set (CMAKE_REQUIRED_FLAGS "${PRE_CMAKE_REQUIRED_FLAGS}")
