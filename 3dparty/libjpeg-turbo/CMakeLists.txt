@@ -3,18 +3,25 @@ include (CheckTypeSize)
 include (CheckFunctionExists)
 include (CheckCSourceCompiles)
 include (CheckCInline)
+include (CheckNASMFlags)
 
-set (LIBJPEGTURBO_WITH_SIMD true)
+string (TOLOWER ${CMAKE_SYSTEM_NAME} SYSTEM_NAME)
 
-if (LIBJPEGTURBO_WITH_SIMD)
-	enable_language (ASM_NASM)
-endif()
+option (LIBJPEGTURBO_WITH_SIMD "Use SIMD instructions for speed up if available" true)
+option (LIBJPEGTURBO_WITH_ARITH_ENC "Use arithmetic encoding support" true)
+option (LIBJPEGTURBO_WITH_ARITH_DEC "Use arithmetic decoding support" true)
 
 set (JPEG_LIB_VERSION "62")
 set (LIBJPEGTURBO_VERSION "1.3.1")
 
-set (C_ARITH_CODING_SUPPORTED		true)
-set (D_ARITH_CODING_SUPPORTED		true)
+if (LIBJPEGTURBO_WITH_ARITH_ENC)
+	set (C_ARITH_CODING_SUPPORTED true)
+endif()
+
+if (LIBJPEGTURBO_WITH_ARITH_DEC)
+	set (D_ARITH_CODING_SUPPORTED true)
+endif()
+
 set (MEM_SRCDST_SUPPORTED		true)
 set (HAVE_PROTOTYPES			true)
 
@@ -145,9 +152,15 @@ endif()
 
 if (LIBJPEGTURBO_WITH_SIMD)
 	if (CMAKE_SYSTEM_PROCESSOR MATCHES "arm")
-		set (SIMD_ARM true)
-		set (WITH_SIMD true)
-	elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "x86")
+		if (DEFINED NSR_PLATFORM_NEON_ENABLED)
+			set (SIMD_ARM ${NSR_PLATFORM_NEON_ENABLED})
+		else()
+			set (SIMD_ARM true)
+		endif()
+
+		set (WITH_SIMD ${SIMD_ARM})
+	elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "x86" OR
+		CMAKE_SYSTEM_PROCESSOR MATCHES "i.86")
 		if (SIZEOF_UNSIGNED_CHAR_P MATCHES 8)
 			set (SIMD_X86_64 true)
 		else()
@@ -158,9 +171,17 @@ if (LIBJPEGTURBO_WITH_SIMD)
 	endif()
 endif()
 
+if (SIMD_I386 OR SIMD_X86_64)
+	enable_language (ASM_NASM)
+
+	if (NOT CMAKE_ASM_NASM_COMPILER_WORKS)
+		set (WITH_SIMD false)
+	endif()
+endif()
+
 set (RIGHT_SHIFT_IS_UNSIGNED ${NSR_RIGHT_SHIFT_IS_UNSIGNED})
 
-if (CMAKE_SYSTEM_NAME MATCHES "Windows")
+if (SYSTEM_NAME MATCHES "windows")
 	configure_file (win/config.h.in ${CMAKE_BINARY_DIR}/config-jpeg.h)
 	configure_file (win/jconfig.h.in ${CMAKE_BINARY_DIR}/jconfig.h)
 else()
@@ -168,7 +189,7 @@ else()
 	configure_file (jconfig.h.in ${CMAKE_BINARY_DIR}/jconfig.h)
 endif()
 
-set (LIBJPEGTURBO_SOURCES
+set (SOURCES
 	jaricom.c
 	jcapimin.c
 	jcapistd.c
@@ -220,38 +241,27 @@ set (LIBJPEGTURBO_SOURCES
 	jmemnobs.c
 )
 
+set (HEADERS
+	jchuff.h
+	jdct.h
+	jdhuff.h
+	jerror.h
+	jinclude.h
+	jmemsys.h
+	jmorecfg.h
+	jpegcomp.h
+	jpegint.h
+	jpeglib.h
+	jsimd.h
+	jsimddct.h
+	jversion.h
+)
+
 if (WITH_SIMD)
-	if (CMAKE_SYSTEM_NAME MATCHES "Windows")
-		set (CMAKE_ASM_NASM_FLAGS "${CMAKE_ASM_NASM_FLAGS} -i${CMAKE_CURRENT_SOURCE_DIR}/win/")
-
-		if (SIMD_X86_64)
-				set (CMAKE_ASM_NASM_OBJECT_FORMAT win64)
-		else()
-				set (CMAKE_ASM_NASM_OBJECT_FORMAT win32)
-		endif()
-	elseif (CMAKE_SYSTEM_NAME MATCHES "Darwin")	
-		if (SIMD_X86_64)
-				set (CMAKE_ASM_NASM_OBJECT_FORMAT macho64)
-		else()
-				set (CMAKE_ASM_NASM_OBJECT_FORMAT macho)
-		endif()
-	elseif (CMAKE_SYSTEM_NAME MATCHES "BSD")
-		set (CMAKE_ASM_NASM_OBJECT_FORMAT aoutb)
-	else()
-		# Hope it is UNIX
-		if (SIMD_X86_64)
-				set (CMAKE_ASM_NASM_OBJECT_FORMAT elf64)
-		else()
-				set (CMAKE_ASM_NASM_OBJECT_FORMAT elf)
-		endif()
-	endif()
-
 	if (SIMD_X86_64)
-		set (LIBJPEGTURBO_SIMD_SOURCES ${LIBJPEGTURBO_SIMD_SOURCES}
-			simd/jsimd_x86_64.c
-		)
+		set (SOURCES ${SOURCES} simd/jsimd_x86_64.c)
 
-		set (LIBJPEGTURBO_SIMD_SOURCES ${LIBJPEGTURBO_SIMD_SOURCES}
+		set (SOURCES ${SOURCES}
 			simd/jfsseflt-64.asm
 			simd/jccolss2-64.asm
 			simd/jdcolss2-64.asm
@@ -271,11 +281,9 @@ if (WITH_SIMD)
 
 		message (STATUS "Building libjpeg-turbo with x86_64 SIMD acceleration")
 	elseif (SIMD_I386)
-		set (LIBJPEGTURBO_SIMD_SOURCES ${LIBJPEGTURBO_SIMD_SOURCES}
-			simd/jsimd_i386.c
-		)
+		set (SOURCES ${SOURCES} simd/jsimd_i386.c)
 
-		set (LIBJPEGTURBO_SIMD_SOURCES ${LIBJPEGTURBO_SIMD_SOURCES}
+		set (SOURCES ${SOURCES}
 			simd/jsimdcpu.asm
 			simd/jccolmmx.asm
 			simd/jcgrammx.asm
@@ -313,64 +321,55 @@ if (WITH_SIMD)
 
 		message (STATUS "Building libjpeg-turbo with i386 SIMD acceleration")
 	elseif (SIMD_ARM)
-		set (LIBJPEGTURBO_SIMD_SOURCES ${LIBJPEGTURBO_SIMD_SOURCES}
+		set (SOURCES ${SOURCES}
 			simd/jsimd_arm.c
 			simd/jsimd_arm_neon.S
 		)
 
+		set_source_files_properties (simd/jsimd_arm_neon.S PROPERTIES LANGUAGE C)
+
 		message (STATUS "Building libjpeg-turbo with NEON SIMD acceleration")
 	endif()
 
-	set (LIBJPEGTURBO_SIMD_HEADERS ${LIBJPEGTURBO_SIMD_HEADERS} simd/jsimd.h)
+	if (NOT SIMD_ARM)
+		set (CMAKE_ASM_NASM_FLAGS "${CMAKE_ASM_NASM_FLAGS} -I${CMAKE_CURRENT_SOURCE_DIR}/simd/ -I${CMAKE_BINARY_DIR}/")
 
-	set (CMAKE_ASM_NASM_FLAGS "-i${CMAKE_CURRENT_SOURCE_DIR}/simd/ -i${CMAKE_BINARY_DIR}/")
+		if (NOT SYSTEM_NAME MATCHES "windows")
+			EXECUTE_PROCESS (
+				OUTPUT_FILE ${CMAKE_BINARY_DIR}/jsimdcfg.inc
+				COMMAND cpp -I${CMAKE_BINARY_DIR}
+					-I${CMAKE_BINARY_DIR}/simd
+					${CMAKE_CURRENT_SOURCE_DIR}/simd/jsimdcfg.inc.h
+				COMMAND egrep "^[\;%]|^\ %"
+				COMMAND sed "s%_cpp_protection_%%"
+				COMMAND sed "s@% define@%define@g"
+			)
+		endif()
 
-	if (NOT CMAKE_SYSTEM_NAME MATCHES "Windows")
-		EXECUTE_PROCESS (
-			OUTPUT_FILE ${CMAKE_BINARY_DIR}/jsimdcfg.inc
-			COMMAND cpp -I${CMAKE_BINARY_DIR}
-				-I${CMAKE_BINARY_DIR}/simd
-				${CMAKE_CURRENT_SOURCE_DIR}/simd/jsimdcfg.inc.h
-			COMMAND egrep "^[\;%]|^\ %"
-			COMMAND sed "s%_cpp_protection_%%"
-			COMMAND sed "s@% define@%define@g"
-		)
+		if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+			set (CMAKE_ASM_NASM_FLAGS "${CMAKE_ASM_NASM_FLAGS} -g")
+		endif()
+
+		NSR_CHECK_NASM_FLAGS (NAFLAGS NAOBJFORMAT)
+
+		set (CMAKE_ASM_NASM_FLAGS "${CMAKE_ASM_NASM_FLAGS} ${NAFLAGS} -DPIC")
+		set (CMAKE_ASM_NASM_OBJECT_FORMAT ${NAOBJFORMAT})
 	endif()
-
-	if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-		set (CMAKE_ASM_NASM_FLAGS "${CMAKE_ASM_NASM_FLAGS} -g")
-	endif()
-
-	message (STATUS "NASM object format: ${CMAKE_ASM_NASM_OBJECT_FORMAT}")
 
 	add_definitions ("-DWITH_SIMD")
-	include_directories (BEFORE ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
-	add_library (jpegturbosimd STATIC ${LIBJPEGTURBO_SIMD_SOURCES} ${LIBJPEGTURBO_SIMD_HEADERS})
+endif()
 
-	set (LIBJPEGTURBO_LIBRARIES ${LIBJPEGTURBO_LIBRARIES} jpegturbosimd)
-else()
-	set (LIBJPEGTURBO_SOURCES ${LIBJPEGTURBO_SOURCES} jsimd_none.c)
+if (NOT WITH_SIMD)
+	set (SOURCES ${SOURCES} jsimd_none.c)
 	message (STATUS "Building libjpeg-turbo without SIMD acceleration")
 endif()
 
-set (LIBJPEGTURBO_HEADERS
-	jchuff.h
-	jdct.h
-	jdhuff.h
-	jerror.h
-	jinclude.h
-	jmemsys.h
-	jmorecfg.h
-	jpegcomp.h
-	jpegint.h
-	jpeglib.h
-	jsimd.h
-	jsimddct.h
-	jversion.h
-)
+set (HEADERS ${HEADERS} simd/jsimd.h)
 
-set (LIBJPEGTURBO_DEFINITIONS "${LIBJPEGTURBO_DEFINITIONS} -DWITH_SIMD" PARENT_SCOPE)
+include_directories (BEFORE ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+add_library (jpegturbo OBJECT ${SOURCES} ${HEADERS})
+set_target_properties (jpegturbo PROPERTIES POSITION_INDEPENDENT_CODE true)
+
+set (LIBJPEGTURBO_DEFINITIONS "${LIBJPEGTURBO_DEFINITIONS}" PARENT_SCOPE)
 set (LIBJPEGTURBO_INCLUDES ${LIBJPEGTURBO_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR} PARENT_SCOPE)
-set (LIBJPEGTURBO_SOURCES ${LIBJPEGTURBO_SOURCES} PARENT_SCOPE)
-set (LIBJPEGTURBO_HEADERS ${LIBJPEGTURBO_HEADERS} PARENT_SCOPE)
 set (LIBJPEGTURBO_LIBRARIES ${LIBJPEGTURBO_LIBRARIES} PARENT_SCOPE)
