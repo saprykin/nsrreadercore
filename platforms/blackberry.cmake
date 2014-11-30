@@ -61,7 +61,7 @@ set (CMAKE_OBJDUMP
 	CACHE PATH "QNX objdump Program")
 
 set (CMAKE_LINKER
-	"${QNX_HOST}/usr/bin/nto${CMAKE_SYSTEM_PROCESSOR}-ld"
+	"${QNX_HOST}/usr/bin/nto${CMAKE_SYSTEM_PROCESSOR}-ld${HOST_EXECUTABLE_SUFFIX}"
 	CACHE PATH "QNX Linker Program")
 
 set (CMAKE_STRIP
