@@ -122,5 +122,3 @@ set (CMAKE_INCLUDE_PATH
 	"${QNX_TARGET}/usr/include"
 	"${QNX_TARGET}/usr"
 )
-
-set (NSR_PLATFORM "blackberry")
