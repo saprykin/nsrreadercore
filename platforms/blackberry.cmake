@@ -68,8 +68,9 @@ set (CMAKE_STRIP
 	"${QNX_HOST}/usr/bin/nto${CMAKE_SYSTEM_PROCESSOR}-strip${HOST_EXECUTABLE_SUFFIX}"
 	CACHE PATH "QNX Strip Program")
 
-set (CMAKE_C_COMPILER ${QNX_HOST}/usr/bin/qcc${HOST_EXECUTABLE_SUFFIX})
-set (CMAKE_CXX_COMPILER ${QNX_HOST}/usr/bin/qcc${HOST_EXECUTABLE_SUFFIX})
+set (CMAKE_C_COMPILER "${QNX_HOST}/usr/bin/qcc${HOST_EXECUTABLE_SUFFIX}")
+set (CMAKE_CXX_COMPILER "${QNX_HOST}/usr/bin/qcc${HOST_EXECUTABLE_SUFFIX}")
+set (CMAKE_ASM_COMPILER "${QNX_HOST}/usr/bin/nto${CMAKE_SYSTEM_PROCESSOR}-as${HOST_EXECUTABLE_SUFFIX}")
 
 set (NSR_ARM_FLAGS "-mcpu=cortex-a9 -mthumb")
 set (NSR_BASE_FLAGS "-D_REENTRANT -Wno-psabi -fstack-protector -fstack-protector-all")
