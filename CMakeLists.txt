@@ -31,8 +31,6 @@ else()
 	add_definitions (${NSR_PLATFORM_DEFINES_RELEASE})
 endif()
 
-set (NSR_RIGHT_SHIFT_IS_UNSIGNED false)
-
 add_subdirectory (3dparty/djvu)
 add_subdirectory (3dparty/libjpeg-turbo)
 add_subdirectory (3dparty/poppler)

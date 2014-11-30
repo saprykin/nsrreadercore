@@ -179,7 +179,7 @@ if (SIMD_I386 OR SIMD_X86_64)
 	endif()
 endif()
 
-set (RIGHT_SHIFT_IS_UNSIGNED ${NSR_RIGHT_SHIFT_IS_UNSIGNED})
+set (RIGHT_SHIFT_IS_UNSIGNED ${NSR_PLATFORM_RIGHT_SHIFT_IS_UNSIGNED})
 
 if (SYSTEM_NAME MATCHES "windows")
 	configure_file (win/config.h.in ${CMAKE_BINARY_DIR}/config-jpeg.h)
