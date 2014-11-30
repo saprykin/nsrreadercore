@@ -43,46 +43,6 @@ add_subdirectory (3dparty/poppler)
 add_subdirectory (3dparty/tiff)
 add_subdirectory (3dparty/universalchardet)
 
-foreach (DJVU_FILE ${DJVU_SOURCES})
-	set (DJVU_FILE "3dparty/djvu/${DJVU_FILE}")
-	set (THIRDPARTY_SOURCES ${THIRDPARTY_SOURCES} ${DJVU_FILE})
-endforeach()
-
-foreach (DJVU_FILE ${DJVU_HEADERS})
-	set (DJVU_FILE "3dparty/djvu/${DJVU_FILE}")
-	set (THIRDPARTY_HEADERS ${THIRDPARTY_HEADERS} ${DJVU_FILE})
-endforeach()
-
-foreach (POPPLER_FILE ${POPPLER_SOURCES})
-	set (POPPLER_FILE "3dparty/poppler/${POPPLER_FILE}")
-	set (THIRDPARTY_SOURCES ${THIRDPARTY_SOURCES} ${POPPLER_FILE})
-endforeach()
-
-foreach (POPPLER_FILE ${POPPLER_HEADERS})
-	set (POPPLER_FILE "3dparty/poppler/${POPPLER_FILE}")
-	set (THIRDPARTY_HEADERS ${THIRDPARTY_HEADERS} ${POPPLER_FILE})
-endforeach()
-
-foreach (TIFF_FILE ${TIFF_SOURCES})
-	set (TIFF_FILE "3dparty/tiff/${TIFF_FILE}")
-	set (THIRDPARTY_SOURCES ${THIRDPARTY_SOURCES} ${TIFF_FILE})
-endforeach()
-
-foreach (TIFF_FILE ${TIFF_HEADERS})
-	set (TIFF_FILE "3dparty/tiff/${TIFF_FILE}")
-	set (THIRDPARTY_HEADERS ${THIRDPARTY_HEADERS} ${TIFF_FILE})
-endforeach()
-
-foreach (UNIVERSALCHARDET_FILE ${UNIVERSALCHARDET_SOURCES})
-	set (UNIVERSALCHARDET_FILE "3dparty/universalchardet/${UNIVERSALCHARDET_FILE}")
-	set (THIRDPARTY_SOURCES ${THIRDPARTY_SOURCES} ${UNIVERSALCHARDET_FILE})
-endforeach()
-
-foreach (UNIVERSALCHARDET_FILE ${UNIVERSALCHARDET_HEADERS})
-	set (UNIVERSALCHARDET_FILE "3dparty/universalchardet/${UNIVERSALCHARDET_FILE}")
-	set (THIRDPARTY_HEADERS ${THIRDPARTY_HEADERS} ${UNIVERSALCHARDET_FILE})
-endforeach()
-
 set (SOURCES
 	nsrabstractdocument.cpp
 	nsrcharsetdetector.cpp
@@ -142,6 +102,10 @@ add_library (${PROJECT_NAME} SHARED
 	${HEADERS}
 	${THIRDPARTY_HEADERS}
 	$<TARGET_OBJECTS:jpegturbo>
+	$<TARGET_OBJECTS:djvulibre>
+	$<TARGET_OBJECTS:poppler>
+	$<TARGET_OBJECTS:tiff>
+	$<TARGET_OBJECTS:universalchardet>
 )
 
 add_definitions ("${DJVU_DEFINITIONS}

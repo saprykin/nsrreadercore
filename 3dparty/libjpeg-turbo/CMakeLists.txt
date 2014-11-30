@@ -366,7 +366,8 @@ endif()
 
 set (HEADERS ${HEADERS} simd/jsimd.h)
 
-include_directories (BEFORE ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+include_directories (BEFORE ${LIBJPEGTURBO_INCLUDES} ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+add_definitions (${LIBJPEGTURBO_DEFINITIONS})
 add_library (jpegturbo OBJECT ${SOURCES} ${HEADERS})
 set_target_properties (jpegturbo PROPERTIES POSITION_INDEPENDENT_CODE true)
 

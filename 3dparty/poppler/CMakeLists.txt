@@ -6,7 +6,9 @@ include (TestBigEndian)
 
 set (POPPLER_VERSION 0.22.0)
 
-if (CMAKE_SYSTEM_NAME MATCHES "Windows")
+string (TOLOWER ${CMAKE_SYSTEM_NAME} SYSTEM_NAME)
+
+if (SYSTEM_NAME MATCHES "windows")
 	set (ENABLE_RELOCATABLE true)
 endif()
 
@@ -40,7 +42,7 @@ if (CMAKE_USE_PTHREADS_INIT)
 	set (HAVE_PTHREAD true)
 endif ()
 
-if (CMAKE_SYSTEM_NAME MATCHES "Windows")
+if (SYSTEM_NAME MATCHES "windows")
 	set (FONT_CONFIGURATION "win32")
 else()
 	set (FONT_CONFIGURATION "fontconfig")
@@ -123,7 +125,7 @@ endif()
 configure_file (config-pdf.h.in "${CMAKE_BINARY_DIR}/config-pdf.h")
 configure_file (poppler/poppler-config.h.in "${CMAKE_BINARY_DIR}/poppler-config.h")
 
-set (POPPLER_SOURCES
+set (SOURCES
 	fofi/FoFiBase.cc
 	fofi/FoFiEncodings.cc
 	fofi/FoFiIdentifier.cc
@@ -227,27 +229,27 @@ set (POPPLER_SOURCES
 )
 
 if (ENABLE_LIBPNG)
-	set (POPPLER_SOURCES ${POPPLER_SOURCES} goo/PNGWriter.cc)
+	set (SOURCES ${SOURCES} goo/PNGWriter.cc)
 endif()
 
 if (ENABLE_ZLIB)
-	set (POPPLER_SOURCES ${POPPLER_SOURCES} poppler/FlateStream.cc)
+	set (SOURCES ${SOURCES} poppler/FlateStream.cc)
 endif()
 
 if (ENABLE_LIBCURL)
-	set (POPPLER_SOURCES ${POPPLER_SOURCES}
+	set (SOURCES ${SOURCES}
 	poppler/CurlCachedFile.cc
 	poppler/CurlPDFDocBuilder.cc
 )
 endif()
 
 if (ENABLE_LIBOPENJPEG)
-	set (POPPLER_SOURCES ${POPPLER_SOURCES} poppler/JPEG2000Stream.cc)
+	set (SOURCES ${SOURCES} poppler/JPEG2000Stream.cc)
 else ()
-	set (POPPLER_SOURCES ${POPPLER_SOURCES} poppler/JPXStream.cc)
+	set (SOURCES ${SOURCES} poppler/JPXStream.cc)
 endif()
 
-set (POPPLER_HEADERS
+set (HEADERS
 	fofi/FoFiBase.h
 	fofi/FoFiEncodings.h
 	fofi/FoFiIdentifier.h
@@ -373,26 +375,37 @@ set (POPPLER_HEADERS
 )
 
 if (ENABLE_LIBPNG)
-	set (POPPLER_HEADERS ${POPPLER_HEADERS} goo/PNGWriter.h)
+	set (HEADERS ${HEADERS} goo/PNGWriter.h)
 endif()
 
 if (ENABLE_LIBCURL)
-	set (POPPLER_HEADERS ${POPPLER_HEADERS}
+	set (HEADERS ${HEADERS}
 		poppler/CurlCachedFile.h
 		poppler/CurlPDFDocBuilder.h
 	)
 endif()
 
 if (ENABLE_LIBOPENJPEG)
-	set (POPPLER_HEADERS ${POPPLER_HEADERS} poppler/JPEG2000Stream.h)
+	set (HEADERS ${HEADERS} poppler/JPEG2000Stream.h)
 else()
-	set (POPPLER_HEADERS ${POPPLER_HEADERS} poppler/JPXStream.h)
+	set (HEADERS ${HEADERS} poppler/JPXStream.h)
 endif()
 
-if (CMAKE_SYSTEM_NAME MATCHES "Windows")
+if (SYSTEM_NAME MATCHES "windows")
 	# gdi32 is needed under win32
 	set (POPPLER_LIBRARIES ${POPPLER_LIBRARIES} gdi32)
 endif()
+
+include_directories (BEFORE
+	${POPPLER_INCLUDES}
+	${CMAKE_CURRENT_SOURCE_DIR}
+	${CMAKE_CURRENT_SOURCE_DIR}/fofi
+	${CMAKE_CURRENT_SOURCE_DIR}/goo
+	${CMAKE_CURRENT_SOURCE_DIR}/poppler
+	${CMAKE_BINARY_DIR})
+add_definitions (${POPPLER_DEFINITIONS})
+add_library (poppler OBJECT ${SOURCES} ${HEADERS})
+set_target_properties (poppler PROPERTIES POSITION_INDEPENDENT_CODE true)
 
 set (POPPLER_DEFINITIONS ${POPPLER_DEFINITIONS} PARENT_SCOPE)
 set (POPPLER_INCLUDES ${POPPLER_INCLUDES}
@@ -400,8 +413,7 @@ set (POPPLER_INCLUDES ${POPPLER_INCLUDES}
 	${CMAKE_CURRENT_SOURCE_DIR}/fofi
 	${CMAKE_CURRENT_SOURCE_DIR}/goo
 	${CMAKE_CURRENT_SOURCE_DIR}/poppler
+	${CMAKE_BINARY_DIR}
 	PARENT_SCOPE
 )
-set (POPPLER_SOURCES ${POPPLER_SOURCES} PARENT_SCOPE)
-set (POPPLER_HEADERS ${POPPLER_HEADERS} PARENT_SCOPE)
 set (POPPLER_LIBRARIES ${POPPLER_LIBRARIES} PARENT_SCOPE)

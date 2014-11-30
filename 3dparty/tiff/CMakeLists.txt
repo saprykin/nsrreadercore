@@ -211,7 +211,7 @@ set (CMAKE_REQUIRED_FLAGS "")
 configure_file (tif_config.h.in ${CMAKE_BINARY_DIR}/tif_config.h)
 configure_file (tiffconf.h.in ${CMAKE_BINARY_DIR}/tiffconf.h)
 
-set (TIFF_SOURCES
+set (SOURCES
 	tif_aux.c
 	tif_close.c
 	tif_codec.c
@@ -254,12 +254,12 @@ set (TIFF_SOURCES
 )
 
 if (USE_WIN32_FILEIO)
-	set (TIFF_SOURCES ${TIFF_SOURCES} tif_win32.c)
+	set (SOURCES ${SOURCES} tif_win32.c)
 else()
-	set (TIFF_SOURCES ${TIFF_SOURCES} tif_unix.c)
+	set (SOURCES ${SOURCES} tif_unix.c)
 endif()
 
-set (TIFF_HEADERS
+set (HEADERS
 	t4.h
 	tif_dir.h
 	tif_fax3.h
@@ -271,8 +271,14 @@ set (TIFF_HEADERS
 	uvcode.h
 )
 
+include_directories (BEFORE
+	${TIFF_INCLUDES}
+	${CMAKE_CURRENT_SOURCE_DIR}
+	${CMAKE_BINARY_DIR})
+add_definitions (${TIFF_DEFINITIONS})
+add_library (tiff OBJECT ${SOURCES} ${HEADERS})
+set_target_properties (tiff PROPERTIES POSITION_INDEPENDENT_CODE true)
+
 set (TIFF_DEFINITIONS ${TIFF_DEFINITIONS} PARENT_SCOPE)
-set (TIFF_INCLUDES ${TIFF_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR} PARENT_SCOPE)
-set (TIFF_SOURCES ${TIFF_SOURCES} PARENT_SCOPE)
-set (TIFF_HEADERS ${TIFF_HEADERS} PARENT_SCOPE)
+set (TIFF_INCLUDES ${TIFF_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_BINARY_DIR} PARENT_SCOPE)
 set (TIFF_LIBRARIES ${TIFF_LIBRARIES} PARENT_SCOPE)
