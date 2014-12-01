@@ -41,13 +41,8 @@ set (CMAKE_REQUIRED_LIBRARIES "")
 
 set (CMAKE_REQUIRED_FLAGS ${NSR_CXX_FLAGS_CHECK})
 
-check_type_size (bool			DJVU_SIZEOF_BOOL BUILTIN_TYPES_ONLY LANGUAGE CXX)
 check_type_size ("long long int"	DJVU_SIZEOF_LONG_LONG_INT LANGUAGE CXX)
 check_type_size (wchar_t		DJVU_SIZEOF_WCHAR_T LANGUAGE CXX)
-
-if (HAVE_DJVU_SIZEOF_BOOL)
-	set (HAVE_BOOL true)
-endif()
 
 if (HAVE_DJVU_SIZEOF_LONG_LONG_INT)
 	set (HAVE_LONG_LONG_INT true)
@@ -132,6 +127,17 @@ check_cxx_source_compiles (
 		return 0;
 	}"
 	HAVE_STDINCLUDES
+)
+
+check_cxx_source_compiles (
+	"int f(int  x){return 1;}
+	int f(char x){return 1;}
+	int f(bool x){return 1;}
+	int main () {
+		bool b = true;
+		return f (b);
+	}"
+	HAVE_BOOL
 )
 
 set (CMAKE_REQUIRED_FLAGS ${NSR_C_FLAGS_CHECK})
