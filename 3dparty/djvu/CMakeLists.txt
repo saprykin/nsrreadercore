@@ -52,8 +52,9 @@ if (HAVE_DJVU_SIZEOF_WCHAR_T)
 	set (HAVE_WCHAR_T true)
 endif()
 
-set (CMAKE_REQUIRED_INCLUDES "wchar.h")
+set (CMAKE_EXTRA_INCLUDE_FILES "wchar.h")
 check_type_size (mbstate_t DJVU_SIZEOF_MBSTATE_T LANGUAGE CXX)
+set (CMAKE_EXTRA_INCLUDE_FILES "")
 
 if (HAVE_DJVU_SIZEOF_MBSTATE_T)
 	set (HAVE_MBSTATE_T true)
