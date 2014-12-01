@@ -185,13 +185,23 @@ NSRRenderThread::run ()
 
 				_doc->renderPage (page.getNumber ());
 
-				bb::ImageData imgData = _doc->getCurrentPage ();
+				NSR_CORE_IMAGE_DATATYPE imgData = _doc->getCurrentPage ();
+
+#ifdef Q_OS_BLACKBERRY
 				NSRCropPads pads = NSRPageCropper::findCropPads (imgData.pixels (),
 										 NSRPageCropper::NSR_PIXEL_ORDER_RGBA,
 										 imgData.width (),
 										 imgData.height (),
 										 imgData.bytesPerLine (),
 										 0);
+#else
+				NSRCropPads pads = NSRPageCropper::findCropPads (imgData.bits (),
+										 NSRPageCropper::NSR_PIXEL_ORDER_RGBA,
+										 imgData.width (),
+										 imgData.height (),
+										 imgData.bytesPerLine (),
+										 0);
+#endif
 				page.setCropPads (pads);
 			}
 		}
