@@ -13,8 +13,17 @@ include (FindPackageHandleStandardArgs)
 
 set (Iconv_FOUND false)
 
-find_path (Iconv_INCLUDE_DIR iconv.h)
-find_library (Iconv_LIBRARIES NAMES iconv libiconv libiconv-2 c)
+if (APPLE)
+	find_path (Iconv_INCLUDE_DIR iconv.h
+		PATHS "/opt/local/include" "/usr/include"
+		NO_CMAKE_SYSTEM_PATH)
+	find_library (Iconv_LIBRARIES NAMES iconv libiconv libiconv-2 c
+		PATHS "/opt/local/lib" "/usr/lib"
+		NO_CMAKE_SYSTEM_PATH)
+else()
+	find_path (Iconv_INCLUDE_DIR iconv.h)
+	find_library (Iconv_LIBRARIES NAMES iconv libiconv libiconv-2 c)
+endif()
 
 # Handle the QUIETLY and REQUIRED arguments and set Iconv_FOUND to TRUE if
 # all listed variables are TRUE
