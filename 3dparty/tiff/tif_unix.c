@@ -184,8 +184,6 @@ TIFFOpen(const char* name, const char* mode)
 	m |= O_BINARY;
 #endif
 
-	m |= O_NOSYMLINK;
-
 	fd = open(name, m, 0666);
 	if (fd < 0) {
 		if (errno > 0 && strerror(errno) != NULL ) {
@@ -247,9 +245,9 @@ TIFFOpenW(const wchar_t* name, const char* mode)
 
 	tif = TIFFFdOpen((int)fd, (mbname != NULL) ? mbname : "<unknown>",
 			 mode);
-	
+
 	_TIFFfree(mbname);
-	
+
 	if(!tif)
 		close(fd);
 	return tif;
