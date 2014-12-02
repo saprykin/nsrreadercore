@@ -7,6 +7,12 @@ include (TestBigEndian)
 
 set (TIFF_VERSION 4.0.3)
 
+string (TOLOWER ${CMAKE_C_COMPILER_ID} COMPILER_ID)
+
+if (COMPILER_ID STREQUAL "clang")
+	set (CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-Wno-int-to-void-pointer-cast")
+endif()
+
 check_include_files (assert.h		HAVE_ASSERT_H)
 check_include_files (fcntl.h		HAVE_FCNTL_H)
 check_include_files (io.h		HAVE_IO_H)
