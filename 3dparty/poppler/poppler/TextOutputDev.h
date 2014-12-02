@@ -15,11 +15,12 @@
 //
 // Copyright (C) 2005-2007 Kristian Høgsberg <krh@redhat.com>
 // Copyright (C) 2006 Ed Catmur <ed@catmur.co.uk>
-// Copyright (C) 2007, 2008, 2011 Carlos Garcia Campos <carlosgc@gnome.org>
+// Copyright (C) 2007, 2008, 2011, 2013 Carlos Garcia Campos <carlosgc@gnome.org>
 // Copyright (C) 2007 Adrian Johnson <ajohnson@redneon.com>
 // Copyright (C) 2008, 2010 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2010 Brian Ewins <brian.ewins@gmail.com>
-// Copyright (C) 2012 Jason Crain <jason@aquaticape.us>
+// Copyright (C) 2012, 2013 Jason Crain <jason@aquaticape.us>
+// Copyright (C) 2013 Thomas Freitag <Thomas.Freitag@alfa.de>
 //
 // To see a description of the changes please see the Changelog file that
 // came with your tarball or type make ChangeLog if you are building from git
@@ -122,7 +123,7 @@ public:
   // Add a character to the word.
   void addChar(GfxState *state, TextFontInfo *fontA, double x, double y,
 	       double dx, double dy, int charPosA, int charLen,
-	       CharCode c, Unicode u);
+	       CharCode c, Unicode u, Matrix textMatA);
 
   // Merge <word> onto the end of <this>.
   void merge(TextWord *word);
@@ -187,6 +188,7 @@ private:
   int len;			// length of text/edge/charPos/font arrays
   int size;			// size of text/edge/charPos/font arrays
   TextFontInfo **font;		// font information for each char
+  Matrix *textMat;		// transformation matrix for each char
   double fontSize;		// font size
   GBool spaceAfter;		// set if there is a space between this
 				//   word and the next word on the line
@@ -195,8 +197,8 @@ private:
 
 #if TEXTOUT_WORD_LIST
   double colorR,		// word color
-         colorG,
-         colorB;
+	 colorG,
+	 colorB;
 #endif
 
   GBool underlined;
@@ -476,6 +478,26 @@ private:
 
 #endif // TEXTOUT_WORD_LIST
 
+class TextWordSelection {
+public:
+  TextWordSelection(TextWord *word, int begin, int end)
+    : word(word), begin(begin), end(end)
+  {
+  }
+
+  TextWord * getWord() const { return word; }
+  int getBegin() const { return begin; }
+  int getEnd() const { return end; }
+
+private:
+  TextWord *word;
+  int begin;
+  int end;
+
+  friend class TextSelectionPainter;
+  friend class TextSelectionDumper;
+};
+
 //------------------------------------------------------------------------
 // TextPage
 //------------------------------------------------------------------------
@@ -561,6 +583,10 @@ public:
   GooString *getSelectionText(PDFRectangle *selection,
 			      SelectionStyle style);
 
+  GooList **getSelectionWords(PDFRectangle *selection,
+			      SelectionStyle style,
+			      int *nLines);
+
   // Find a string by character position and length.  If found, sets
   // the text bounding rectangle and returns true; otherwise returns
   // false.
@@ -584,10 +610,10 @@ public:
 #endif
 
 private:
-  
+
   // Destructor.
   ~TextPage();
-  
+
   void clear();
   void assignColumns(TextLineFrag *frags, int nFrags, GBool rot);
   int dumpFragment(Unicode *text, int len, UnicodeMap *uMap, GooString *s);
@@ -620,7 +646,7 @@ private:
 				//   page [TextFontInfo]
 
   double lastFindXMin,		// coordinates of the last "find" result
-         lastFindYMin;
+	 lastFindYMin;
   GBool haveLastFind;
 
   GooList *underlines;		// [TextUnderline]
@@ -663,7 +689,7 @@ private:
   double actualTextY1;
   int actualTextNBytes;
 };
-  
+
 
 //------------------------------------------------------------------------
 // TextOutputDev
@@ -718,7 +744,7 @@ public:
   //----- initialization and control
 
   // Start a page.
-  virtual void startPage(int pageNum, GfxState *state);
+  virtual void startPage(int pageNum, GfxState *state, XRef *xref);
 
   // End a page.
   virtual void endPage();

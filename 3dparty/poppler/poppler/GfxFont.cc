@@ -13,7 +13,7 @@
 // All changes made under the Poppler project to this file are licensed
 // under GPL version 2 or later
 //
-// Copyright (C) 2005, 2006, 2008-2010, 2012 Albert Astals Cid <aacid@kde.org>
+// Copyright (C) 2005, 2006, 2008-2010, 2012, 2014 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2005, 2006 Kristian Høgsberg <krh@redhat.com>
 // Copyright (C) 2006 Takashi Iwai <tiwai@suse.de>
 // Copyright (C) 2007 Julien Rebetez <julienr@svn.gnome.org>
@@ -26,10 +26,12 @@
 // Copyright (C) 2009 Peter Kerzum <kerzum@yandex-team.ru>
 // Copyright (C) 2009, 2010 David Benjamin <davidben@mit.edu>
 // Copyright (C) 2011 Axel Strübing <axel.struebing@freenet.de>
-// Copyright (C) 2011, 2012 Adrian Johnson <ajohnson@redneon.com>
+// Copyright (C) 2011, 2012, 2014 Adrian Johnson <ajohnson@redneon.com>
 // Copyright (C) 2012 Yi Yang <ahyangyi@gmail.com>
 // Copyright (C) 2012 Suzuki Toshiya <mpsuzuki@hiroshima-u.ac.jp>
 // Copyright (C) 2012 Thomas Freitag <Thomas.Freitag@alfa.de>
+// Copyright (C) 2013, 2014 Jason Crain <jason@aquaticape.us>
+// Copyright (C) 2014 Olly Betts <olly@survex.com>
 //
 // To see a description of the changes please see the Changelog file that
 // came with your tarball or type make ChangeLog if you are building from git
@@ -763,8 +765,8 @@ GfxFontLoc *GfxFont::locateFont(XRef *xref, GBool ps) {
     }
     substName = new GooString(base14SubstFonts[substIdx]);
     if (ps) {
-      error(errSyntaxWarning, -1, "Substituting font '{0:s}' for '{1:t}'",
-	    base14SubstFonts[substIdx], name ? name : new GooString("null"));
+      error(errSyntaxWarning, -1, "Substituting font '{0:s}' for '{1:s}'",
+	    base14SubstFonts[substIdx], name ? name->getCString() : "null");
       fontLoc = new GfxFontLoc();
       fontLoc->locType = gfxFontLocResident;
       fontLoc->fontType = fontType1;
@@ -776,8 +778,8 @@ GfxFontLoc *GfxFont::locateFont(XRef *xref, GBool ps) {
       delete substName;
       if (path) {
 	if ((fontLoc = getExternalFont(path, gFalse))) {
-	  error(errSyntaxWarning, -1, "Substituting font '{0:s}' for '{1:t}'",
-		  base14SubstFonts[substIdx], (name == NULL) ? new GooString("") : name);
+	  error(errSyntaxWarning, -1, "Substituting font '{0:s}' for '{1:s}'",
+		  base14SubstFonts[substIdx], name ? name->getCString() : "");
 	  name = new GooString(base14SubstFonts[substIdx]);
 	  fontLoc->substIdx = substIdx;
 	  return fontLoc;
@@ -911,9 +913,118 @@ char *GfxFont::readEmbFontFile(XRef *xref, int *len) {
   return buf;
 }
 
+
+struct AlternateNameMap {
+  const char *name;
+  const char *alt;
+};
+
+static const AlternateNameMap alternateNameMap[] =
+{
+  { "fi", "f_i" },
+  { "fl", "f_l" },
+  { "ff", "f_f" },
+  { "ffi", "f_f_i" },
+  { "ffl", "f_f_l" },
+  { 0,    0 }
+};
+
+const char *GfxFont::getAlternateName(const char *name) {
+  const AlternateNameMap *map = alternateNameMap;
+  while (map->name) {
+    if (strcmp(name, map->name) == 0) {
+      return map->alt;
+    }
+    map++;
+  }
+  return 0;
+}
+
 //------------------------------------------------------------------------
 // Gfx8BitFont
 //------------------------------------------------------------------------
+
+// Parse character names of the form 'Axx', 'xx', 'Ann', 'ABnn', or
+// 'nn', where 'A' and 'B' are any letters, 'xx' is two hex digits,
+// and 'nn' is decimal digits.
+static GBool parseNumericName(char *s, GBool hex, unsigned int *u) {
+  char *endptr;
+
+  // Strip leading alpha characters.
+  if (hex) {
+    int n = 0;
+
+    // Get string length while ignoring junk at end.
+    while (isalnum(s[n]))
+      ++n;
+
+    // Only 2 hex characters with optional leading alpha is allowed.
+    if (n == 3 && isalpha(*s)) {
+      ++s;
+    } else if (n != 2) {
+      return gFalse;
+    }
+  } else {
+    // Strip up to two alpha characters.
+    for (int i = 0; i < 2 && isalpha(*s); ++i)
+      ++s;
+  }
+
+  int v = strtol(s, &endptr, hex ? 16 : 10);
+
+  if (endptr == s)
+    return gFalse;
+
+  // Skip trailing junk characters.
+  while (*endptr != '\0' && !isalnum(*endptr))
+    ++endptr;
+
+  if (*endptr == '\0') {
+    if (u)
+      *u = v;
+    return gTrue;
+  }
+  return gFalse;
+}
+
+// Returns gTrue if the font has character names like xx or Axx which
+// should be parsed for hex or decimal values.
+static GBool testForNumericNames(Dict *fontDict, GBool hex) {
+  Object enc, diff, obj;
+  GBool numeric = gTrue;
+
+  fontDict->lookup("Encoding", &enc);
+  if (!enc.isDict()) {
+    enc.free();
+    return gFalse;
+  }
+
+  enc.dictLookup("Differences", &diff);
+  enc.free();
+  if (!diff.isArray()) {
+    diff.free();
+    return gFalse;
+  }
+
+  for (int i = 0; i < diff.arrayGetLength() && numeric; ++i) {
+    diff.arrayGet(i, &obj);
+    if (obj.isInt()) {
+      // All sequences must start between character codes 0 and 5.
+      if (obj.getInt() > 5)
+	numeric = gFalse;
+    } else if (obj.isName()) {
+      // All character names must sucessfully parse.
+      if (!parseNumericName(obj.getName(), hex, NULL))
+	numeric = gFalse;
+    } else {
+      numeric = gFalse;
+    }
+    obj.free();
+  }
+
+  diff.free();
+  return numeric;
+}
 
 Gfx8BitFont::Gfx8BitFont(XRef *xref, const char *tagA, Ref idA, GooString *nameA,
 			 GfxFontType typeA, Ref embFontIDA, Dict *fontDict):
@@ -929,6 +1040,7 @@ Gfx8BitFont::Gfx8BitFont(XRef *xref, const char *tagA, Ref idA, GooString *nameA
   int code;
   char *charName;
   GBool missing, hex;
+  GBool numeric;
   Unicode toUnicode[256];
   CharCodeToUnicode *utu, *ctu2;
   Unicode uBuf[8];
@@ -1221,10 +1333,16 @@ Gfx8BitFont::Gfx8BitFont(XRef *xref, const char *tagA, Ref idA, GooString *nameA
 
   // pass 1: use the name-to-Unicode mapping table
   missing = hex = gFalse;
+  GBool isZapfDingbats = name && name->endsWith("ZapfDingbats");
   for (code = 0; code < 256; ++code) {
     if ((charName = enc[code])) {
-      if (!(toUnicode[code] = globalParams->mapNameToUnicode(charName)) &&
-	  strcmp(charName, ".notdef")) {
+      if (isZapfDingbats) {
+	// include ZapfDingbats names
+	toUnicode[code] = globalParams->mapNameToUnicodeAll(charName);
+      } else {
+	toUnicode[code] = globalParams->mapNameToUnicodeText(charName);
+      }
+      if (!toUnicode[code] && strcmp(charName, ".notdef")) {
 	// if it wasn't in the name-to-Unicode table, check for a
 	// name that looks like 'Axx' or 'xx', where 'A' is any letter
 	// and 'xx' is two hex digits
@@ -1237,9 +1355,9 @@ Gfx8BitFont::Gfx8BitFont(XRef *xref, const char *tagA, Ref idA, GooString *nameA
 	      (charName[2] >= 'A' && charName[2] <= 'F'))) ||
 	    (strlen(charName) == 2 &&
 	     isxdigit(charName[0]) && isxdigit(charName[1]) &&
-	     ((charName[0] >= 'a' && charName[0] <= 'f') ||
-	      (charName[0] >= 'A' && charName[0] <= 'F') ||
-	      (charName[1] >= 'a' && charName[1] <= 'f') ||
+	     // Only check idx 1 to avoid misidentifying a decimal
+	     // number like a0
+	     ((charName[1] >= 'a' && charName[1] <= 'f') ||
 	      (charName[1] >= 'A' && charName[1] <= 'F')))) {
 	  hex = gTrue;
 	}
@@ -1249,6 +1367,8 @@ Gfx8BitFont::Gfx8BitFont(XRef *xref, const char *tagA, Ref idA, GooString *nameA
       toUnicode[code] = 0;
     }
   }
+
+  numeric = testForNumericNames(fontDict, hex);
 
   // construct the char code -> Unicode mapping object
   ctu = CharCodeToUnicode::make8BitToUnicode(toUnicode);
@@ -1273,22 +1393,18 @@ Gfx8BitFont::Gfx8BitFont(XRef *xref, const char *tagA, Ref idA, GooString *nameA
 	    && (n = parseCharName(charName, uBuf, sizeof(uBuf)/sizeof(*uBuf), 
 				  gFalse, // don't check simple names (pass 1)
 				  gTrue, // do check ligatures
-				  globalParams->getMapNumericCharNames(),
+				  numeric,
 				  hex,
 				  gTrue))) { // do check variants
 	  ctu->setMapping((CharCode)code, uBuf, n);
-	} else if (globalParams->getMapUnknownCharNames()) {
-	  // if the 'mapUnknownCharNames' flag is set, do a simple pass-through
-	  // mapping for unknown character names
-	  if (charName && charName[0]) {
-	    for (n = 0; n < (int)(sizeof(uBuf)/sizeof(*uBuf)); ++n)
-	      if (!(uBuf[n] = charName[n]))
-		break;
-	    ctu->setMapping((CharCode)code, uBuf, n);
-	  } else {
+	  continue;
+	}
+
+	// if the 'mapUnknownCharNames' flag is set, do a simple pass-through
+	// mapping for unknown character names
+	if (globalParams->getMapUnknownCharNames()) {
 	    uBuf[0] = code;
 	    ctu->setMapping((CharCode)code, uBuf, 1);
-	  }
 	}
       }
     }
@@ -1298,7 +1414,7 @@ Gfx8BitFont::Gfx8BitFont(XRef *xref, const char *tagA, Ref idA, GooString *nameA
   // existing entries in ctu, i.e., the ToUnicode CMap takes
   // precedence, but the other encoding info is allowed to fill in any
   // holes
-  readToUnicodeCMap(fontDict, 8, ctu);
+  readToUnicodeCMap(fontDict, 16, ctu);
 
   // look for a Unicode-to-Unicode mapping
   if (name && (utu = globalParams->getUnicodeToUnicode(name))) {
@@ -1485,10 +1601,10 @@ static int parseCharName(char *charName, Unicode *uBuf, int uLen,
   // corresponding character in that list.
   // 3.2. otherwise, if the component is in the Adobe Glyph List, then map it
   // to the corresponding character in that list.
-  if (names && (uBuf[0] = globalParams->mapNameToUnicode(charName))) {
+  if (names && (uBuf[0] = globalParams->mapNameToUnicodeText(charName))) {
     return 1;
   }
-  if (numeric) {
+  if (globalParams->getMapNumericCharNames()) {
     unsigned int n = strlen(charName);
     // 3.3. otherwise, if the component is of the form "uni" (U+0075 U+006E
     // U+0069) followed by a sequence of uppercase hexadecimal digits (0 .. 9,
@@ -1531,30 +1647,10 @@ static int parseCharName(char *charName, Unicode *uBuf, int uLen,
 	return 1;
       }
     }
-    // Not in Adobe Glyph Mapping convention: look for names of the form 'Axx',
-    // 'xx', 'Ann', 'ABnn', or 'nn', where 'A' and 'B' are any letters, 'xx' is
-    // two hex digits, and 'nn' is 2-4 decimal digits
-    if (hex && n == 3 && isalpha(charName[0]) &&
-	isxdigit(charName[1]) && isxdigit(charName[2])) {
-      sscanf(charName+1, "%x", (unsigned int *)uBuf);
+    // Not in Adobe Glyph Mapping convention: look for names like xx
+    // or Axx and parse for hex or decimal values.
+    if (numeric && parseNumericName(charName, hex, uBuf))
       return 1;
-    } else if (hex && n == 2 &&
-	       isxdigit(charName[0]) && isxdigit(charName[1])) {
-      sscanf(charName, "%x", (unsigned int *)uBuf);
-      return 1;
-    } else if (!hex && n >= 2 && n <= 4 &&
-	       isdigit(charName[0]) && isdigit(charName[1])) {
-      uBuf[0] = (Unicode)atoi(charName);
-      return 1;
-    } else if (n >= 3 && n <= 5 &&
-	       isdigit(charName[1]) && isdigit(charName[2])) {
-      uBuf[0] = (Unicode)atoi(charName+1);
-      return 1;
-    } else if (n >= 4 && n <= 6 &&
-	       isdigit(charName[2]) && isdigit(charName[3])) {
-      uBuf[0] = (Unicode)atoi(charName+2);
-      return 1;
-    }
   }
   // 3.5. otherwise, map the component to the empty string
   return 0;
@@ -1674,7 +1770,7 @@ int *Gfx8BitFont::getCodeToGIDMap(FoFiTrueType *ff) {
   } else if (useUnicode) {
     Unicode *uAux;
     for (i = 0; i < 256; ++i) {
-      if (((charName = enc[i]) && (u = globalParams->mapNameToUnicode(charName))))
+      if (((charName = enc[i]) && (u = globalParams->mapNameToUnicodeAll(charName))))
 	map[i] = ff->mapCodeToGID(cmap, u);
       else
       {

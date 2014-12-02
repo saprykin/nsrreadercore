@@ -15,14 +15,14 @@
 //
 // Copyright (C) 2005 Martin Kretzschmar <martink@gnome.org>
 // Copyright (C) 2005 Kristian Høgsberg <krh@redhat.com>
-// Copyright (C) 2006-2008, 2012 Albert Astals Cid <aacid@kde.org>
+// Copyright (C) 2006-2008, 2012, 2013 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2007 Brad Hards <bradh@kde.org>
-// Copyright (C) 2009-2012 Thomas Freitag <Thomas.Freitag@alfa.de>
+// Copyright (C) 2009-2013 Thomas Freitag <Thomas.Freitag@alfa.de>
 // Copyright (C) 2009 Till Kamppeter <till.kamppeter@gmail.com>
 // Copyright (C) 2009 Carlos Garcia Campos <carlosgc@gnome.org>
 // Copyright (C) 2009, 2011 William Bader <williambader@hotmail.com>
 // Copyright (C) 2010 Hib Eris <hib@hiberis.nl>
-// Copyright (C) 2011 Adrian Johnson <ajohnson@redneon.com>
+// Copyright (C) 2011, 2014 Adrian Johnson <ajohnson@redneon.com>
 // Copyright (C) 2012 Fabio D'Urso <fabiodurso@hotmail.it>
 //
 // To see a description of the changes please see the Changelog file that
@@ -43,6 +43,8 @@
 #include "GfxState.h"
 #include "GlobalParams.h"
 #include "OutputDev.h"
+#include <set>
+#include <map>
 
 class GHooash;
 class PDFDoc;
@@ -66,8 +68,7 @@ class PSOutputDev;
 enum PSOutMode {
   psModePS,
   psModeEPS,
-  psModeForm,
-  psModePSOrigPageSizes
+  psModeForm
 };
 
 enum PSFileType {
@@ -96,6 +97,7 @@ public:
 	      char *psTitle,
 	      int firstPage, int lastPage, PSOutMode modeA,
 	      int paperWidthA = -1, int paperHeightA = -1,
+              GBool noCrop = gFalse,
 	      GBool duplexA = gTrue,
 	      int imgLLXA = 0, int imgLLYA = 0,
 	      int imgURXA = 0, int imgURYA = 0,
@@ -110,6 +112,7 @@ public:
 	      PDFDoc *docA,
 	      int firstPage, int lastPage, PSOutMode modeA,
 	      int paperWidthA = -1, int paperHeightA = -1,
+              GBool noCrop = gFalse,
 	      GBool duplexA = gTrue,
 	      int imgLLXA = 0, int imgLLYA = 0,
 	      int imgURXA = 0, int imgURYA = 0,
@@ -186,7 +189,7 @@ public:
 			       void *annotDisplayDecideCbkData = NULL);
 
   // Start a page.
-  virtual void startPage(int pageNum, GfxState *state);
+  virtual void startPage(int pageNum, GfxState *state, XRef *xref);
 
   // End a page.
   virtual void endPage();
@@ -248,7 +251,6 @@ public:
   //----- text drawing
   virtual void drawString(GfxState *state, GooString *s);
   virtual void beginTextObject(GfxState *state);
-  virtual GBool deviceHasTextClip(GfxState *state) { return haveTextClip; }
   virtual void endTextObject(GfxState *state);
 
   //----- image drawing
@@ -311,7 +313,7 @@ private:
 	    int firstPage, int lastPage, PSOutMode modeA,
 	    int imgLLXA, int imgLLYA, int imgURXA, int imgURYA,
 	    GBool manualCtrlA, int paperWidthA, int paperHeightA,
-            GBool duplexA);
+            GBool noCropA, GBool duplexA);
   void setupResources(Dict *resDict);
   void setupFonts(Dict *resDict);
   void setupFont(GfxFont *font, Dict *parentResDict);
@@ -408,6 +410,7 @@ private:
       imgURX, imgURY;
   GBool preload;		// load all images into memory, and
 				//   predefine forms
+  GBool noCrop;
 
   PSOutputFunc outputFunc;
   void *outputStream;
@@ -429,6 +432,7 @@ private:
   Ref *fontIDs;			// list of object IDs of all used fonts
   int fontIDLen;		// number of entries in fontIDs array
   int fontIDSize;		// size of fontIDs array
+  std::set<int> resourceIDs;	// list of object IDs of objects containing Resources we've already set up
   GooHash *fontNames;		// all used font names
   PST1FontName *t1FontNames;	// font names for Type 1/1C fonts
   int t1FontNameLen;		// number of entries in t1FontNames array
@@ -445,14 +449,13 @@ private:
   Ref *formIDs;			// list of IDs for predefined forms
   int formIDLen;		// number of entries in formIDs array
   int formIDSize;		// size of formIDs array
-  GooList *xobjStack;		// stack of XObject dicts currently being
-				//   processed
   int numSaves;			// current number of gsaves
   int numTilingPatterns;	// current number of nested tiling patterns
   int nextFunc;			// next unique number to use for a function
 
   GooList *paperSizes;		// list of used paper sizes, if paperMatch
 				//   is true [PSOutPaperSize]
+  std::map<int,int> pagePaperSize; // page num to paperSize entry mapping
   double tx0, ty0;		// global translation
   double xScale0, yScale0;	// global scaling
   int rotate0;			// rotation angle (0, 90, 180, 270)

@@ -17,6 +17,7 @@
 // Copyright (C) 2005 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2007 Krzysztof Kowalczyk <kkowalczyk@gmail.com>
 // Copyright (C) 2012 Marek Kasik <mkasik@redhat.com>
+// Copyright (C) 2013 Adrian Johnson <ajohnson@redneon.com>
 //
 // To see a description of the changes please see the Changelog file that
 // came with your tarball or type make ChangeLog if you are building from git
@@ -48,17 +49,17 @@ static const char *errorCategoryNames[] = {
 };
 
 static void (*errorCbk)(void *data, ErrorCategory category,
-			int pos, char *msg) = NULL;
+			Goffset pos, char *msg) = NULL;
 static void *errorCbkData = NULL;
 
 void setErrorCallback(void (*cbk)(void *data, ErrorCategory category,
-				  int pos, char *msg),
+				  Goffset pos, char *msg),
 		      void *data) {
   errorCbk = cbk;
   errorCbkData = data;
 }
 
-void CDECL error(ErrorCategory category, int pos, const char *msg, ...) {
+void CDECL error(ErrorCategory category, Goffset pos, const char *msg, ...) {
   va_list args;
   GooString *s, *sanitized;
 
@@ -84,8 +85,8 @@ void CDECL error(ErrorCategory category, int pos, const char *msg, ...) {
     (*errorCbk)(errorCbkData, category, pos, sanitized->getCString());
   } else {
     if (pos >= 0) {
-      fprintf(stderr, "%s (%d): %s\n",
-	      errorCategoryNames[category], pos, sanitized->getCString());
+      fprintf(stderr, "%s (%lld): %s\n",
+	      errorCategoryNames[category], (long long)pos, sanitized->getCString());
     } else {
       fprintf(stderr, "%s: %s\n",
 	      errorCategoryNames[category], sanitized->getCString());

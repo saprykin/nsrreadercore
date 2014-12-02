@@ -136,7 +136,7 @@ NSRPopplerDocument::renderPage (int page)
 
 	setZoomSilent (validateMaxZoom (QSize (_page->getCropWidth (), _page->getCropHeight ()), getZoom ()));
 
-	_dev->startPage (0, NULL);
+	_dev->startPage (0, NULL, _doc->getXRef ());
 
 	dpix = 72.0 * getZoom () / 100.0;
 	dpiy = 72.0 * getZoom () / 100.0;

@@ -15,11 +15,13 @@
 //
 // Copyright (C) 2006 Raj Kumar <rkumar@archive.org>
 // Copyright (C) 2006 Paul Walmsley <paul@booyaka.com>
-// Copyright (C) 2006-2010, 2012 Albert Astals Cid <aacid@kde.org>
+// Copyright (C) 2006-2010, 2012, 2014 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2009 David Benjamin <davidben@mit.edu>
 // Copyright (C) 2011 Edward Jiang <ejiang@google.com>
 // Copyright (C) 2012 William Bader <williambader@hotmail.com>
 // Copyright (C) 2012 Thomas Freitag <Thomas.Freitag@alfa.de>
+// Copyright (C) 2013 Adrian Johnson <ajohnson@redneon.com>
+// Copyright (C) 2013, 2014 Fabio D'Urso <fabiodurso@hotmail.it>
 //
 // To see a description of the changes please see the Changelog file that
 // came with your tarball or type make ChangeLog if you are building from git
@@ -1284,7 +1286,7 @@ int JBIG2Stream::lookChar() {
   return EOF;
 }
 
-int JBIG2Stream::getPos() {
+Goffset JBIG2Stream::getPos() {
   if (pageBitmap == NULL) {
     return 0;
   }
@@ -1320,7 +1322,7 @@ void JBIG2Stream::readSegments() {
   Guint segNum, segFlags, segType, page, segLength;
   Guint refFlags, nRefSegs;
   Guint *refSegs;
-  int segDataPos;
+  Goffset segDataPos;
   int c1, c2, c3;
   Guint i;
 
@@ -1483,7 +1485,7 @@ void JBIG2Stream::readSegments() {
 
     if (segLength != 0xffffffff) {
 
-      int segExtraBytes = segDataPos + segLength - curStr->getPos();
+      Goffset segExtraBytes = segDataPos + segLength - curStr->getPos();
       if (segExtraBytes > 0) {
 
 	// If we didn't read all of the bytes in the segment data,
@@ -1494,14 +1496,14 @@ void JBIG2Stream::readSegments() {
 	// arithmetic-coded symbol dictionary segments when numNewSyms
 	// == 0.  Segments like this often occur for blank pages.
 	
-	error(errSyntaxError, curStr->getPos(), "{0:d} extraneous byte{1:s} after segment",
+	error(errSyntaxError, curStr->getPos(), "{0:lld} extraneous byte{1:s} after segment",
 	      segExtraBytes, (segExtraBytes > 1) ? "s" : "");
 	
 	// Burn through the remaining bytes -- inefficient, but
 	// hopefully we're not doing this much
 	
 	int trash;
-	for (int i = segExtraBytes; i > 0; i--) {
+	for (Goffset i = segExtraBytes; i > 0; i--) {
 	  readByte(&trash);
 	}
 	
@@ -1838,7 +1840,7 @@ GBool JBIG2Stream::readSymbolDictSeg(Guint segNum, Guint length,
 	  }
 	  refBitmap = bitmaps[symID];
 	  if (unlikely(refBitmap == NULL)) {
-	    error(errSyntaxError, curStr->getPos(), "Invalid ref bitmap for symbol ID {0:d} in JBIG2 symbol dictionary", symID);
+	    error(errSyntaxError, curStr->getPos(), "Invalid ref bitmap for symbol ID {0:ud} in JBIG2 symbol dictionary", symID);
 	    goto syntaxError;
 	  }
 	  bitmaps[numInputSyms + i] =
@@ -2288,8 +2290,8 @@ void JBIG2Stream::readTextRegionSeg(Guint segNum, GBool imm,
 
  codeTableError:
   error(errSyntaxError, curStr->getPos(), "Missing code table in JBIG2 text region");
-  gfree(codeTables);
-  delete syms;
+  delete codeTables;
+  gfree(syms);
   return;
 
  eofError:
@@ -3382,8 +3384,9 @@ JBIG2Bitmap *JBIG2Stream::readGenericBitmap(GBool mmr, int w, int h,
 
 	if (atx[0] >= -8 && atx[0] <= 8) {
 	  // set up the adaptive context
-	  if (y + aty[0] >= 0) {
-	    atP0 = bitmap->getDataPtr() + (y + aty[0]) * bitmap->getLineSize();
+	  const int atY = y + aty[0];
+	  if ((atY >= 0) && (atY < bitmap->getHeight())) {
+	    atP0 = bitmap->getDataPtr() + atY * bitmap->getLineSize();
 	    atBuf0 = *atP0++ << 8;
 	  } else {
 	    atP0 = NULL;
@@ -3497,8 +3500,9 @@ JBIG2Bitmap *JBIG2Stream::readGenericBitmap(GBool mmr, int w, int h,
 
 	if (atx[0] >= -8 && atx[0] <= 8) {
 	  // set up the adaptive context
-	  if (y + aty[0] >= 0) {
-	    atP0 = bitmap->getDataPtr() + (y + aty[0]) * bitmap->getLineSize();
+	  const int atY = y + aty[0];
+	  if ((atY >= 0) && (atY < bitmap->getHeight())) {
+	    atP0 = bitmap->getDataPtr() + atY * bitmap->getLineSize();
 	    atBuf0 = *atP0++ << 8;
 	  } else {
 	    atP0 = NULL;
@@ -3605,8 +3609,9 @@ JBIG2Bitmap *JBIG2Stream::readGenericBitmap(GBool mmr, int w, int h,
 
 	if (atx[0] >= -8 && atx[0] <= 8) {
 	  // set up the adaptive context
-	  if (y + aty[0] >= 0) {
-	    atP0 = bitmap->getDataPtr() + (y + aty[0]) * bitmap->getLineSize();
+	  const int atY = y + aty[0];
+	  if ((atY >= 0) && (atY < bitmap->getHeight())) {
+	    atP0 = bitmap->getDataPtr() + atY * bitmap->getLineSize();
 	    atBuf0 = *atP0++ << 8;
 	  } else {
 	    atP0 = NULL;

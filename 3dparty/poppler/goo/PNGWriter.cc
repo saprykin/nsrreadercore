@@ -8,7 +8,7 @@
 // Copyright (C) 2009 Shen Liang <shenzhuxi@gmail.com>
 // Copyright (C) 2009, 2011 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2009 Stefan Thomas <thomas@eload24.com>
-// Copyright (C) 2010, 2011 Adrian Johnson <ajohnson@redneon.com>
+// Copyright (C) 2010, 2011, 2013 Adrian Johnson <ajohnson@redneon.com>
 // Copyright (C) 2011 Thomas Klausner <wiz@danbala.tuwien.ac.at>
 // Copyright (C) 2012 Pino Toscano <pino@kde.org>
 //
@@ -146,10 +146,6 @@ bool PNGWriter::init(FILE *f, int width, int height, int hDPI, int vDPI)
     error(errInternal, -1, "error during writing png info bytes");
     return false;
   }
-
-  // pack 1 pixel/byte rows into 8 pixels/byte
-  if (priv->format == MONOCHROME)
-    png_set_packing(priv->png_ptr);
 
   return true;
 }

@@ -15,18 +15,23 @@
 //
 // Copyright (C) 2006 Scott Turner <scotty1024@mac.com>
 // Copyright (C) 2007, 2008 Julien Rebetez <julienr@svn.gnome.org>
-// Copyright (C) 2007-2012 Albert Astals Cid <aacid@kde.org>
-// Copyright (C) 2007-2012 Carlos Garcia Campos <carlosgc@gnome.org>
+// Copyright (C) 2007-2013 Albert Astals Cid <aacid@kde.org>
+// Copyright (C) 2007-2013 Carlos Garcia Campos <carlosgc@gnome.org>
 // Copyright (C) 2007, 2008 Iñigo Martínez <inigomartinez@gmail.com>
 // Copyright (C) 2007 Jeff Muizelaar <jeff@infidigm.net>
 // Copyright (C) 2008, 2011 Pino Toscano <pino@kde.org>
 // Copyright (C) 2008 Michael Vrable <mvrable@cs.ucsd.edu>
 // Copyright (C) 2008 Hugo Mercier <hmercier31@gmail.com>
 // Copyright (C) 2009 Ilya Gorenbein <igorenbein@finjan.com>
-// Copyright (C) 2011 José Aliste <jaliste@src.gnome.org>
-// Copyright (C) 2012 Fabio D'Urso <fabiodurso@hotmail.it>
-// Copyright (C) 2012 Thomas Freitag <Thomas.Freitag@alfa.de>
+// Copyright (C) 2011, 2013 José Aliste <jaliste@src.gnome.org>
+// Copyright (C) 2012, 2013 Fabio D'Urso <fabiodurso@hotmail.it>
+// Copyright (C) 2012, 2013 Thomas Freitag <Thomas.Freitag@alfa.de>
 // Copyright (C) 2012 Tobias Koenig <tokoe@kdab.com>
+// Copyright (C) 2013 Peter Breitenlohner <peb@mppmu.mpg.de>
+// Copyright (C) 2013 Adrian Johnson <ajohnson@redneon.com>
+// Copyright (C) 2014 Marek Kasik <mkasik@redhat.com>
+// Copyright (C) 2014 Jiri Slaby <jirislaby@gmail.com>
+// Copyright (C) 2014 Anuj Khare <khareanuj18@gmail.com>
 //
 // To see a description of the changes please see the Changelog file that
 // came with your tarball or type make ChangeLog if you are building from git
@@ -66,6 +71,14 @@
 #include "DateInfo.h"
 #include "Link.h"
 #include <string.h>
+
+#if MULTITHREADED
+#  define annotLocker()   MutexLocker locker(&mutex)
+#  define annotCondLocker(X)  MutexLocker locker(&mutex, (X))
+#else
+#  define annotLocker()
+#  define annotCondLocker(X)
+#endif
 
 #define fieldFlagReadOnly           0x00000001
 #define fieldFlagRequired           0x00000002
@@ -212,6 +225,28 @@ static LinkAction* getAdditionalAction(Annot::AdditionalActionsType type, Object
                        type == Annot::actionPageClosing ?   "PC" :
                        type == Annot::actionPageVisible ?   "PV" :
                        type == Annot::actionPageInvisible ? "PI" : NULL);
+
+    Object actionObject;
+
+    if (additionalActionsObject.dictLookup(key, &actionObject)->isDict())
+      linkAction = LinkAction::parseAction(&actionObject, doc->getCatalog()->getBaseURI());
+    actionObject.free();
+  }
+
+  additionalActionsObject.free();
+
+  return linkAction;
+}
+
+static LinkAction* getFormAdditionalAction(Annot::FormAdditionalActionsType type, Object *additionalActions, PDFDoc *doc) {
+  Object additionalActionsObject;
+  LinkAction *linkAction = NULL;
+
+  if (additionalActions->fetch(doc->getXRef(), &additionalActionsObject)->isDict()) {
+    const char *key = (type == Annot::actionFieldModified ?  "K" :
+                       type == Annot::actionFormatField ?    "F" :
+                       type == Annot::actionValidateField ?  "V" :
+                       type == Annot::actionCalculateField ? "C" : NULL);
 
     Object actionObject;
 
@@ -488,7 +523,6 @@ AnnotQuadrilaterals::AnnotQuadrilateral::AnnotQuadrilateral(double x1, double y1
 // AnnotBorder
 //------------------------------------------------------------------------
 AnnotBorder::AnnotBorder() {
-  type = typeUnknown;
   width = 1;
   dashLength = 0;
   dash = NULL;
@@ -533,7 +567,6 @@ AnnotBorder::~AnnotBorder() {
 //------------------------------------------------------------------------
 
 AnnotBorderArray::AnnotBorderArray() {
-  type = typeArray;
   horizontalCorner = 0;
   verticalCorner = 0;
 }
@@ -584,10 +617,17 @@ void AnnotBorderArray::writeToObject(XRef *xref, Object *obj1) const {
   Object obj2;
 
   obj1->initArray(xref);
-  obj1->arrayAdd(obj2.initReal( horizontalCorner ));
-  obj1->arrayAdd(obj2.initReal( verticalCorner ));
-  obj1->arrayAdd(obj2.initReal( width ));
-  // TODO: Dash array
+  obj1->arrayAdd(obj2.initReal(horizontalCorner));
+  obj1->arrayAdd(obj2.initReal(verticalCorner));
+  obj1->arrayAdd(obj2.initReal(width));
+
+  if (dashLength > 0) {
+    Object obj3;
+
+    obj1->arrayAdd(obj3.initArray(xref));
+    for (int i = 0; i < dashLength; i++)
+      obj3.arrayAdd(obj2.initReal(dash[i]));
+  }
 }
 
 //------------------------------------------------------------------------
@@ -595,7 +635,6 @@ void AnnotBorderArray::writeToObject(XRef *xref, Object *obj1) const {
 //------------------------------------------------------------------------
 
 AnnotBorderBS::AnnotBorderBS() {
-  type = typeBS;
 }
 
 AnnotBorderBS::AnnotBorderBS(Dict *dict) {
@@ -643,6 +682,38 @@ AnnotBorderBS::AnnotBorderBS(Dict *dict) {
       dash = (double *) gmallocn (dashLength, sizeof (double));
       dash[0] = 3;
     }
+  }
+}
+
+const char *AnnotBorderBS::getStyleName() const {
+  switch (style) {
+  case borderSolid:
+    return "S";
+  case borderDashed:
+    return "D";
+  case borderBeveled:
+    return "B";
+  case borderInset:
+    return "I";
+  case borderUnderlined:
+    return "U";
+  }
+
+  return "S";
+}
+
+void AnnotBorderBS::writeToObject(XRef *xref, Object *obj1) const {
+  Object obj2;
+
+  obj1->initDict(xref);
+  obj1->dictSet("W", obj2.initReal(width));
+  obj1->dictSet("S", obj2.initName(getStyleName()));
+  if (style == borderDashed && dashLength > 0) {
+    Object obj3;
+
+    obj1->dictSet("D", obj3.initArray(xref));
+    for (int i = 0; i < dashLength; i++)
+      obj3.arrayAdd(obj2.initReal(dash[i]));
   }
 }
 
@@ -1073,7 +1144,6 @@ void AnnotAppearanceBBox::extendTo(double x, double y) {
 }
 
 void AnnotAppearanceBBox::getBBoxRect(double bbox[4]) const {
-  Object obj2;
   bbox[0] = minX - borderWidth;
   bbox[1] = minY - borderWidth;
   bbox[2] = maxX + borderWidth;
@@ -1197,7 +1267,7 @@ void Annot::initialize(PDFDoc *docA, Dict *dict) {
   if (dict->lookup("Contents", &obj1)->isString()) {
     contents = obj1.getString()->copy();
   } else {
-    contents = NULL;
+    contents = new GooString();
   }
   obj1.free();
 
@@ -1264,18 +1334,14 @@ void Annot::initialize(PDFDoc *docA, Dict *dict) {
   }
 
   //----- parse the border style
-  if (dict->lookup("BS", &obj1)->isDict()) {
-    border = new AnnotBorderBS(obj1.getDict());
-  } else {
-    obj1.free();
-
-    if (dict->lookup("Border", &obj1)->isArray())
-      border = new AnnotBorderArray(obj1.getArray());
-    else
-      // Adobe draws no border at all if the last element is of
-      // the wrong type.
-      border = NULL;
-  }
+  // According to the spec if neither the Border nor the BS entry is present,
+  // the border shall be drawn as a solid line with a width of 1 point. But acroread
+  // seems to ignore the Border entry for annots that can't have a BS entry. So, we only
+  // follow this rule for annots tha can have a BS entry.
+  if (dict->lookup("Border", &obj1)->isArray())
+    border = new AnnotBorderArray(obj1.getArray());
+  else
+    border = NULL;
   obj1.free();
 
   if (dict->lookup("C", &obj1)->isArray()) {
@@ -1293,6 +1359,10 @@ void Annot::initialize(PDFDoc *docA, Dict *dict) {
   obj1.free();
 
   dict->lookupNF("OC", &oc);
+
+#if MULTITHREADED
+  gInitMutex(&mutex);
+#endif
 }
 
 void Annot::getRect(double *x1, double *y1, double *x2, double *y2) const {
@@ -1332,6 +1402,7 @@ void Annot::setRect(double x1, double y1, double x2, double y2) {
   obj1.arrayAdd (obj2.initReal (rect->y2));
 
   update("Rect", &obj1);
+  invalidateAppearance();
 }
 
 GBool Annot::inRect(double x, double y) const {
@@ -1339,6 +1410,7 @@ GBool Annot::inRect(double x, double y) const {
 }
 
 void Annot::update(const char *key, Object *value) {
+  annotLocker();
   /* Set M to current time, unless we are updating M itself */
   if (strcmp(key, "M") != 0) {
     delete modified;
@@ -1355,6 +1427,7 @@ void Annot::update(const char *key, Object *value) {
 }
 
 void Annot::setContents(GooString *new_content) {
+  annotLocker();
   delete contents;
 
   if (new_content) {
@@ -1374,6 +1447,7 @@ void Annot::setContents(GooString *new_content) {
 }
 
 void Annot::setName(GooString *new_name) {
+  annotLocker();
   delete name;
 
   if (new_name) {
@@ -1388,6 +1462,7 @@ void Annot::setName(GooString *new_name) {
 }
 
 void Annot::setModified(GooString *new_modified) {
+  annotLocker();
   delete modified;
 
   if (new_modified)
@@ -1401,26 +1476,30 @@ void Annot::setModified(GooString *new_modified) {
 }
 
 void Annot::setFlags(Guint new_flags) {
+  annotLocker();
   Object obj1;
   flags = new_flags;
   obj1.initInt(flags);
   update ("F", &obj1);
 }
 
-void Annot::setBorder(AnnotBorderArray *new_border) {
+void Annot::setBorder(AnnotBorder *new_border) {
+  annotLocker();
   delete border;
 
   if (new_border) {
     Object obj1;
     new_border->writeToObject(xref, &obj1);
-    update ("Border", &obj1);
+    update(new_border->getType() == AnnotBorder::typeArray ? "Border" : "BS", &obj1);
     border = new_border;
   } else {
     border = NULL;
   }
+  invalidateAppearance();
 }
 
 void Annot::setColor(AnnotColor *new_color) {
+  annotLocker();
   delete color;
 
   if (new_color) {
@@ -1431,9 +1510,11 @@ void Annot::setColor(AnnotColor *new_color) {
   } else {
     color = NULL;
   }
+  invalidateAppearance();
 }
 
 void Annot::setPage(int pageIndex, GBool updateP) {
+  annotLocker();
   Page *pageobj = doc->getPage(pageIndex);
   Object obj1;
 
@@ -1452,6 +1533,7 @@ void Annot::setPage(int pageIndex, GBool updateP) {
 }
 
 void Annot::setAppearanceState(const char *state) {
+  annotLocker();
   if (!state)
     return;
 
@@ -1475,18 +1557,31 @@ void Annot::setAppearanceState(const char *state) {
 }
 
 void Annot::invalidateAppearance() {
+  annotLocker();
   if (appearStreams) { // Remove existing appearance streams
     appearStreams->removeAllStreams();
   }
   delete appearStreams;
   appearStreams = NULL;
 
-  setAppearanceState("Off"); // Default appearance state
+  delete appearState;
+  appearState = NULL;
 
-  Object obj1;
+  delete appearBBox;
+  appearBBox = NULL;
+
+  appearance.free();
+  appearance.initNull();
+
+  Object obj1, obj2;
   obj1.initNull();
-  update ("AP", &obj1); // Remove AP
-  update ("AS", &obj1); // Remove AS
+  if (!annotObj.dictLookup("AP", &obj2)->isNull())
+    update ("AP", &obj1); // Remove AP
+  obj2.free();
+
+  if (!annotObj.dictLookup("AS", &obj2)->isNull())
+    update ("AS", &obj1); // Remove AS
+  obj2.free();
 }
 
 double Annot::getXMin() {
@@ -1495,6 +1590,14 @@ double Annot::getXMin() {
 
 double Annot::getYMin() {
   return rect->y1;
+}
+
+double Annot::getXMax() {
+  return rect->x2;
+}
+
+double Annot::getYMax() {
+  return rect->y2;
 }
 
 void Annot::readArrayNum(Object *pdfArray, int key, double *value) {
@@ -1516,21 +1619,31 @@ void Annot::removeReferencedObjects() {
 }
 
 void Annot::incRefCnt() {
+  annotLocker();
   refCnt++;
 }
 
 void Annot::decRefCnt() {
-  if (--refCnt == 0)
+#if MULTITHREADED
+  gLockMutex(&mutex);
+#endif
+  if (--refCnt == 0) {
+#if MULTITHREADED
+    gUnlockMutex(&mutex);
+#endif
     delete this;
+    return;
+  }
+#if MULTITHREADED
+  gUnlockMutex(&mutex);
+#endif
 }
 
 Annot::~Annot() {
   annotObj.free();
   
   delete rect;
-  
-  if (contents)
-    delete contents;
+  delete contents;
 
   if (name)
     delete name;
@@ -1552,6 +1665,10 @@ Annot::~Annot() {
     delete color;
 
   oc.free();
+
+#if MULTITHREADED
+    gDestroyMutex(&mutex);
+#endif
 }
 
 void Annot::setColor(AnnotColor *color, GBool fill) {
@@ -1577,6 +1694,26 @@ void Annot::setColor(AnnotColor *color, GBool fill) {
   default:
     break;
   }
+}
+
+void Annot::setLineStyleForBorder(AnnotBorder *border) {
+  int i, dashLength;
+  double *dash;
+
+  switch (border->getStyle()) {
+  case AnnotBorder::borderDashed:
+    appearBuf->append("[");
+    dashLength = border->getDashLength();
+    dash = border->getDash();
+    for (i = 0; i < dashLength; ++i)
+      appearBuf->appendf(" {0:.2f}", dash[i]);
+    appearBuf->append(" ] 0 d\n");
+    break;
+  default:
+    appearBuf->append("[] 0 d\n");
+    break;
+  }
+  appearBuf->appendf("{0:.2f} w\n", border->getWidth());
 }
 
 // Draw an (approximate) circle of radius <r> centered at (<cx>, <cy>).
@@ -1741,16 +1878,29 @@ GBool Annot::isVisible(GBool printing) {
   return gTrue;
 }
 
+int Annot::getRotation() const
+{
+  Page *pageobj = doc->getPage(page);
+  assert(pageobj != NULL);
+
+  if (flags & flagNoRotate) {
+    return (360 - pageobj->getRotate()) % 360;
+  } else {
+    return 0;
+  }
+}
+
 void Annot::draw(Gfx *gfx, GBool printing) {
   Object obj;
 
+  annotLocker();
   if (!isVisible (printing))
     return;
 
   // draw the appearance stream
-  appearance.fetch(xref, &obj);
+  appearance.fetch(gfx->getXRef(), &obj);
   gfx->drawAnnot(&obj, (AnnotBorder *)NULL, color,
-      rect->x1, rect->y1, rect->x2, rect->y2);
+      rect->x1, rect->y1, rect->x2, rect->y2, getRotation());
   obj.free();
 }
 
@@ -1950,6 +2100,7 @@ void AnnotMarkup::setOpacity(double opacityA) {
   opacity = opacityA;
   obj1.initReal(opacity);
   update ("CA", &obj1);
+  invalidateAppearance();
 }
 
 void AnnotMarkup::setDate(GooString *new_date) {
@@ -2108,6 +2259,7 @@ void AnnotText::setIcon(GooString *new_icon) {
   Object obj1;
   obj1.initName (icon->getCString());
   update("Name", &obj1);
+  invalidateAppearance();
 }
 
 #define ANNOT_TEXT_AP_NOTE                                                    \
@@ -2361,6 +2513,7 @@ void AnnotText::draw(Gfx *gfx, GBool printing) {
   if (!isVisible (printing))
     return;
 
+  annotLocker();
   if (appearance.isNull()) {
     ca = opacity;
 
@@ -2412,14 +2565,15 @@ void AnnotText::draw(Gfx *gfx, GBool printing) {
   }
 
   // draw the appearance stream
-  appearance.fetch(xref, &obj);
+  appearance.fetch(gfx->getXRef(), &obj);
   if (appearBBox) {
     gfx->drawAnnot(&obj, (AnnotBorder *)NULL, color,
                    appearBBox->getPageXMin(), appearBBox->getPageYMin(),
-                   appearBBox->getPageXMax(), appearBBox->getPageYMax());
+                   appearBBox->getPageXMax(), appearBBox->getPageYMax(),
+                   getRotation());
   } else {
     gfx->drawAnnot(&obj, (AnnotBorder *)NULL, color,
-                   rect->x1, rect->y1, rect->x2, rect->y2);
+                   rect->x1, rect->y1, rect->x2, rect->y2, getRotation());
   }
   obj.free();
 }
@@ -2502,6 +2656,14 @@ void AnnotLink::initialize(PDFDoc *docA, Dict *dict) {
     quadrilaterals = NULL;
   }
   obj1.free();
+
+  if (dict->lookup("BS", &obj1)->isDict()) {
+    delete border;
+    border = new AnnotBorderBS(obj1.getDict());
+  } else if (!border) {
+    border = new AnnotBorderBS();
+  }
+  obj1.free();
 }
 
 void AnnotLink::draw(Gfx *gfx, GBool printing) {
@@ -2510,10 +2672,11 @@ void AnnotLink::draw(Gfx *gfx, GBool printing) {
   if (!isVisible (printing))
     return;
 
+  annotLocker();
   // draw the appearance stream
-  appearance.fetch(xref, &obj);
+  appearance.fetch(gfx->getXRef(), &obj);
   gfx->drawAnnot(&obj, border, color,
-		 rect->x1, rect->y1, rect->x2, rect->y2);
+		 rect->x1, rect->y1, rect->x2, rect->y2, getRotation());
   obj.free();
 }
 
@@ -2628,6 +2791,14 @@ void AnnotFreeText::initialize(PDFDoc *docA, Dict *dict) {
   }
   obj1.free();
 
+  if (dict->lookup("BS", &obj1)->isDict()) {
+    delete border;
+    border = new AnnotBorderBS(obj1.getDict());
+  } else if (!border) {
+    border = new AnnotBorderBS();
+  }
+  obj1.free();
+
   if (dict->lookup("BE", &obj1)->isDict()) {
     borderEffect = new AnnotBorderEffect(obj1.getDict());
   } else {
@@ -2651,6 +2822,11 @@ void AnnotFreeText::initialize(PDFDoc *docA, Dict *dict) {
   obj1.free();
 }
 
+void AnnotFreeText::setContents(GooString *new_content) {
+  Annot::setContents(new_content);
+  invalidateAppearance();
+}
+
 void AnnotFreeText::setAppearanceString(GooString *new_string) {
   delete appearanceString;
 
@@ -2663,6 +2839,7 @@ void AnnotFreeText::setAppearanceString(GooString *new_string) {
   Object obj1;
   obj1.initString(appearanceString->copy());
   update ("DA", &obj1);
+  invalidateAppearance();
 }
 
 void AnnotFreeText::setQuadding(AnnotFreeTextQuadding new_quadding) {
@@ -2670,6 +2847,7 @@ void AnnotFreeText::setQuadding(AnnotFreeTextQuadding new_quadding) {
   quadding = new_quadding;
   obj1.initInt((int)quadding);
   update ("Q", &obj1);
+  invalidateAppearance();
 }
 
 void AnnotFreeText::setStyleString(GooString *new_string) {
@@ -2720,6 +2898,7 @@ void AnnotFreeText::setCalloutLine(AnnotCalloutLine *line) {
   }
 
   update("CL", &obj1);
+  invalidateAppearance();
 }
 
 void AnnotFreeText::setIntent(AnnotFreeTextIntent new_intent) {
@@ -2818,29 +2997,10 @@ void AnnotFreeText::generateFreeTextAppearance()
 
   appearBuf = new GooString ();
   appearBuf->append ("q\n");
-  
-  if (border) {
-    int i, dashLength;
-    double *dash;
-    borderWidth = border->getWidth();
 
-    switch (border->getStyle()) {
-    case AnnotBorder::borderDashed:
-      appearBuf->append("[");
-      dashLength = border->getDashLength();
-      dash = border->getDash();
-      for (i = 0; i < dashLength; ++i)
-        appearBuf->appendf(" {0:.2f}", dash[i]);
-      appearBuf->append(" ] 0 d\n");
-      break;
-    default:
-      appearBuf->append("[] 0 d\n");
-      break;
-    }
-    appearBuf->appendf("{0:.2f} w\n", borderWidth);
-  } else {
-    borderWidth = 0; // No border
-  }
+  borderWidth = border->getWidth();
+  if (borderWidth > 0)
+    setLineStyleForBorder(border);
 
   // Box size
   const double width = rect->x2 - rect->x1;
@@ -2855,6 +3015,8 @@ void AnnotFreeText::generateFreeTextAppearance()
     fontsize = 10;
   if (fontcolor == NULL)
     fontcolor = new AnnotColor(0, 0, 0); // Black
+  if (!contents)
+    contents = new GooString ();
 
   // Draw box
   GBool doFill = (color && color->getSpace() != AnnotColor::colorTransparent);
@@ -2939,14 +3101,15 @@ void AnnotFreeText::draw(Gfx *gfx, GBool printing) {
   if (!isVisible (printing))
     return;
 
+  annotLocker();
   if (appearance.isNull()) {
     generateFreeTextAppearance();
   }
 
   // draw the appearance stream
-  appearance.fetch(xref, &obj);
+  appearance.fetch(gfx->getXRef(), &obj);
   gfx->drawAnnot(&obj, (AnnotBorder *)NULL, color,
-                 rect->x1, rect->y1, rect->x2, rect->y2);
+                 rect->x1, rect->y1, rect->x2, rect->y2, getRotation());
   obj.free();
 }
 
@@ -2963,20 +3126,12 @@ Object *AnnotFreeText::getAppearanceResDict(Object *dest) {
 // AnnotLine
 //------------------------------------------------------------------------
 
-AnnotLine::AnnotLine(PDFDoc *docA, PDFRectangle *rect, PDFRectangle *lRect) :
+AnnotLine::AnnotLine(PDFDoc *docA, PDFRectangle *rect) :
     AnnotMarkup(docA, rect) {
   Object obj1;
 
   type = typeLine;
   annotObj.dictSet ("Subtype", obj1.initName ("Line"));
-
-  Object obj2, obj3;
-  obj2.initArray (doc->getXRef());
-  obj2.arrayAdd (obj3.initReal (lRect->x1));
-  obj2.arrayAdd (obj3.initReal (lRect->y1));
-  obj2.arrayAdd (obj3.initReal (lRect->x2));
-  obj2.arrayAdd (obj3.initReal (lRect->y2));
-  annotObj.dictSet ("L", &obj2);
 
   initialize (docA, annotObj.getDict());
 }
@@ -3133,6 +3288,20 @@ void AnnotLine::initialize(PDFDoc *docA, Dict *dict) {
     captionTextHorizontal = captionTextVertical = 0;
   }
   obj1.free();
+
+  if (dict->lookup("BS", &obj1)->isDict()) {
+    delete border;
+    border = new AnnotBorderBS(obj1.getDict());
+  } else if (!border) {
+    border = new AnnotBorderBS();
+  }
+  obj1.free();
+}
+
+void AnnotLine::setContents(GooString *new_content) {
+  Annot::setContents(new_content);
+  if (caption)
+    invalidateAppearance();
 }
 
 void AnnotLine::setVertices(double x1, double y1, double x2, double y2) {
@@ -3150,6 +3319,7 @@ void AnnotLine::setVertices(double x1, double y1, double x2, double y2) {
   obj1.arrayAdd( obj2.initReal(y2) );
 
   update("L", &obj1);
+  invalidateAppearance();
 }
 
 void AnnotLine::setStartEndStyle(AnnotLineEndingStyle start, AnnotLineEndingStyle end) {
@@ -3163,6 +3333,7 @@ void AnnotLine::setStartEndStyle(AnnotLineEndingStyle start, AnnotLineEndingStyl
   obj1.arrayAdd( obj2.initName(convertAnnotLineEndingStyle( endStyle )) );
 
   update("LE", &obj1);
+  invalidateAppearance();
 }
 
 void AnnotLine::setInteriorColor(AnnotColor *new_color) {
@@ -3176,6 +3347,7 @@ void AnnotLine::setInteriorColor(AnnotColor *new_color) {
   } else {
     interiorColor = NULL;
   }
+  invalidateAppearance();
 }
 
 void AnnotLine::setLeaderLineLength(double len) {
@@ -3184,6 +3356,7 @@ void AnnotLine::setLeaderLineLength(double len) {
   leaderLineLength = len;
   obj1.initReal(len);
   update ("LL", &obj1);
+  invalidateAppearance();
 }
 
 void AnnotLine::setLeaderLineExtension(double len) {
@@ -3196,6 +3369,7 @@ void AnnotLine::setLeaderLineExtension(double len) {
   // LL is required if LLE is present
   obj1.initReal(leaderLineLength);
   update ("LL", &obj1);
+  invalidateAppearance();
 }
 
 void AnnotLine::setCaption(bool new_cap) {
@@ -3204,6 +3378,7 @@ void AnnotLine::setCaption(bool new_cap) {
   caption = new_cap;
   obj1.initBool(new_cap);
   update ("Cap", &obj1);
+  invalidateAppearance();
 }
 
 void AnnotLine::setIntent(AnnotLineIntent new_intent) {
@@ -3228,29 +3403,9 @@ void AnnotLine::generateLineAppearance()
     setColor(color, gFalse);
   }
 
-  if (border) {
-    int i, dashLength;
-    double *dash;
-
-    switch (border->getStyle()) {
-    case AnnotBorder::borderDashed:
-      appearBuf->append("[");
-      dashLength = border->getDashLength();
-      dash = border->getDash();
-      for (i = 0; i < dashLength; ++i)
-        appearBuf->appendf(" {0:.2f}", dash[i]);
-      appearBuf->append(" ] 0 d\n");
-      break;
-    default:
-      appearBuf->append("[] 0 d\n");
-      break;
-    }
-    borderWidth = border->getWidth();
-    appearBuf->appendf("{0:.2f} w\n", borderWidth);
-    appearBBox->setBorderWidth(borderWidth);
-  } else {
-    borderWidth = 0;
-  }
+  setLineStyleForBorder(border);
+  borderWidth = border->getWidth();
+  appearBBox->setBorderWidth(std::max(1., borderWidth));
 
   const double x1 = coord1->getX();
   const double y1 = coord1->getY();
@@ -3411,19 +3566,21 @@ void AnnotLine::draw(Gfx *gfx, GBool printing) {
   if (!isVisible (printing))
     return;
 
+  annotLocker();
   if (appearance.isNull()) {
     generateLineAppearance();
   }
 
   // draw the appearance stream
-  appearance.fetch(xref, &obj);
+  appearance.fetch(gfx->getXRef(), &obj);
   if (appearBBox) {
     gfx->drawAnnot(&obj, (AnnotBorder *)NULL, color,
                    appearBBox->getPageXMin(), appearBBox->getPageYMin(),
-                   appearBBox->getPageXMax(), appearBBox->getPageYMax());
+                   appearBBox->getPageXMax(), appearBBox->getPageYMax(),
+                   getRotation());
   } else {
     gfx->drawAnnot(&obj, (AnnotBorder *)NULL, color,
-                   rect->x1, rect->y1, rect->x2, rect->y2);
+                   rect->x1, rect->y1, rect->x2, rect->y2, getRotation());
   }
   obj.free();
 }
@@ -3440,8 +3597,7 @@ Object *AnnotLine::getAppearanceResDict(Object *dest) {
 //------------------------------------------------------------------------
 // AnnotTextMarkup
 //------------------------------------------------------------------------
-AnnotTextMarkup::AnnotTextMarkup(PDFDoc *docA, PDFRectangle *rect, AnnotSubtype subType,
-				 AnnotQuadrilaterals *quadPoints) :
+AnnotTextMarkup::AnnotTextMarkup(PDFDoc *docA, PDFRectangle *rect, AnnotSubtype subType) :
     AnnotMarkup(docA, rect) {
   Object obj1;
 
@@ -3462,22 +3618,12 @@ AnnotTextMarkup::AnnotTextMarkup(PDFDoc *docA, PDFRectangle *rect, AnnotSubtype 
       assert (0 && "Invalid subtype for AnnotTextMarkup\n");
   }
 
-  Object obj2;
+  // Store dummy quadrilateral with null coordinates
+  Object obj2, obj3;
   obj2.initArray (doc->getXRef());
-
-  for (int i = 0; i < quadPoints->getQuadrilateralsLength(); ++i) {
-    Object obj3;
-
-    obj2.arrayAdd (obj3.initReal (quadPoints->getX1(i)));
-    obj2.arrayAdd (obj3.initReal (quadPoints->getY1(i)));
-    obj2.arrayAdd (obj3.initReal (quadPoints->getX2(i)));
-    obj2.arrayAdd (obj3.initReal (quadPoints->getY2(i)));
-    obj2.arrayAdd (obj3.initReal (quadPoints->getX3(i)));
-    obj2.arrayAdd (obj3.initReal (quadPoints->getY3(i)));
-    obj2.arrayAdd (obj3.initReal (quadPoints->getX4(i)));
-    obj2.arrayAdd (obj3.initReal (quadPoints->getY4(i)));
+  for (int i = 0; i < 4*2; ++i) {
+    obj2.arrayAdd (obj3.initReal (0));
   }
-
   annotObj.dictSet ("QuadPoints", &obj2);
 
   initialize(docA, annotObj.getDict());
@@ -3545,6 +3691,7 @@ void AnnotTextMarkup::setType(AnnotSubtype new_type) {
 
   type = new_type;
   update("Subtype", &obj1);
+  invalidateAppearance();
 }
 
 void AnnotTextMarkup::setQuadrilaterals(AnnotQuadrilaterals *quadPoints) {
@@ -3562,9 +3709,11 @@ void AnnotTextMarkup::setQuadrilaterals(AnnotQuadrilaterals *quadPoints) {
     obj1.arrayAdd (obj2.initReal (quadPoints->getY4(i)));
   }
 
+  delete quadrilaterals;
   quadrilaterals = new AnnotQuadrilaterals(obj1.getArray(), rect);
 
   annotObj.dictSet ("QuadPoints", &obj1);
+  invalidateAppearance();
 }
 
 void AnnotTextMarkup::draw(Gfx *gfx, GBool printing) {
@@ -3576,6 +3725,7 @@ void AnnotTextMarkup::draw(Gfx *gfx, GBool printing) {
   if (!isVisible (printing))
     return;
 
+  annotLocker();
   if (appearance.isNull() || type == typeHighlight) {
     GBool blendMultiply = gTrue;
     ca = opacity;
@@ -3601,14 +3751,15 @@ void AnnotTextMarkup::draw(Gfx *gfx, GBool printing) {
       appearBuf->append ("[] 0 d 1 w\n");
 
       for (i = 0; i < quadrilaterals->getQuadrilateralsLength(); ++i) {
-        double x1, x2, y3;
+	double x3, y3, x4, y4;
 
-	x1 = quadrilaterals->getX1(i);
-	x2 = quadrilaterals->getX2(i);
+	x3 = quadrilaterals->getX3(i);
 	y3 = quadrilaterals->getY3(i);
+	x4 = quadrilaterals->getX4(i);
+	y4 = quadrilaterals->getY4(i);
 
-	appearBuf->appendf ("{0:.2f} {1:.2f} m\n", x1, y3);
-	appearBuf->appendf ("{0:.2f} {1:.2f} l\n", x2, y3);
+	appearBuf->appendf ("{0:.2f} {1:.2f} m\n", x3, y3);
+	appearBuf->appendf ("{0:.2f} {1:.2f} l\n", x4, y4);
 	appearBuf->append ("S\n");
       }
       break;
@@ -3620,17 +3771,21 @@ void AnnotTextMarkup::draw(Gfx *gfx, GBool printing) {
       appearBuf->append ("[] 0 d 1 w\n");
 
       for (i = 0; i < quadrilaterals->getQuadrilateralsLength(); ++i) {
-        double x1, y1, x2, y3;
-	double h2;
+	double x1, y1, x2, y2;
+	double x3, y3, x4, y4;
 
 	x1 = quadrilaterals->getX1(i);
 	y1 = quadrilaterals->getY1(i);
 	x2 = quadrilaterals->getX2(i);
-	y3 = quadrilaterals->getY3(i);
-	h2 = (y1 - y3) / 2.0;
+	y2 = quadrilaterals->getY2(i);
 
-	appearBuf->appendf ("{0:.2f} {1:.2f} m\n", x1, y3+h2);
-	appearBuf->appendf ("{0:.2f} {1:.2f} l\n", x2, y3+h2);
+	x3 = quadrilaterals->getX3(i);
+	y3 = quadrilaterals->getY3(i);
+	x4 = quadrilaterals->getX4(i);
+	y4 = quadrilaterals->getY4(i);
+
+	appearBuf->appendf ("{0:.2f} {1:.2f} m\n", (x1+x3)/2., (y1+y3)/2.);
+	appearBuf->appendf ("{0:.2f} {1:.2f} l\n", (x2+x4)/2., (y2+y4)/2.);
 	appearBuf->append ("S\n");
       }
       break;
@@ -3724,14 +3879,15 @@ void AnnotTextMarkup::draw(Gfx *gfx, GBool printing) {
   }
 
   // draw the appearance stream
-  appearance.fetch(xref, &obj);
+  appearance.fetch(gfx->getXRef(), &obj);
   if (appearBBox) {
     gfx->drawAnnot(&obj, (AnnotBorder *)NULL, color,
                    appearBBox->getPageXMin(), appearBBox->getPageYMin(),
-                   appearBBox->getPageXMax(), appearBBox->getPageYMax());
+                   appearBBox->getPageXMax(), appearBBox->getPageYMax(),
+                   getRotation());
   } else {
     gfx->drawAnnot(&obj, (AnnotBorder *)NULL, color,
-                   rect->x1, rect->y1, rect->x2, rect->y2);
+                   rect->x1, rect->y1, rect->x2, rect->y2, getRotation());
   }
   obj.free();
 }
@@ -3811,12 +3967,23 @@ void AnnotWidget::initialize(PDFDoc *docA, Dict *dict) {
   }
   obj1.free();
 
+  if (dict->lookup("BS", &obj1)->isDict()) {
+    delete border;
+    border = new AnnotBorderBS(obj1.getDict());
+  }
+  obj1.free();
+
   updatedAppearanceStream.num = updatedAppearanceStream.gen = -1;
 }
 
 LinkAction* AnnotWidget::getAdditionalAction(AdditionalActionsType type)
 {
   return ::getAdditionalAction(type, &additionalActions, doc);
+}
+
+LinkAction* AnnotWidget::getFormAdditionalAction(FormAdditionalActionsType type)
+{
+  return ::getFormAdditionalAction(type, &additionalActions, doc);
 }
 
 // Grand unified handler for preparing text strings to be drawn into form
@@ -3922,7 +4089,7 @@ void Annot::layoutText(GooString *text, GooString *outBuf, int *i,
         // This assumes an identity CMap.
         outBuf->append((uChar >> 8) & 0xff);
         outBuf->append(uChar & 0xff);
-      } else if (ccToUnicode->mapToCharCode(&uChar, &c, 1)) {
+      } else if (ccToUnicode->mapToCharCode(&uChar, &c, 2)) {
         ccToUnicode->decRefCnt();
         if (font->isCIDFont()) {
           // TODO: This assumes an identity CMap.  It should be extended to
@@ -4762,7 +4929,8 @@ void AnnotWidget::drawFormFieldButton(GfxResources *resources, GooString *da) {
   switch (static_cast<FormFieldButton *>(field)->getButtonType()) {
   case formButtonRadio: {
     //~ Acrobat doesn't draw a caption if there is no AP dict (?)
-    if (appearState && appearState->cmp("Off") != 0) {
+    if (appearState && appearState->cmp("Off") != 0 &&
+        static_cast<FormFieldButton *>(field)->getState(appearState->getCString())) {
       if (caption) {
         drawText(caption, da, resources, gFalse, 0, fieldQuadCenter,
                  gFalse, gTrue);
@@ -4898,7 +5066,7 @@ void AnnotWidget::generateFieldAppearance() {
   }
 
   // build the appearance stream
-  appearStream = new MemStream(strdup(appearBuf->getCString()), 0,
+  appearStream = new MemStream(copyString(appearBuf->getCString()), 0,
       appearBuf->getLength(), &appearDict);
   appearance.free();
   appearance.initStream(appearStream);
@@ -4956,6 +5124,7 @@ void AnnotWidget::draw(Gfx *gfx, GBool printing) {
   if (!isVisible (printing))
     return;
 
+  annotLocker();
   addDingbatsResource = gFalse;
 
   // Only construct the appearance stream when
@@ -4967,7 +5136,7 @@ void AnnotWidget::draw(Gfx *gfx, GBool printing) {
   }
 
   // draw the appearance stream
-  appearance.fetch(xref, &obj);
+  appearance.fetch(gfx->getXRef(), &obj);
   if (addDingbatsResource) {
     // We are forcing ZaDb but the font does not exist
     // so create a fake one
@@ -4976,25 +5145,25 @@ void AnnotWidget::draw(Gfx *gfx, GBool printing) {
     subtypeObj.initName("Type1");
 
     Object fontDictObj;
-    Dict *fontDict = new Dict(xref);
+    Dict *fontDict = new Dict(gfx->getXRef());
     fontDict->decRef();
     fontDict->add(copyString("BaseFont"), &baseFontObj);
     fontDict->add(copyString("Subtype"), &subtypeObj);
     fontDictObj.initDict(fontDict);
 
     Object fontsDictObj;
-    Dict *fontsDict = new Dict(xref);
+    Dict *fontsDict = new Dict(gfx->getXRef());
     fontsDict->decRef();
     fontsDict->add(copyString("ZaDb"), &fontDictObj);
     fontsDictObj.initDict(fontsDict);
 
-    Dict *dict = new Dict(xref);
+    Dict *dict = new Dict(gfx->getXRef());
     dict->add(copyString("Font"), &fontsDictObj);
     gfx->pushResources(dict);
     delete dict;
   }
   gfx->drawAnnot(&obj, (AnnotBorder *)NULL, color,
-		 rect->x1, rect->y1, rect->x2, rect->y2);
+		 rect->x1, rect->y1, rect->x2, rect->y2, getRotation());
   if (addDingbatsResource) {
     gfx->popResources();
   }
@@ -5068,6 +5237,7 @@ void AnnotMovie::draw(Gfx *gfx, GBool printing) {
   if (!isVisible (printing))
     return;
 
+  annotLocker();
   if (appearance.isNull() && movie->getShowPoster()) {
     int width, height;
     Object poster;
@@ -5084,25 +5254,25 @@ void AnnotMovie::draw(Gfx *gfx, GBool printing) {
       appearBuf->append ("Q\n");
 
       Object imgDict;
-      imgDict.initDict(xref);
+      imgDict.initDict(gfx->getXRef());
       imgDict.dictSet ("MImg", &poster);
 
       Object resDict;
-      resDict.initDict(xref);
+      resDict.initDict(gfx->getXRef());
       resDict.dictSet ("XObject", &imgDict);
 
       Object formDict, obj1, obj2;
-      formDict.initDict(xref);
+      formDict.initDict(gfx->getXRef());
       formDict.dictSet("Length", obj1.initInt(appearBuf->getLength()));
       formDict.dictSet("Subtype", obj1.initName("Form"));
       formDict.dictSet("Name", obj1.initName("FRM"));
-      obj1.initArray(xref);
+      obj1.initArray(gfx->getXRef());
       obj1.arrayAdd(obj2.initInt(0));
       obj1.arrayAdd(obj2.initInt(0));
       obj1.arrayAdd(obj2.initInt(width));
       obj1.arrayAdd(obj2.initInt(height));
       formDict.dictSet("BBox", &obj1);
-      obj1.initArray(xref);
+      obj1.initArray(gfx->getXRef());
       obj1.arrayAdd(obj2.initInt(1));
       obj1.arrayAdd(obj2.initInt(0));
       obj1.arrayAdd(obj2.initInt(0));
@@ -5120,10 +5290,10 @@ void AnnotMovie::draw(Gfx *gfx, GBool printing) {
       delete appearBuf;
 
       Object objDict;
-      objDict.initDict(xref);
+      objDict.initDict(gfx->getXRef());
       objDict.dictSet ("FRM", &aStream);
 
-      resDict.initDict(xref);
+      resDict.initDict(gfx->getXRef());
       resDict.dictSet ("XObject", &objDict);
 
       appearBuf = new GooString ();
@@ -5147,9 +5317,9 @@ void AnnotMovie::draw(Gfx *gfx, GBool printing) {
   }
 
   // draw the appearance stream
-  appearance.fetch(xref, &obj);
+  appearance.fetch(gfx->getXRef(), &obj);
   gfx->drawAnnot(&obj, (AnnotBorder *)NULL, color,
-		 rect->x1, rect->y1, rect->x2, rect->y2);
+		 rect->x1, rect->y1, rect->x2, rect->y2, getRotation());
   obj.free();
 }
 
@@ -5267,6 +5437,7 @@ void AnnotStamp::setIcon(GooString *new_icon) {
   Object obj1;
   obj1.initName (icon->getCString());
   update("Name", &obj1);
+  invalidateAppearance();
 }
 
 //------------------------------------------------------------------------
@@ -5323,6 +5494,14 @@ void AnnotGeometry::initialize(PDFDoc *docA, Dict* dict) {
   }
   obj1.free();
 
+  if (dict->lookup("BS", &obj1)->isDict()) {
+    delete border;
+    border = new AnnotBorderBS(obj1.getDict());
+  } else if (!border) {
+    border = new AnnotBorderBS();
+  }
+  obj1.free();
+
   if (dict->lookup("BE", &obj1)->isDict()) {
     borderEffect = new AnnotBorderEffect(obj1.getDict());
   } else {
@@ -5354,6 +5533,7 @@ void AnnotGeometry::setType(AnnotSubtype new_type) {
 
   type = new_type;
   update("Subtype", &obj1);
+  invalidateAppearance();
 }
 
 void AnnotGeometry::setInteriorColor(AnnotColor *new_color) {
@@ -5367,6 +5547,7 @@ void AnnotGeometry::setInteriorColor(AnnotColor *new_color) {
   } else {
     interiorColor = NULL;
   }
+  invalidateAppearance();
 }
 
 void AnnotGeometry::draw(Gfx *gfx, GBool printing) {
@@ -5376,6 +5557,7 @@ void AnnotGeometry::draw(Gfx *gfx, GBool printing) {
   if (!isVisible (printing))
     return;
 
+  annotLocker();
   if (appearance.isNull()) {
     ca = opacity;
 
@@ -5384,88 +5566,70 @@ void AnnotGeometry::draw(Gfx *gfx, GBool printing) {
     if (color)
       setColor(color, gFalse);
 
-    if (border) {
-      int i, dashLength;
-      double *dash;
-      double borderWidth = border->getWidth();
+    double borderWidth = border->getWidth();
+    setLineStyleForBorder(border);
 
-      switch (border->getStyle()) {
-      case AnnotBorder::borderDashed:
-        appearBuf->append("[");
-	dashLength = border->getDashLength();
-	dash = border->getDash();
-	for (i = 0; i < dashLength; ++i)
-	  appearBuf->appendf(" {0:.2f}", dash[i]);
-	appearBuf->append(" ] 0 d\n");
-	break;
-      default:
-        appearBuf->append("[] 0 d\n");
-        break;
-      }
-      appearBuf->appendf("{0:.2f} w\n", borderWidth);
+    if (interiorColor)
+      setColor(interiorColor, gTrue);
 
-      if (interiorColor)
-        setColor(interiorColor, gTrue);
+    if (type == typeSquare) {
+      appearBuf->appendf ("{0:.2f} {1:.2f} {2:.2f} {3:.2f} re\n",
+                          borderWidth / 2.0, borderWidth / 2.0,
+                          (rect->x2 - rect->x1) - borderWidth,
+                          (rect->y2 - rect->y1) - borderWidth);
+    } else {
+      double width, height;
+      double b;
+      double x1, y1, x2, y2, x3, y3;
 
-      if (type == typeSquare) {
-        appearBuf->appendf ("{0:.2f} {1:.2f} {2:.2f} {3:.2f} re\n",
-			    borderWidth / 2.0, borderWidth / 2.0,
-			    (rect->x2 - rect->x1) - borderWidth,
-			    (rect->y2 - rect->y1) - borderWidth);
-      } else {
-        double width, height;
-	double b;
-	double x1, y1, x2, y2, x3, y3;
+      width = rect->x2 - rect->x1;
+      height = rect->y2 - rect->y1;
+      b = borderWidth / 2.0;
 
-	width = rect->x2 - rect->x1;
-	height = rect->y2 - rect->y1;
-	b = borderWidth / 2.0;
+      x1 = b;
+      y1 = height / 2.0;
+      appearBuf->appendf ("{0:.2f} {1:.2f} m\n", x1, y1);
 
-	x1 = b;
-	y1 = height / 2.0;
-	appearBuf->appendf ("{0:.2f} {1:.2f} m\n", x1, y1);
+      y1 += height / 4.0;
+      x2 = width / 4.0;
+      y2 = height - b;
+      x3 = width / 2.0;
+      y3 = y2;
+      appearBuf->appendf ("{0:.2f} {1:.2f} {2:.2f} {3:.2f} {4:.2f} {5:.2f} c\n",
+                          x1, y1, x2, y2, x3, y3);
+      x2 = width - b;
+      y2 = y1;
+      x1 = x3 + (width / 4.0);
+      y1 = y3;
+      x3 = x2;
+      y3 = height / 2.0;
+      appearBuf->appendf ("{0:.2f} {1:.2f} {2:.2f} {3:.2f} {4:.2f} {5:.2f} c\n",
+                          x1, y1, x2, y2, x3, y3);
 
-	y1 += height / 4.0;
-	x2 = width / 4.0;
-	y2 = height - b;
-	x3 = width / 2.0;
-	y3 = y2;
-	appearBuf->appendf ("{0:.2f} {1:.2f} {2:.2f} {3:.2f} {4:.2f} {5:.2f} c\n",
-			    x1, y1, x2, y2, x3, y3);
-	x2 = width - b;
-	y2 = y1;
-	x1 = x3 + (width / 4.0);
-	y1 = y3;
-	x3 = x2;
-	y3 = height / 2.0;
-	appearBuf->appendf ("{0:.2f} {1:.2f} {2:.2f} {3:.2f} {4:.2f} {5:.2f} c\n",
-			    x1, y1, x2, y2, x3, y3);
+      x2 = x1;
+      y2 = b;
+      x1 = x3;
+      y1 = height / 4.0;
+      x3 = width / 2.0;
+      y3 = b;
+      appearBuf->appendf ("{0:.2f} {1:.2f} {2:.2f} {3:.2f} {4:.2f} {5:.2f} c\n",
+                          x1, y1, x2, y2, x3, y3);
 
-	x2 = x1;
-	y2 = b;
-	x1 = x3;
-	y1 = height / 4.0;
-	x3 = width / 2.0;
-	y3 = b;
-	appearBuf->appendf ("{0:.2f} {1:.2f} {2:.2f} {3:.2f} {4:.2f} {5:.2f} c\n",
-			    x1, y1, x2, y2, x3, y3);
-
-	x2 = b;
-	y2 = y1;
-	x1 = width / 4.0;
-	y1 = b;
-	x3 = b;
-	y3 = height / 2.0;
-	appearBuf->appendf ("{0:.2f} {1:.2f} {2:.2f} {3:.2f} {4:.2f} {5:.2f} c\n",
-			    x1, y1, x2, y2, x3, y3);
-
-      }
-
-      if (interiorColor && interiorColor->getSpace() != AnnotColor::colorTransparent)
-        appearBuf->append ("b\n");
-      else
-        appearBuf->append ("S\n");
+      x2 = b;
+      y2 = y1;
+      x1 = width / 4.0;
+      y1 = b;
+      x3 = b;
+      y3 = height / 2.0;
+      appearBuf->appendf ("{0:.2f} {1:.2f} {2:.2f} {3:.2f} {4:.2f} {5:.2f} c\n",
+                          x1, y1, x2, y2, x3, y3);
     }
+
+    if (interiorColor && interiorColor->getSpace() != AnnotColor::colorTransparent)
+      appearBuf->append ("b\n");
+    else
+      appearBuf->append ("S\n");
+
     appearBuf->append ("Q\n");
 
     double bbox[4];
@@ -5489,16 +5653,16 @@ void AnnotGeometry::draw(Gfx *gfx, GBool printing) {
   }
 
   // draw the appearance stream
-  appearance.fetch(xref, &obj);
+  appearance.fetch(gfx->getXRef(), &obj);
   gfx->drawAnnot(&obj, (AnnotBorder *)NULL, color,
-		 rect->x1, rect->y1, rect->x2, rect->y2);
+		 rect->x1, rect->y1, rect->x2, rect->y2, getRotation());
   obj.free();
 }
 
 //------------------------------------------------------------------------
 // AnnotPolygon
 //------------------------------------------------------------------------
-AnnotPolygon::AnnotPolygon(PDFDoc *docA, PDFRectangle *rect, AnnotSubtype subType, AnnotPath *path) :
+AnnotPolygon::AnnotPolygon(PDFDoc *docA, PDFRectangle *rect, AnnotSubtype subType) :
     AnnotMarkup(docA, rect) {
   Object obj1;
 
@@ -5513,16 +5677,11 @@ AnnotPolygon::AnnotPolygon(PDFDoc *docA, PDFRectangle *rect, AnnotSubtype subTyp
       assert (0 && "Invalid subtype for AnnotGeometry\n");
   }
 
-  Object obj2;
+  // Store dummy path with one null vertex only
+  Object obj2, obj3;
   obj2.initArray (doc->getXRef());
-
-  for (int i = 0; i < path->getCoordsLength(); ++i) {
-    Object obj3;
-
-    obj2.arrayAdd (obj3.initReal (path->getX(i)));
-    obj2.arrayAdd (obj3.initReal (path->getY(i)));
-  }
-
+  obj2.arrayAdd (obj3.initReal (0));
+  obj2.arrayAdd (obj3.initReal (0));
   annotObj.dictSet ("Vertices", &obj2);
 
   initialize(docA, annotObj.getDict());
@@ -5594,6 +5753,14 @@ void AnnotPolygon::initialize(PDFDoc *docA, Dict* dict) {
   }
   obj1.free();
 
+  if (dict->lookup("BS", &obj1)->isDict()) {
+    delete border;
+    border = new AnnotBorderBS(obj1.getDict());
+  } else if (!border) {
+    border = new AnnotBorderBS();
+  }
+  obj1.free();
+
   if (dict->lookup("BE", &obj1)->isDict()) {
     borderEffect = new AnnotBorderEffect(obj1.getDict());
   } else {
@@ -5633,6 +5800,7 @@ void AnnotPolygon::setType(AnnotSubtype new_type) {
 
   type = new_type;
   update("Subtype", &obj1);
+  invalidateAppearance();
 }
 
 void AnnotPolygon::setVertices(AnnotPath *path) {
@@ -5649,6 +5817,7 @@ void AnnotPolygon::setVertices(AnnotPath *path) {
   vertices = new AnnotPath(obj1.getArray());
 
   update("Vertices", &obj1);
+  invalidateAppearance();
 }
 
 void AnnotPolygon::setStartEndStyle(AnnotLineEndingStyle start, AnnotLineEndingStyle end) {
@@ -5662,6 +5831,7 @@ void AnnotPolygon::setStartEndStyle(AnnotLineEndingStyle start, AnnotLineEndingS
   obj1.arrayAdd( obj2.initName(convertAnnotLineEndingStyle( endStyle )) );
 
   update("LE", &obj1);
+  invalidateAppearance();
 }
 
 void AnnotPolygon::setInteriorColor(AnnotColor *new_color) {
@@ -5675,6 +5845,7 @@ void AnnotPolygon::setInteriorColor(AnnotColor *new_color) {
   } else {
     interiorColor = NULL;
   }
+  invalidateAppearance();
 }
 
 void AnnotPolygon::setIntent(AnnotPolygonIntent new_intent) {
@@ -5697,6 +5868,7 @@ void AnnotPolygon::draw(Gfx *gfx, GBool printing) {
   if (!isVisible (printing))
     return;
 
+  annotLocker();
   if (appearance.isNull()) {
     appearBBox = new AnnotAppearanceBBox(rect);
     ca = opacity;
@@ -5708,26 +5880,8 @@ void AnnotPolygon::draw(Gfx *gfx, GBool printing) {
       setColor(color, gFalse);
     }
 
-    if (border) {
-      int i, dashLength;
-      double *dash;
-
-      switch (border->getStyle()) {
-      case AnnotBorder::borderDashed:
-        appearBuf->append("[");
-        dashLength = border->getDashLength();
-        dash = border->getDash();
-        for (i = 0; i < dashLength; ++i)
-          appearBuf->appendf(" {0:.2f}", dash[i]);
-        appearBuf->append(" ] 0 d\n");
-        break;
-      default:
-        appearBuf->append("[] 0 d\n");
-        break;
-      }
-      appearBuf->appendf("{0:.2f} w\n", border->getWidth());
-      appearBBox->setBorderWidth(border->getWidth());
-    }
+    setLineStyleForBorder(border);
+    appearBBox->setBorderWidth(std::max(1., border->getWidth()));
 
     if (interiorColor) {
       setColor(interiorColor, gTrue);
@@ -5773,14 +5927,15 @@ void AnnotPolygon::draw(Gfx *gfx, GBool printing) {
   }
 
   // draw the appearance stream
-  appearance.fetch(xref, &obj);
+  appearance.fetch(gfx->getXRef(), &obj);
   if (appearBBox) {
     gfx->drawAnnot(&obj, (AnnotBorder *)NULL, color,
                    appearBBox->getPageXMin(), appearBBox->getPageYMin(),
-                   appearBBox->getPageXMax(), appearBBox->getPageYMax());
+                   appearBBox->getPageXMax(), appearBBox->getPageYMax(),
+                   getRotation());
   } else {
     gfx->drawAnnot(&obj, (AnnotBorder *)NULL, color,
-                   rect->x1, rect->y1, rect->x2, rect->y2);
+                   rect->x1, rect->y1, rect->x2, rect->y2, getRotation());
   }
   obj.free();
 }
@@ -5836,12 +5991,13 @@ void AnnotCaret::setSymbol(AnnotCaretSymbol new_symbol) {
   obj1.initName( new_symbol == symbolP ? "P" : "None" );
   symbol = new_symbol;
   update("Sy", &obj1);
+  invalidateAppearance();
 }
 
 //------------------------------------------------------------------------
 // AnnotInk
 //------------------------------------------------------------------------
-AnnotInk::AnnotInk(PDFDoc *docA, PDFRectangle *rect, AnnotPath **paths, int n_paths) :
+AnnotInk::AnnotInk(PDFDoc *docA, PDFRectangle *rect) :
     AnnotMarkup(docA, rect) {
   Object obj1;
 
@@ -5849,10 +6005,12 @@ AnnotInk::AnnotInk(PDFDoc *docA, PDFRectangle *rect, AnnotPath **paths, int n_pa
 
   annotObj.dictSet ("Subtype", obj1.initName ("Ink"));
 
-  Object obj2;
+  // Store dummy path with one null vertex only
+  Object obj2, obj3, obj4;
   obj2.initArray (doc->getXRef());
-  writeInkList(paths, n_paths, obj2.getArray());
-
+  obj2.arrayAdd (obj3.initArray (doc->getXRef()));
+  obj3.arrayAdd (obj4.initReal (0));
+  obj3.arrayAdd (obj4.initReal (0));
   annotObj.dictSet ("InkList", &obj2);
 
   initialize(docA, annotObj.getDict());
@@ -5878,6 +6036,14 @@ void AnnotInk::initialize(PDFDoc *docA, Dict* dict) {
     inkList = NULL;
     error(errSyntaxError, -1, "Bad Annot Ink List");
     ok = gFalse;
+  }
+  obj1.free();
+
+  if (dict->lookup("BS", &obj1)->isDict()) {
+    delete border;
+    border = new AnnotBorderBS(obj1.getDict());
+  } else if (!border) {
+    border = new AnnotBorderBS();
   }
   obj1.free();
 }
@@ -5925,6 +6091,7 @@ void AnnotInk::setInkList(AnnotPath **paths, int n_paths) {
 
   parseInkList(obj1.getArray());
   annotObj.dictSet ("InkList", &obj1);
+  invalidateAppearance();
 }
 
 void AnnotInk::draw(Gfx *gfx, GBool printing) {
@@ -5934,6 +6101,7 @@ void AnnotInk::draw(Gfx *gfx, GBool printing) {
   if (!isVisible (printing))
     return;
 
+  annotLocker();
   if (appearance.isNull()) {
     appearBBox = new AnnotAppearanceBBox(rect);
     ca = opacity;
@@ -5945,10 +6113,8 @@ void AnnotInk::draw(Gfx *gfx, GBool printing) {
       setColor(color, gFalse);
     }
 
-    if (border) {
-      appearBuf->appendf("{0:.2f} w\n", border->getWidth());
-      appearBBox->setBorderWidth(border->getWidth());
-    }
+    setLineStyleForBorder(border);
+    appearBBox->setBorderWidth(std::max(1., border->getWidth()));
 
     for (int i = 0; i < inkListLength; ++i) {
       const AnnotPath * path = inkList[i];
@@ -5985,14 +6151,15 @@ void AnnotInk::draw(Gfx *gfx, GBool printing) {
   }
 
   // draw the appearance stream
-  appearance.fetch(xref, &obj);
+  appearance.fetch(gfx->getXRef(), &obj);
   if (appearBBox) {
     gfx->drawAnnot(&obj, (AnnotBorder *)NULL, color,
                    appearBBox->getPageXMin(), appearBBox->getPageYMin(),
-                   appearBBox->getPageXMax(), appearBBox->getPageYMax());
+                   appearBBox->getPageXMax(), appearBBox->getPageYMax(),
+                   getRotation());
   } else {
     gfx->drawAnnot(&obj, (AnnotBorder *)NULL, color,
-                   rect->x1, rect->y1, rect->x2, rect->y2);
+                   rect->x1, rect->y1, rect->x2, rect->y2, getRotation());
   }
   obj.free();
 }
@@ -6166,6 +6333,7 @@ void AnnotFileAttachment::draw(Gfx *gfx, GBool printing) {
   if (!isVisible (printing))
     return;
 
+  annotLocker();
   if (appearance.isNull()) {
     ca = opacity;
 
@@ -6206,9 +6374,9 @@ void AnnotFileAttachment::draw(Gfx *gfx, GBool printing) {
   }
 
   // draw the appearance stream
-  appearance.fetch(xref, &obj);
-  gfx->drawAnnot(&obj, border, color,
-		 rect->x1, rect->y1, rect->x2, rect->y2);
+  appearance.fetch(gfx->getXRef(), &obj);
+  gfx->drawAnnot(&obj, (AnnotBorder *)NULL, color,
+		 rect->x1, rect->y1, rect->x2, rect->y2, getRotation());
   obj.free();
 }
 
@@ -6332,6 +6500,7 @@ void AnnotSound::draw(Gfx *gfx, GBool printing) {
   if (!isVisible (printing))
     return;
 
+  annotLocker();
   if (appearance.isNull()) {
     ca = opacity;
 
@@ -6367,9 +6536,9 @@ void AnnotSound::draw(Gfx *gfx, GBool printing) {
   }
 
   // draw the appearance stream
-  appearance.fetch(xref, &obj);
-  gfx->drawAnnot(&obj, border, color,
-		 rect->x1, rect->y1, rect->x2, rect->y2);
+  appearance.fetch(gfx->getXRef(), &obj);
+  gfx->drawAnnot(&obj, (AnnotBorder *)NULL, color,
+		 rect->x1, rect->y1, rect->x2, rect->y2, getRotation());
   obj.free();
 }
 

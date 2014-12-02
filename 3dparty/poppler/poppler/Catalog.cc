@@ -14,7 +14,7 @@
 // under GPL version 2 or later
 //
 // Copyright (C) 2005 Kristian Høgsberg <krh@redhat.com>
-// Copyright (C) 2005-2012 Albert Astals Cid <aacid@kde.org>
+// Copyright (C) 2005-2013 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2005 Jeff Muizelaar <jrmuizel@nit.ca>
 // Copyright (C) 2005 Jonathan Blandford <jrb@redhat.com>
 // Copyright (C) 2005 Marco Pesenti Gritti <mpg@redhat.com>
@@ -25,6 +25,12 @@
 // Copyright (C) 2009 Ilya Gorenbein <igorenbein@finjan.com>
 // Copyright (C) 2010 Hib Eris <hib@hiberis.nl>
 // Copyright (C) 2012 Fabio D'Urso <fabiodurso@hotmail.it>
+// Copyright (C) 2013 Thomas Freitag <Thomas.Freitag@alfa.de>
+// Copyright (C) 2013 Julien Nabet <serval2412@yahoo.fr>
+// Copyright (C) 2013 Adrian Perez de Castro <aperez@igalia.com>
+// Copyright (C) 2013 Adrian Johnson <ajohnson@redneon.com>
+// Copyright (C) 2013 José Aliste <jaliste@src.gnome.org>
+// Copyright (C) 2014 Ed Porras <ed@moto-research.com>
 //
 // To see a description of the changes please see the Changelog file that
 // came with your tarball or type make ChangeLog if you are building from git
@@ -54,7 +60,13 @@
 #include "OptionalContent.h"
 #include "ViewerPreferences.h"
 #include "FileSpec.h"
+#include "StructTreeRoot.h"
 
+#if MULTITHREADED
+#  define catalogLocker()   MutexLocker locker(&mutex)
+#else
+#  define catalogLocker()
+#endif
 //------------------------------------------------------------------------
 // Catalog
 //------------------------------------------------------------------------
@@ -64,6 +76,9 @@ Catalog::Catalog(PDFDoc *docA) {
   Object obj, obj2;
   Object optContentProps;
 
+#if MULTITHREADED
+  gInitMutex(&mutex);
+#endif
   ok = gTrue;
   doc = docA;
   xref = doc->getXRef();
@@ -81,12 +96,14 @@ Catalog::Catalog(PDFDoc *docA) {
   embeddedFileNameTree = NULL;
   jsNameTree = NULL;
   viewerPrefs = NULL;
+  structTreeRoot = NULL;
 
   pagesList = NULL;
   pagesRefList = NULL;
   attrsList = NULL;
   kidsIdxList = NULL;
   lastCachedPage = 0;
+  markInfo = markInfoNull;
 
   xref->getCatalog(&catDict);
   if (!catDict.isDict()) {
@@ -115,6 +132,9 @@ Catalog::Catalog(PDFDoc *docA) {
   }
   optContentProps.free();
 
+  // actions
+  catDict.dictLookupNF("AA", &additionalActions);
+
   // get the ViewerPreferences dictionary
   catDict.dictLookup("ViewerPreferences", &viewerPreferences);
   catDict.free();
@@ -129,7 +149,7 @@ Catalog::~Catalog() {
   delete kidsIdxList;
   if (attrsList) {
     std::vector<PageAttrs *>::iterator it;
-    for (it = attrsList->begin() ; it < attrsList->end(); it++ ) {
+    for (it = attrsList->begin() ; it != attrsList->end(); ++it ) {
       delete *it;
     }
     delete attrsList;
@@ -137,7 +157,7 @@ Catalog::~Catalog() {
   delete pagesRefList;
   if (pagesList) {
     std::vector<Dict *>::iterator it;
-    for (it = pagesList->begin() ; it < pagesList->end(); it++ ) {
+    for (it = pagesList->begin() ; it != pagesList->end(); ++it ) {
       if (!(*it)->decRef()) {
          delete *it;
       }
@@ -165,11 +185,15 @@ Catalog::~Catalog() {
   delete form;
   delete optContent;
   delete viewerPrefs;
+  delete structTreeRoot;
   metadata.free();
-  structTreeRoot.free();
   outline.free();
   acroForm.free();
   viewerPreferences.free();
+  additionalActions.free();
+#if MULTITHREADED
+  gDestroyMutex(&mutex);
+#endif
 }
 
 GooString *Catalog::readMetadata() {
@@ -177,6 +201,7 @@ GooString *Catalog::readMetadata() {
   Dict *dict;
   Object obj;
 
+  catalogLocker();
   if (metadata.isNone()) {
     Object catDict;
 
@@ -209,8 +234,12 @@ Page *Catalog::getPage(int i)
 {
   if (i < 1) return NULL;
 
+  catalogLocker();
   if (i > lastCachedPage) {
-     if (cachePageTree(i) == gFalse) return NULL;
+     GBool cached = cachePageTree(i);
+     if ( cached == gFalse) {
+       return NULL;
+     }
   }
   return pages[i-1];
 }
@@ -219,8 +248,12 @@ Ref *Catalog::getPageRef(int i)
 {
   if (i < 1) return NULL;
 
+  catalogLocker();
   if (i > lastCachedPage) {
-     if (cachePageTree(i) == gFalse) return NULL;
+     GBool cached = cachePageTree(i);
+     if ( cached == gFalse) {
+       return NULL;
+     }
   }
   return &pageRefs[i-1];
 }
@@ -423,6 +456,7 @@ LinkDest *Catalog::findDest(GooString *name) {
       obj1.free();
   }
   if (!found) {
+    catalogLocker();
     if (getDestNameTree()->lookup(name, &obj1))
       found = gTrue;
     else
@@ -457,6 +491,7 @@ FileSpec *Catalog::embeddedFile(int i)
 {
     Object efDict;
     Object obj;
+    catalogLocker();
     obj = getEmbeddedFileNameTree()->getValue(i);
     FileSpec *embeddedFile = 0;
     if (obj.isRef()) {
@@ -477,6 +512,7 @@ GooString *Catalog::getJS(int i)
   Object obj;
   // getJSNameTree()->getValue(i) returns a shallow copy of the object so we
   // do not need to free it
+  catalogLocker();
   getJSNameTree()->getValue(i).fetch(xref, &obj);
 
   if (!obj.isDict()) {
@@ -512,6 +548,7 @@ GooString *Catalog::getJS(int i)
 
 Catalog::PageMode Catalog::getPageMode() {
 
+  catalogLocker();
   if (pageMode == pageModeNull) {
 
     Object catDict, obj;
@@ -547,6 +584,7 @@ Catalog::PageMode Catalog::getPageMode() {
 
 Catalog::PageLayout Catalog::getPageLayout() {
 
+  catalogLocker();
   if (pageLayout == pageLayoutNull) {
 
     Object catDict, obj;
@@ -630,9 +668,20 @@ void NameTree::addEntry(Entry *entry)
   ++length;
 }
 
+int NameTree::Entry::cmpEntry(const void *voidEntry, const void *voidOtherEntry)
+{
+  Entry *entry = *(NameTree::Entry **) voidEntry;
+  Entry *otherEntry = *(NameTree::Entry **) voidOtherEntry;
+
+  return entry->name.cmp(&otherEntry->name);
+}
+
 void NameTree::init(XRef *xrefA, Object *tree) {
   xref = xrefA;
   parse(tree);
+  if (entries && length > 0) {
+    qsort(entries, length, sizeof(Entry *), Entry::cmpEntry);
+  }
 }
 
 void NameTree::parse(Object *tree) {
@@ -683,7 +732,7 @@ GBool NameTree::lookup(GooString *name, Object *obj)
     (*entry)->value.fetch(xref, obj);
     return gTrue;
   } else {
-    printf("failed to look up %s\n", name->getCString());
+    error(errSyntaxError, -1, "failed to look up ({0:s})", name->getCString());
     obj->initNull();
     return gFalse;
   }
@@ -746,6 +795,7 @@ GBool Catalog::indexToLabel(int index, GooString *label)
 
 int Catalog::getNumPages()
 {
+  catalogLocker();
   if (numPages == -1)
   {
     Object catDict, pagesDict, obj;
@@ -787,6 +837,7 @@ int Catalog::getNumPages()
 
 PageLabelInfo *Catalog::getPageLabelInfo()
 {
+  catalogLocker();
   if (!pageLabelInfo) {
     Object catDict;
     Object obj;
@@ -808,27 +859,77 @@ PageLabelInfo *Catalog::getPageLabelInfo()
   return pageLabelInfo;
 }
 
-Object *Catalog::getStructTreeRoot()
+StructTreeRoot *Catalog::getStructTreeRoot()
 {
-  if (structTreeRoot.isNone())
-  {
-     Object catDict;
+  catalogLocker();
+  if (!structTreeRoot) {
+    Object catalog;
+    Object root;
 
-     xref->getCatalog(&catDict);
-     if (catDict.isDict()) {
-       catDict.dictLookup("StructTreeRoot", &structTreeRoot);
-     } else {
-       error(errSyntaxError, -1, "Catalog object is wrong type ({0:s})", catDict.getTypeName());
-       structTreeRoot.initNull();
-     }
-     catDict.free();
+    xref->getCatalog(&catalog);
+    if (!catalog.isDict()) {
+      error(errSyntaxError, -1, "Catalog object is wrong type ({0:s})", catalog.getTypeName());
+      catalog.free();
+      return NULL;
+    }
+
+    if (catalog.dictLookup("StructTreeRoot", &root)->isDict("StructTreeRoot")) {
+      structTreeRoot = new StructTreeRoot(doc, root.getDict());
+    }
+
+    root.free();
+    catalog.free();
   }
+  return structTreeRoot;
+}
 
-  return &structTreeRoot;
+Guint Catalog::getMarkInfo()
+{
+  if (markInfo == markInfoNull) {
+    markInfo = 0;
+
+    Object catDict;
+    catalogLocker();
+    xref->getCatalog(&catDict);
+
+    if (catDict.isDict()) {
+      Object markInfoDict;
+      catDict.dictLookup("MarkInfo", &markInfoDict);
+      if (markInfoDict.isDict()) {
+        Object value;
+
+        if (markInfoDict.dictLookup("Marked", &value)->isBool() && value.getBool())
+          markInfo |= markInfoMarked;
+        else if (!value.isNull())
+          error(errSyntaxError, -1, "Marked object is wrong type ({0:s})", value.getTypeName());
+        value.free();
+
+        if (markInfoDict.dictLookup("Suspects", &value)->isBool() && value.getBool())
+          markInfo |= markInfoSuspects;
+        else if (!value.isNull())
+          error(errSyntaxError, -1, "Suspects object is wrong type ({0:s})", value.getTypeName());
+        value.free();
+
+        if (markInfoDict.dictLookup("UserProperties", &value)->isBool() && value.getBool())
+          markInfo |= markInfoUserProperties;
+        else if (!value.isNull())
+          error(errSyntaxError, -1, "UserProperties object is wrong type ({0:s})", value.getTypeName());
+        value.free();
+      } else if (!markInfoDict.isNull()) {
+        error(errSyntaxError, -1, "MarkInfo object is wrong type ({0:s})", markInfoDict.getTypeName());
+      }
+      markInfoDict.free();
+    } else {
+      error(errSyntaxError, -1, "Catalog object is wrong type ({0:s})", catDict.getTypeName());
+    }
+    catDict.free();
+  }
+  return markInfo;
 }
 
 Object *Catalog::getOutline()
 {
+  catalogLocker();
   if (outline.isNone())
   {
      Object catDict;
@@ -848,6 +949,7 @@ Object *Catalog::getOutline()
 
 Object *Catalog::getDests()
 {
+  catalogLocker();
   if (dests.isNone())
   {
      Object catDict;
@@ -885,6 +987,7 @@ Catalog::FormType Catalog::getFormType()
 
 Form *Catalog::getForm()
 {
+  catalogLocker();
   if (!form) {
     if (acroForm.isDict()) {
       form = new Form(doc, &acroForm);
@@ -898,6 +1001,7 @@ Form *Catalog::getForm()
 
 ViewerPreferences *Catalog::getViewerPreferences()
 {
+  catalogLocker();
   if (!viewerPrefs) {
     if (viewerPreferences.isDict()) {
       viewerPrefs = new ViewerPreferences(viewerPreferences.getDict());
@@ -983,3 +1087,25 @@ NameTree *Catalog::getJSNameTree()
   return jsNameTree;
 }
 
+LinkAction* Catalog::getAdditionalAction(DocumentAdditionalActionsType type) {
+  Object additionalActionsObject;
+  LinkAction *linkAction = NULL;
+
+  if (additionalActions.fetch(doc->getXRef(), &additionalActionsObject)->isDict()) {
+    const char *key = (type == actionCloseDocument ?       "WC" :
+                       type == actionSaveDocumentStart ?   "WS" :
+                       type == actionSaveDocumentFinish ?  "DS" :
+                       type == actionPrintDocumentStart ?  "WP" :
+                       type == actionPrintDocumentFinish ? "DP" : NULL);
+
+    Object actionObject;
+
+    if (additionalActionsObject.dictLookup(key, &actionObject)->isDict())
+      linkAction = LinkAction::parseAction(&actionObject, doc->getCatalog()->getBaseURI());
+    actionObject.free();
+  }
+
+  additionalActionsObject.free();
+
+  return linkAction;
+}

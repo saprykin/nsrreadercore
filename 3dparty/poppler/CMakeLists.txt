@@ -28,7 +28,7 @@ check_function_exists (mkstemp		HAVE_MKSTEMP)
 check_function_exists (popen		HAVE_POPEN)
 check_function_exists (randr_r		HAVE_RANDR_R)
 
-NSR_TEST_LARGE_FILES (DJVU_HAVE_LARGEFILES)
+NSR_TEST_LARGE_FILES (POPPLER_HAVE_LARGEFILES)
 NSR_CHECK_DIRSYMBOL_EXISTS ("dirent.h"		HAVE_DIRENT_H)
 NSR_CHECK_DIRSYMBOL_EXISTS ("ndir.h" 		HAVE_NDIR_H)
 NSR_CHECK_DIRSYMBOL_EXISTS ("sys/ndir.h"	HAVE_SYS_NDIR_H)
@@ -144,6 +144,7 @@ set (SOURCES
 	goo/gstrtod.cc
 	goo/ImgWriter.cc
 	goo/JpegWriter.cc
+	goo/NetPBMWriter.cc
 	goo/TiffWriter.cc
 	poppler/Annot.cc
 	poppler/Array.cc
@@ -174,6 +175,7 @@ set (SOURCES
 	poppler/Linearization.cc
 	poppler/Link.cc
 	poppler/LocalPDFDocBuilder.cc
+	poppler/MarkedContentOutputDev.cc
 	poppler/Movie.cc
 	poppler/NameToCharCode.cc
 	poppler/Object.cc
@@ -200,6 +202,8 @@ set (SOURCES
 	poppler/StdinPDFDocBuilder.cc
 	poppler/Stream.cc
 	poppler/strtok_r.cpp
+	poppler/StructElement.cc
+	poppler/StructTreeRoot.cc
 	poppler/TextOutputDev.cc
 	poppler/UnicodeMap.cc
 	poppler/UnicodeTypeTable.cc
@@ -271,6 +275,7 @@ set (HEADERS
 	goo/gtypes.h
 	goo/ImgWriter.h
 	goo/JpegWriter.h
+	goo/NetPBMWriter.h
 	goo/TiffWriter.h
 	poppler/Rendition.h
 	poppler/Stream-CCITT.h
@@ -309,6 +314,7 @@ set (HEADERS
 	poppler/Linearization.h
 	poppler/Link.h
 	poppler/LocalPDFDocBuilder.h
+	poppler/MarkedContentOutputDev.cc
 	poppler/Movie.h
 	poppler/NameToCharCode.h
 	poppler/NameToUnicodeTable.h
@@ -318,6 +324,7 @@ set (HEADERS
 	poppler/OutputDev.h
 	poppler/Page.h
 	poppler/PageLabelInfo.h
+	poppler/PageLabelInfo_p.h
 	poppler/PageTransition.h
 	poppler/Parser.h
 	poppler/PDFDoc.h
@@ -337,6 +344,8 @@ set (HEADERS
 	poppler/StdinPDFDocBuilder.h
 	poppler/Stream-CCITT.h
 	poppler/Stream.h
+	poppler/StructElement.h
+	poppler/StructTreeRoot.h
 	poppler/TextOutputDev.h
 	poppler/UnicodeCClassTables.h
 	poppler/UnicodeCompTables.h

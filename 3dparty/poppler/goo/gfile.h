@@ -18,6 +18,10 @@
 // Copyright (C) 2006 Kristian Høgsberg <krh@redhat.com>
 // Copyright (C) 2009, 2011, 2012 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2009 Kovid Goyal <kovid@kovidgoyal.net>
+// Copyright (C) 2013 Adam Reichold <adamreichold@myopera.com>
+// Copyright (C) 2013 Adrian Johnson <ajohnson@redneon.com>
+// Copyright (C) 2014 Bogdan Cristea <cristeab@gmail.com>
+// Copyright (C) 2014 Peter Breitenlohner <peb@mppmu.mpg.de>
 //
 // To see a description of the changes please see the Changelog file that
 // came with your tarball or type make ChangeLog if you are building from git
@@ -37,6 +41,9 @@ extern "C" {
 #  ifdef FPTEX
 #    include <win32lib.h>
 #  else
+#    ifndef NOMINMAX
+#      define NOMINMAX
+#    endif
 #    include <windows.h>
 #  endif
 #elif defined(ACORN)
@@ -113,6 +120,42 @@ extern FILE *openFile(const char *path, const char *mode);
 // Just like fgets, but handles Unix, Mac, and/or DOS end-of-line
 // conventions.
 extern char *getLine(char *buf, int size, FILE *f);
+
+// Like fseek/ftell but uses platform specific variants that support large files
+extern int Gfseek(FILE *f, Goffset offset, int whence);
+extern Goffset Gftell(FILE *f);
+
+// Largest offset supported by Gfseek/Gftell
+extern Goffset GoffsetMax();
+
+//------------------------------------------------------------------------
+// GooFile
+//------------------------------------------------------------------------
+
+class GooFile
+{
+public:
+  int read(char *buf, int n, Goffset offset) const;
+  Goffset size() const;
+  
+  static GooFile *open(const GooString *fileName);
+  
+#ifdef _WIN32
+  static GooFile *open(const wchar_t *fileName);
+  
+  ~GooFile() { CloseHandle(handle); }
+  
+private:
+  GooFile(HANDLE handleA): handle(handleA) {}
+  HANDLE handle;
+#else
+  ~GooFile() { close(fd); }
+    
+private:
+  GooFile(int fdA) : fd(fdA) {}
+  int fd;
+#endif // _WIN32
+};
 
 //------------------------------------------------------------------------
 // GDir and GDirEntry

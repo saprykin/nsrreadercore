@@ -15,7 +15,7 @@
 //
 // Copyright (C) 2005 Kristian Høgsberg <krh@redhat.com>
 // Copyright (C) 2005 Jeff Muizelaar <jeff@infidigm.net>
-// Copyright (C) 2005-2012 Albert Astals Cid <aacid@kde.org>
+// Copyright (C) 2005-2013 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2006-2008 Pino Toscano <pino@kde.org>
 // Copyright (C) 2006 Nickolay V. Shmyrev <nshmyrev@yandex.ru>
 // Copyright (C) 2006 Scott Turner <scotty1024@mac.com>
@@ -24,7 +24,10 @@
 // Copyright (C) 2008 Iñigo Martínez <inigomartinez@gmail.com>
 // Copyright (C) 2008 Brad Hards <bradh@kde.org>
 // Copyright (C) 2008 Ilya Gorenbein <igorenbein@finjan.com>
-// Copyright (C) 2012 Fabio D'Urso <fabiodurso@hotmail.it>
+// Copyright (C) 2012, 2013 Fabio D'Urso <fabiodurso@hotmail.it>
+// Copyright (C) 2013, 2014 Thomas Freitag <Thomas.Freitag@alfa.de>
+// Copyright (C) 2013 Jason Crain <jason@aquaticape.us>
+// Copyright (C) 2013 Adrian Johnson <ajohnson@redneon.com>
 //
 // To see a description of the changes please see the Changelog file that
 // came with your tarball or type make ChangeLog if you are building from git
@@ -57,6 +60,11 @@
 #include "Catalog.h"
 #include "Form.h"
 
+#if MULTITHREADED
+#  define pageLocker()   MutexLocker locker(&mutex)
+#else
+#  define pageLocker()
+#endif
 //------------------------------------------------------------------------
 // PDFRectangle
 //------------------------------------------------------------------------
@@ -257,6 +265,9 @@ GBool PageAttrs::readBox(Dict *dict, const char *key, PDFRectangle *box) {
 Page::Page(PDFDoc *docA, int numA, Dict *pageDict, Ref pageRefA, PageAttrs *attrsA, Form *form) {
   Object tmp;
 	
+#if MULTITHREADED
+  gInitMutex(&mutex);
+#endif
   ok = gTrue;
   doc = docA;
   xref = doc->getXRef();
@@ -343,12 +354,52 @@ Page::~Page() {
   trans.free();
   thumb.free();
   actions.free();
+#if MULTITHREADED
+  gDestroyMutex(&mutex);
+#endif
 }
 
-Annots *Page::getAnnots() {
+Dict *Page::getResourceDict() { 
+  return attrs->getResourceDict();
+}
+
+Dict *Page::getResourceDictCopy(XRef *xrefA) { 
+  pageLocker();
+  Dict *dict = attrs->getResourceDict();
+  return dict ? dict->copy(xrefA) : NULL;
+}
+
+void Page::replaceXRef(XRef *xrefA) {
+  Object obj1;
+  Dict *pageDict = pageObj.getDict()->copy(xrefA);
+  xref = xrefA;
+  trans.free();
+  pageDict->lookupNF("Trans", &trans);
+  annotsObj.free();
+  pageDict->lookupNF("Annots", &annotsObj);
+  contents.free();
+  pageDict->lookupNF("Contents", &contents);
+  if (contents.isArray()) {
+    contents.free();
+    pageDict->lookupNF("Contents", &obj1)->getArray()->copy(xrefA, &contents);
+    obj1.free();
+  }
+  thumb.free();
+  pageDict->lookupNF("Thumb", &thumb);
+  actions.free();
+  pageDict->lookupNF("AA", &actions);
+  pageDict->lookup("Resources", &obj1);
+  if (obj1.isDict()) {
+    attrs->replaceResource(obj1);
+  }
+  obj1.free();
+  delete pageDict;
+}
+
+Annots *Page::getAnnots(XRef *xrefA) {
   if (!annots) {
     Object obj;
-    annots = new Annots(doc, num, getAnnots(&obj));
+    annots = new Annots(doc, num, getAnnots(&obj, (xrefA == NULL) ? xref : xrefA));
     obj.free();
   }
 
@@ -363,6 +414,7 @@ void Page::addAnnot(Annot *annot) {
   // Make sure we have annots before adding the new one
   // even if it's an empty list so that we can safely
   // call annots->appendAnnot(annot)
+  pageLocker();
   getAnnots();
 
   if (annotsObj.isNull()) {
@@ -398,17 +450,20 @@ void Page::removeAnnot(Annot *annot) {
   Ref annotRef = annot->getRef();
   Object annArray;
 
+  pageLocker();
   getAnnots(&annArray);
   if (annArray.isArray()) {
     int idx = -1;
     // Get annotation position
     for (int i = 0; idx == -1 && i < annArray.arrayGetLength(); ++i) {
       Object tmp;
-      Ref currAnnot = annArray.arrayGetNF(i, &tmp)->getRef();
-      tmp.free();
-      if (currAnnot.num == annotRef.num && currAnnot.gen == annotRef.gen) {
-        idx = i;
+      if (annArray.arrayGetNF(i, &tmp)->isRef()) {
+        Ref currAnnot = tmp.getRef();
+        if (currAnnot.num == annotRef.num && currAnnot.gen == annotRef.gen) {
+          idx = i;
+        }
       }
+      tmp.free();
     }
 
     if (idx == -1) {
@@ -445,10 +500,11 @@ void Page::display(OutputDev *out, double hDPI, double vDPI,
 		   GBool (*abortCheckCbk)(void *data),
 		   void *abortCheckCbkData,
                    GBool (*annotDisplayDecideCbk)(Annot *annot, void *user_data),
-                   void *annotDisplayDecideCbkData) {
+                   void *annotDisplayDecideCbkData,
+                   GBool copyXRef) {
   displaySlice(out, hDPI, vDPI, rotate, useMediaBox, crop, -1, -1, -1, -1, printing,
 	       abortCheckCbk, abortCheckCbkData,
-               annotDisplayDecideCbk, annotDisplayDecideCbkData);
+               annotDisplayDecideCbk, annotDisplayDecideCbkData, copyXRef);
 }
 
 Gfx *Page::createGfx(OutputDev *out, double hDPI, double vDPI,
@@ -456,7 +512,7 @@ Gfx *Page::createGfx(OutputDev *out, double hDPI, double vDPI,
 		     int sliceX, int sliceY, int sliceW, int sliceH,
 		     GBool printing,
 		     GBool (*abortCheckCbk)(void *data),
-		     void *abortCheckCbkData) {
+		     void *abortCheckCbkData, XRef *xrefA) {
   PDFRectangle *mediaBox, *cropBox;
   PDFRectangle box;
   Gfx *gfx;
@@ -486,7 +542,7 @@ Gfx *Page::createGfx(OutputDev *out, double hDPI, double vDPI,
   }
   gfx = new Gfx(doc, out, num, attrs->getResourceDict(),
 		hDPI, vDPI, &box, crop ? cropBox : (PDFRectangle *)NULL,
-		rotate, abortCheckCbk, abortCheckCbkData);
+		rotate, abortCheckCbk, abortCheckCbkData, xrefA);
 
   return gfx;
 }
@@ -498,7 +554,8 @@ void Page::displaySlice(OutputDev *out, double hDPI, double vDPI,
 			GBool (*abortCheckCbk)(void *data),
 			void *abortCheckCbkData,
                         GBool (*annotDisplayDecideCbk)(Annot *annot, void *user_data),
-                        void *annotDisplayDecideCbkData) {
+                        void *annotDisplayDecideCbkData,
+                        GBool copyXRef) {
   Gfx *gfx;
   Object obj;
   Annots *annotList;
@@ -511,13 +568,18 @@ void Page::displaySlice(OutputDev *out, double hDPI, double vDPI,
 			   annotDisplayDecideCbk, annotDisplayDecideCbkData)) {
     return;
   }
+  pageLocker();
+  XRef *localXRef = (copyXRef) ? xref->copy() : xref;
+  if (copyXRef) {
+    replaceXRef(localXRef);
+  }
 
   gfx = createGfx(out, hDPI, vDPI, rotate, useMediaBox, crop,
 		  sliceX, sliceY, sliceW, sliceH,
 		  printing,
-		  abortCheckCbk, abortCheckCbkData);
+		  abortCheckCbk, abortCheckCbkData, localXRef);
 
-  contents.fetch(xref, &obj);
+  contents.fetch(localXRef, &obj);
   if (!obj.isNull()) {
     gfx->saveState();
     gfx->display(&obj);
@@ -548,6 +610,10 @@ void Page::displaySlice(OutputDev *out, double hDPI, double vDPI,
   }
 
   delete gfx;
+  if (copyXRef) {
+    replaceXRef(doc->getXRef());
+    delete localXRef;
+  }
 }
 
 void Page::display(Gfx *gfx) {
@@ -576,6 +642,7 @@ GBool Page::loadThumb(unsigned char **data_out,
   GfxImageColorMap *colorMap;
 
   /* Get stream dict */
+  pageLocker();
   thumb.fetch(xref, &fetched_thumb);
   if (!fetched_thumb.isStream()) {
     fetched_thumb.free();
@@ -605,7 +672,7 @@ GBool Page::loadThumb(unsigned char **data_out,
     obj1.free ();
     dict->lookup ("CS", &obj1);
   }
-  colorSpace = GfxColorSpace::parse(&obj1, NULL);
+  colorSpace = GfxColorSpace::parse(NULL, &obj1, NULL, NULL);
   obj1.free();
   if (!colorSpace) {
     fprintf (stderr, "Error: Cannot parse color space\n");
@@ -756,4 +823,24 @@ void Page::getDefaultCTM(double *ctm, double hDPI, double vDPI,
     ctm[i] = state->getCTM()[i];
   }
  delete state;
+}
+
+LinkAction* Page::getAdditionalAction(PageAdditionalActionsType type) {
+  Object additionalActionsObject;
+  LinkAction *linkAction = NULL;
+
+  if (actions.fetch(doc->getXRef(), &additionalActionsObject)->isDict()) {
+    const char *key = (type == actionOpenPage ?  "O" :
+                       type == actionClosePage ? "C" : NULL);
+
+    Object actionObject;
+
+    if (additionalActionsObject.dictLookup(key, &actionObject)->isDict())
+      linkAction = LinkAction::parseAction(&actionObject, doc->getCatalog()->getBaseURI());
+    actionObject.free();
+  }
+
+  additionalActionsObject.free();
+
+  return linkAction;
 }

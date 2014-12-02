@@ -21,6 +21,8 @@
 // Copyright (C) 2008 Iñigo Martínez <inigomartinez@gmail.com>
 // Copyright (C) 2012 Fabio D'Urso <fabiodurso@hotmail.it>
 // Copyright (C) 2012 Albert Astals Cid <aacid@kde.org>
+// Copyright (C) 2013 Thomas Freitag <Thomas.Freitag@alfa.de>
+// Copyright (C) 2013 Adrian Johnson <ajohnson@redneon.com>
 //
 // To see a description of the changes please see the Changelog file that
 // came with your tarball or type make ChangeLog if you are building from git
@@ -34,13 +36,16 @@
 #pragma interface
 #endif
 
+#include "poppler-config.h"
 #include "Object.h"
+#include "goo/GooMutex.h"
 
 class Dict;
 class PDFDoc;
 class XRef;
 class OutputDev;
 class Links;
+class LinkAction;
 class Annots;
 class Annot;
 class Gfx;
@@ -102,6 +107,8 @@ public:
 	? separationInfo.getDict() : (Dict *)NULL; }
   Dict *getResourceDict()
     { return resources.isDict() ? resources.getDict() : (Dict *)NULL; }
+  void replaceResource(Object obj1) 
+  {  resources.free(); obj1.copy(&resources); }
 
   // Clip all other boxes to the MediaBox.
   void clipBoxes();
@@ -169,10 +176,11 @@ public:
   Ref getRef() { return pageRef; }
 
   // Get resource dictionary.
-  Dict *getResourceDict() { return attrs->getResourceDict(); }
+  Dict *getResourceDict();
+  Dict *getResourceDictCopy(XRef *xrefA);
 
   // Get annotations array.
-  Object *getAnnots(Object *obj) { return annotsObj.fetch(xref, obj); }
+  Object *getAnnots(Object *obj, XRef *xrefA = NULL) { return annotsObj.fetch((xrefA == NULL) ? xref : xrefA, obj); }
   // Add a new annotation to the page
   void addAnnot(Annot *annot);
   // Remove an existing annotation from the page
@@ -182,7 +190,7 @@ public:
   Links *getLinks();
 
   // Return a list of annots. It will be valid until the page is destroyed
-  Annots *getAnnots();
+  Annots *getAnnots(XRef *xrefA = NULL);
 
   // Get contents.
   Object *getContents(Object *obj) { return contents.fetch(xref, obj); }
@@ -205,12 +213,19 @@ public:
   // Get actions
   Object *getActions(Object *obj) { return actions.fetch(xref, obj); }
 
+  enum PageAdditionalActionsType {
+    actionOpenPage,     ///< Performed when opening the page
+    actionClosePage,    ///< Performed when closing the page
+  };
+
+  LinkAction *getAdditionalAction(PageAdditionalActionsType type);
+
   Gfx *createGfx(OutputDev *out, double hDPI, double vDPI,
 		 int rotate, GBool useMediaBox, GBool crop,
 		 int sliceX, int sliceY, int sliceW, int sliceH,
 		 GBool printing,
 		 GBool (*abortCheckCbk)(void *data),
-		 void *abortCheckCbkData);
+		 void *abortCheckCbkData, XRef *xrefA = NULL);
 
   // Display a page.
   void display(OutputDev *out, double hDPI, double vDPI,
@@ -219,7 +234,8 @@ public:
 	       GBool (*abortCheckCbk)(void *data) = NULL,
 	       void *abortCheckCbkData = NULL,
                GBool (*annotDisplayDecideCbk)(Annot *annot, void *user_data) = NULL,
-               void *annotDisplayDecideCbkData = NULL);
+               void *annotDisplayDecideCbkData = NULL,
+               GBool copyXRef = gFalse);
 
   // Display part of a page.
   void displaySlice(OutputDev *out, double hDPI, double vDPI,
@@ -229,7 +245,8 @@ public:
 		    GBool (*abortCheckCbk)(void *data) = NULL,
 		    void *abortCheckCbkData = NULL,
                     GBool (*annotDisplayDecideCbk)(Annot *annot, void *user_data) = NULL,
-                    void *annotDisplayDecideCbkData = NULL);
+                    void *annotDisplayDecideCbkData = NULL,
+                    GBool copyXRef = gFalse);
 
   void display(Gfx *gfx);
 
@@ -245,6 +262,8 @@ public:
 		     int rotate, GBool useMediaBox, GBool upsideDown);
 
 private:
+  // replace xref
+  void replaceXRef(XRef *xrefA);
 
   PDFDoc *doc;
   XRef *xref;			// the xref table for this PDF file
@@ -257,9 +276,12 @@ private:
   Object contents;		// page contents
   Object thumb;			// page thumbnail
   Object trans;			// page transition
-  Object actions;		// page addiction actions
+  Object actions;		// page additional actions
   double duration;              // page duration
   GBool ok;			// true if page is valid
+#if MULTITHREADED
+  GooMutex mutex;
+#endif
 };
 
 #endif

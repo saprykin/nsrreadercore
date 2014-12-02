@@ -14,16 +14,19 @@
 // under GPL version 2 or later
 //
 // Copyright (C) 2005, 2006, 2008 Brad Hards <bradh@frogmouth.net>
-// Copyright (C) 2005, 2009 Albert Astals Cid <aacid@kde.org>
+// Copyright (C) 2005, 2009, 2014 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2008 Julien Rebetez <julienr@svn.gnome.org>
 // Copyright (C) 2008 Pino Toscano <pino@kde.org>
 // Copyright (C) 2008 Carlos Garcia Campos <carlosgc@gnome.org>
 // Copyright (C) 2009 Eric Toombs <ewtoombs@uwaterloo.ca>
 // Copyright (C) 2009 Kovid Goyal <kovid@kovidgoyal.net>
-// Copyright (C) 2010 Hib Eris <hib@hiberis.nl>
+// Copyright (C) 2010, 2014 Hib Eris <hib@hiberis.nl>
 // Copyright (C) 2010 Srinivas Adicherla <srinivas.adicherla@geodesic.com>
-// Copyright (C) 2011, 2012 Thomas Freitag <Thomas.Freitag@alfa.de>
+// Copyright (C) 2011, 2013, 2014 Thomas Freitag <Thomas.Freitag@alfa.de>
 // Copyright (C) 2012 Fabio D'Urso <fabiodurso@hotmail.it>
+// Copyright (C) 2013 Adrian Johnson <ajohnson@redneon.com>
+// Copyright (C) 2013 Adam Reichold <adamreichold@myopera.com>
+// Copyright (C) 2013 Adrian Perez de Castro <aperez@igalia.com>
 //
 // To see a description of the changes please see the Changelog file that
 // came with your tarball or type make ChangeLog if you are building from git
@@ -37,7 +40,9 @@
 #pragma interface
 #endif
 
+#include "poppler-config.h"
 #include <stdio.h>
+#include "goo/GooMutex.h"
 #include "XRef.h"
 #include "Catalog.h"
 #include "Page.h"
@@ -46,6 +51,7 @@
 #include "Stream.h"
 
 class GooString;
+class GooFile;
 class BaseStream;
 class OutputDev;
 class Links;
@@ -55,6 +61,7 @@ class Outline;
 class Linearization;
 class SecurityHandler;
 class Hints;
+class StructTreeRoot;
 
 enum PDFWriteMode {
   writeStandard,
@@ -134,7 +141,7 @@ public:
   GooString *readMetadata() { return catalog->readMetadata(); }
 
   // Return the structure tree root object.
-  Object *getStructTreeRoot() { return catalog->getStructTreeRoot(); }
+  StructTreeRoot *getStructTreeRoot() { return catalog->getStructTreeRoot(); }
 
   // Get page.
   Page *getPage(int page);
@@ -146,7 +153,7 @@ public:
 		   GBool (*abortCheckCbk)(void *data) = NULL,
 		   void *abortCheckCbkData = NULL,
                    GBool (*annotDisplayDecideCbk)(Annot *annot, void *user_data) = NULL,
-                   void *annotDisplayDecideCbkData = NULL);
+                   void *annotDisplayDecideCbkData = NULL, GBool copyXRef = gFalse);
 
   // Display a range of pages.
   void displayPages(OutputDev *out, int firstPage, int lastPage,
@@ -165,7 +172,7 @@ public:
 			GBool (*abortCheckCbk)(void *data) = NULL,
 			void *abortCheckCbkData = NULL,
                         GBool (*annotDisplayDecideCbk)(Annot *annot, void *user_data) = NULL,
-                        void *annotDisplayDecideCbkData = NULL);
+                        void *annotDisplayDecideCbkData = NULL, GBool copyXRef = gFalse);
 
   // Find a page, given its object ID.  Returns page number, or 0 if
   // not found.
@@ -212,7 +219,7 @@ public:
 
 
   // Is this document linearized?
-  GBool isLinearized();
+  GBool isLinearized(GBool tryingToReconstruct = gFalse);
 
   // Return the document's Info dictionary (if any).
   Object *getDocInfo(Object *obj) { return xref->getDocInfo(obj); }
@@ -240,8 +247,10 @@ public:
   void *getGUIData() { return guiData; }
 
   // rewrite pageDict with MediaBox, CropBox and new page CTM
-  void replacePageDict(int pageNo, int rotate, PDFRectangle *mediaBox, PDFRectangle *cropBox, Object *pageCTM);
-  void markPageObjects(Dict *pageDict, XRef *xRef, XRef *countRef, Guint numOffset);
+  void replacePageDict(int pageNo, int rotate, PDFRectangle *mediaBox, PDFRectangle *cropBox);
+  void markPageObjects(Dict *pageDict, XRef *xRef, XRef *countRef, Guint numOffset, int oldRefNum, int newRefNum);
+  GBool markAnnotations(Object *annots, XRef *xRef, XRef *countRef, Guint numOffset, int oldPageNum, int newPageNum);
+  void markAcroForm(Object *acrpForm, XRef *xRef, XRef *countRef, Guint numOffset, int oldPageNum, int newPageNum);
   // write all objects used by pageDict to outStr
   Guint writePageObjects(OutStream *outStr, XRef *xRef, Guint numOffset, GBool combine = gFalse);
   static void writeObject (Object *obj, OutStream* outStr, XRef *xref, Guint numOffset, Guchar *fileKey,
@@ -249,22 +258,22 @@ public:
   static void writeHeader(OutStream *outStr, int major, int minor);
 
   // Ownership goes to the caller
-  static Dict *createTrailerDict (int uxrefSize, GBool incrUpdate, Guint startxRef,
-                                  Ref *root, XRef *xRef, const char *fileName, Guint fileSize);
+  static Dict *createTrailerDict (int uxrefSize, GBool incrUpdate, Goffset startxRef,
+                                  Ref *root, XRef *xRef, const char *fileName, Goffset fileSize);
   static void writeXRefTableTrailer (Dict *trailerDict, XRef *uxref, GBool writeAllEntries,
-                                     Guint uxrefOffset, OutStream* outStr, XRef *xRef);
+                                     Goffset uxrefOffset, OutStream* outStr, XRef *xRef);
   static void writeXRefStreamTrailer (Dict *trailerDict, XRef *uxref, Ref *uxrefStreamRef,
-                                      Guint uxrefOffset, OutStream* outStr, XRef *xRef);
+                                      Goffset uxrefOffset, OutStream* outStr, XRef *xRef);
 
 private:
   // insert referenced objects in XRef
-  void markDictionnary (Dict* dict, XRef *xRef, XRef *countRef, Guint numOffset);
-  void markObject (Object *obj, XRef *xRef, XRef *countRef, Guint numOffset);
+  void markDictionnary (Dict* dict, XRef *xRef, XRef *countRef, Guint numOffset, int oldRefNum, int newRefNum);
+  void markObject (Object *obj, XRef *xRef, XRef *countRef, Guint numOffset, int oldRefNum, int newRefNum);
   static void writeDictionnary (Dict* dict, OutStream* outStr, XRef *xRef, Guint numOffset, Guchar *fileKey,
                                 CryptAlgorithm encAlgorithm, int keyLength, int objNum, int objGen);
 
   // Write object header to current file stream and return its offset
-  static Guint writeObjectHeader (Ref *ref, OutStream* outStr);
+  static Goffset writeObjectHeader (Ref *ref, OutStream* outStr);
   static void writeObjectFooter (OutStream* outStr);
 
   void writeObject (Object *obj, OutStream* outStr, Guchar *fileKey, CryptAlgorithm encAlgorithm,
@@ -275,7 +284,7 @@ private:
   { writeDictionnary(dict, outStr, getXRef(), 0, fileKey, encAlgorithm, keyLength, objNum, objGen); }
   static void writeStream (Stream* str, OutStream* outStr);
   static void writeRawStream (Stream* str, OutStream* outStr);
-  void writeXRefTableTrailer (Guint uxrefOffset, XRef *uxref, GBool writeAllEntries,
+  void writeXRefTableTrailer (Goffset uxrefOffset, XRef *uxref, GBool writeAllEntries,
                               int uxrefSize, OutStream* outStr, GBool incrUpdate);
   static void writeString (GooString* s, OutStream* outStr, Guchar *fileKey,
                            CryptAlgorithm encAlgorithm, int keyLength, int objNum, int objGen);
@@ -294,17 +303,17 @@ private:
   void checkHeader();
   GBool checkEncryption(GooString *ownerPassword, GooString *userPassword);
   // Get the offset of the start xref table.
-  Guint getStartXRef();
+  Goffset getStartXRef(GBool tryingToReconstruct = gFalse);
   // Get the offset of the entries in the main XRef table of a
   // linearized document (0 for non linearized documents).
-  Guint getMainXRefEntriesOffset();
-  Guint strToUnsigned(char *s);
+  Goffset getMainXRefEntriesOffset(GBool tryingToReconstruct = gFalse);
+  long long strToLongLong(char *s);
 
   GooString *fileName;
 #ifdef _WIN32
   wchar_t *fileNameU;
 #endif
-  FILE *file;
+  GooFile *file;
   BaseStream *str;
   void *guiData;
   int pdfMajorVersion;
@@ -325,7 +334,10 @@ private:
   //then the POSIX errno will be here.
   int fopenErrno;
 
-  Guint startXRefPos;		// offset of last xref table
+  Goffset startXRefPos;		// offset of last xref table
+#if MULTITHREADED
+  GooMutex mutex;
+#endif
 };
 
 #endif

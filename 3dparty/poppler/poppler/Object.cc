@@ -14,6 +14,7 @@
 // under GPL version 2 or later
 //
 // Copyright (C) 2008, 2010, 2012 Albert Astals Cid <aacid@kde.org>
+// Copyright (C) 2013 Adrian Johnson <ajohnson@redneon.com>
 //
 // To see a description of the changes please see the Changelog file that
 // came with your tarball or type make ChangeLog if you are building from git
@@ -53,7 +54,7 @@ static const char *objTypeNames[numObjTypes] = {
   "error",
   "eof",
   "none",
-  "unsigned integer"
+  "integer64"
 };
 
 #ifdef DEBUG_MEM
@@ -224,8 +225,8 @@ void Object::print(FILE *f) {
   case objNone:
     fprintf(f, "<none>");
     break;
-  case objUint:
-    fprintf(f, "%u", uintg);
+  case objInt64:
+    fprintf(f, "%lld", int64g);
     break;
   }
 }

@@ -14,13 +14,17 @@
 // under GPL version 2 or later
 //
 // Copyright (C) 2005 Kristian Høgsberg <krh@redhat.com>
-// Copyright (C) 2005, 2007, 2009-2011 Albert Astals Cid <aacid@kde.org>
+// Copyright (C) 2005, 2007, 2009-2011, 2013 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2005 Jonathan Blandford <jrb@redhat.com>
 // Copyright (C) 2005, 2006, 2008 Brad Hards <bradh@frogmouth.net>
 // Copyright (C) 2007 Julien Rebetez <julienr@svn.gnome.org>
 // Copyright (C) 2008, 2011 Pino Toscano <pino@kde.org>
 // Copyright (C) 2010 Hib Eris <hib@hiberis.nl>
 // Copyright (C) 2012 Fabio D'Urso <fabiodurso@hotmail.it>
+// Copyright (C) 2013 Thomas Freitag <Thomas.Freitag@alfa.de>
+// Copyright (C) 2013 Adrian Perez de Castro <aperez@igalia.com>
+// Copyright (C) 2013 Adrian Johnson <ajohnson@redneon.com>
+// Copyright (C) 2013 José Aliste <jaliste@src.gnome.org>
 //
 // To see a description of the changes please see the Changelog file that
 // came with your tarball or type make ChangeLog if you are building from git
@@ -34,7 +38,9 @@
 #pragma interface
 #endif
 
+#include "poppler-config.h"
 #include "Object.h"
+#include "goo/GooMutex.h"
 
 #include <vector>
 
@@ -45,11 +51,13 @@ class Page;
 class PageAttrs;
 struct Ref;
 class LinkDest;
+class LinkAction;
 class PageLabelInfo;
 class Form;
 class OCGs;
 class ViewerPreferences;
 class FileSpec;
+class StructTreeRoot;
 
 //------------------------------------------------------------------------
 // NameTree
@@ -73,6 +81,7 @@ private:
     GooString name;
     Object value;
     void free();
+    static int cmpEntry(const void *voidEntry, const void *voidOtherEntry);
     static int cmp(const void *key, const void *entry);
   };
 
@@ -120,7 +129,16 @@ public:
   GooString *readMetadata();
 
   // Return the structure tree root object.
-  Object *getStructTreeRoot();
+  StructTreeRoot *getStructTreeRoot();
+
+  // Return values from the MarkInfo dictionary as flags in a bitfield.
+  enum MarkInfoFlags {
+    markInfoNull           = 1 << 0,
+    markInfoMarked         = 1 << 1,
+    markInfoUserProperties = 1 << 2,
+    markInfoSuspects       = 1 << 3,
+  };
+  Guint getMarkInfo();
 
   // Find a page, given its object ID.  Returns page number, or 0 if
   // not found.
@@ -140,6 +158,7 @@ public:
 
   // Get the number of javascript scripts
   int numJS() { return getJSNameTree()->numEntries(); }
+  GooString *getJSName(int i) { return getJSNameTree()->getName(i); }
 
   // Get the i'th JavaScript script (at the Document level) in the document
   GooString *getJS(int i);
@@ -190,6 +209,16 @@ public:
   PageMode getPageMode();
   PageLayout getPageLayout();
 
+  enum DocumentAdditionalActionsType {
+    actionCloseDocument,        ///< Performed before closing the document
+    actionSaveDocumentStart,    ///< Performed before saving the document
+    actionSaveDocumentFinish,   ///< Performed after saving the document
+    actionPrintDocumentStart,   ///< Performed before printing the document
+    actionPrintDocumentFinish,  ///< Performed after printing the document
+  };
+
+  LinkAction *getAdditionalAction(DocumentAdditionalActionsType type);
+
 private:
 
   // Get page label info.
@@ -215,7 +244,8 @@ private:
   NameTree *jsNameTree;		// Java Script name-tree
   GooString *baseURI;		// base URI for URI-type links
   Object metadata;		// metadata stream
-  Object structTreeRoot;	// structure tree root dictionary
+  StructTreeRoot *structTreeRoot;	// structure tree root
+  Guint markInfo;               // Flags from MarkInfo dictionary
   Object outline;		// outline dictionary
   Object acroForm;		// AcroForm dictionary
   Object viewerPreferences;     // ViewerPreference dictionary
@@ -224,6 +254,7 @@ private:
   PageLabelInfo *pageLabelInfo; // info about page labels
   PageMode pageMode;		// page mode
   PageLayout pageLayout;	// page layout
+  Object additionalActions;     // page additional actions
 
   GBool cachePageTree(int page); // Cache first <page> pages.
   Object *findDestInTree(Object *tree, GooString *name, Object *obj);
@@ -232,6 +263,9 @@ private:
   NameTree *getDestNameTree();
   NameTree *getEmbeddedFileNameTree();
   NameTree *getJSNameTree();
+#if MULTITHREADED
+  GooMutex mutex;
+#endif
 
 };
 

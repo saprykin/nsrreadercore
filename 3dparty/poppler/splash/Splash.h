@@ -13,7 +13,7 @@
 //
 // Copyright (C) 2005 Marco Pesenti Gritti <mpg@redhat.com>
 // Copyright (C) 2007, 2011 Albert Astals Cid <aacid@kde.org>
-// Copyright (C) 2010-2012 Thomas Freitag <Thomas.Freitag@alfa.de>
+// Copyright (C) 2010-2013 Thomas Freitag <Thomas.Freitag@alfa.de>
 // Copyright (C) 2010 Christian Feuersänger <cfeuersaenger@googlemail.com>
 // Copyright (C) 2012 Adrian Johnson <ajohnson@redneon.com>
 //
@@ -232,6 +232,7 @@ public:
   // zero.
   SplashError blitTransparent(SplashBitmap *src, int xSrc, int ySrc,
 			      int xDest, int yDest, int w, int h);
+  void blitImage(SplashBitmap *src, GBool srcAlpha, int xDest, int yDest);
 
   //----- misc
 
@@ -247,6 +248,10 @@ public:
 
   // Set the minimum line width.
   void setMinLineWidth(SplashCoord w) { minLineWidth = w; }
+
+  // Setter/Getter for thin line mode
+  void setThinLineMode(SplashThinLineMode thinLineModeA) { thinLineMode = thinLineModeA; }
+  SplashThinLineMode getThinLineMode() { return thinLineMode; }
 
   // Get a bounding box which includes all modifications since the
   // last call to clearModRegion.
@@ -307,7 +312,7 @@ private:
   void drawAAPixelInit();
   void drawAAPixel(SplashPipe *pipe, int x, int y);
   void drawSpan(SplashPipe *pipe, int x0, int x1, int y, GBool noClip);
-  void drawAALine(SplashPipe *pipe, int x0, int x1, int y);
+  void drawAALine(SplashPipe *pipe, int x0, int x1, int y, GBool adjustLine = gFalse, Guchar lineOpacity = 0);
   void transform(SplashCoord *matrix, SplashCoord xi, SplashCoord yi,
 		 SplashCoord *xo, SplashCoord *yo);
   void updateModX(int x);
@@ -323,6 +328,7 @@ private:
 		    SplashCoord *matrix, SplashCoord flatness2,
 		    SplashPath *fPath);
   SplashPath *makeDashedPath(SplashPath *xPath);
+  void getBBoxFP(SplashPath *path, SplashCoord *xMinA, SplashCoord *yMinA, SplashCoord *xMaxA, SplashCoord *yMaxA);
   SplashError fillWithPattern(SplashPath *path, GBool eo,
 			      SplashPattern *pattern, SplashCoord alpha);
   GBool pathAllOutside(SplashPath *path);
@@ -359,7 +365,7 @@ private:
   SplashBitmap *scaleImage(SplashImageSource src, void *srcData,
 			   SplashColorMode srcMode, int nComps,
 			   GBool srcAlpha, int srcWidth, int srcHeight,
-			   int scaledWidth, int scaledHeight, GBool interpolate);
+			   int scaledWidth, int scaledHeight, GBool interpolate, GBool tilingPattern = gFalse);
   void scaleImageYdXd(SplashImageSource src, void *srcData,
 		      SplashColorMode srcMode, int nComps,
 		      GBool srcAlpha, int srcWidth, int srcHeight,
@@ -409,6 +415,7 @@ private:
   int alpha0X, alpha0Y;		// offset within alpha0Bitmap
   SplashCoord aaGamma[splashAASize * splashAASize + 1];
   SplashCoord minLineWidth;
+  SplashThinLineMode thinLineMode;
   int modXMin, modYMin, modXMax, modYMax;
   SplashClipResult opClipRes;
   GBool vectorAntialias;

@@ -18,9 +18,13 @@
 // Copyright (C) 2006 Takashi Iwai <tiwai@suse.de>
 // Copyright (C) 2006 Kristian Høgsberg <krh@redhat.com>
 // Copyright (C) 2008 Adam Batkin <adam@batkin.net>
-// Copyright (C) 2008, 2010, 2012 Hib Eris <hib@hiberis.nl>
-// Copyright (C) 2009, 2012 Albert Astals Cid <aacid@kde.org>
+// Copyright (C) 2008, 2010, 2012, 2013 Hib Eris <hib@hiberis.nl>
+// Copyright (C) 2009, 2012, 2014 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2009 Kovid Goyal <kovid@kovidgoyal.net>
+// Copyright (C) 2013 Adam Reichold <adamreichold@myopera.com>
+// Copyright (C) 2013 Adrian Johnson <ajohnson@redneon.com>
+// Copyright (C) 2013 Peter Breitenlohner <peb@mppmu.mpg.de>
+// Copyright (C) 2013 Thomas Freitag <Thomas.Freitag@alfa.de>
 //
 // To see a description of the changes please see the Changelog file that
 // came with your tarball or type make ChangeLog if you are building from git
@@ -49,6 +53,8 @@
 #    include <unixlib.h>
 #  endif
 #endif // _WIN32
+#include <stdio.h>
+#include <limits>
 #include "GooString.h"
 #include "gfile.h"
 
@@ -486,7 +492,7 @@ FILE *openFile(const char *path, const char *mode) {
       }
     }
     wPath[i] = (wchar_t)0;
-    for (i = 0; mode[i] && i < sizeof(mode) - 1; ++i) {
+    for (i = 0; (i < sizeof(mode) - 1) && mode[i]; ++i) {
       wMode[i] = (wchar_t)(mode[i] & 0xff);
     }
     wMode[i] = (wchar_t)0;
@@ -545,6 +551,125 @@ char *getLine(char *buf, int size, FILE *f) {
   }
   return buf;
 }
+
+int Gfseek(FILE *f, Goffset offset, int whence) {
+#if HAVE_FSEEKO
+  return fseeko(f, offset, whence);
+#elif HAVE_FSEEK64
+  return fseek64(f, offset, whence);
+#elif defined(__MINGW32__)
+  return fseeko64(f, offset, whence);
+#elif _WIN32
+  return _fseeki64(f, offset, whence);
+#else
+  return fseek(f, offset, whence);
+#endif
+}
+
+Goffset Gftell(FILE *f) {
+#if HAVE_FSEEKO
+  return ftello(f);
+#elif HAVE_FSEEK64
+  return ftell64(f);
+#elif defined(__MINGW32__)
+  return ftello64(f);
+#elif _WIN32
+  return _ftelli64(f);
+#else
+  return ftell(f);
+#endif
+}
+
+Goffset GoffsetMax() {
+#if HAVE_FSEEKO
+  return (std::numeric_limits<off_t>::max)();
+#elif HAVE_FSEEK64 || defined(__MINGW32__)
+  return (std::numeric_limits<off64_t>::max)();
+#elif _WIN32
+  return (std::numeric_limits<__int64>::max)();
+#else
+  return (std::numeric_limits<long>::max)();
+#endif
+}
+
+//------------------------------------------------------------------------
+// GooFile
+//------------------------------------------------------------------------
+
+#ifdef _WIN32
+
+int GooFile::read(char *buf, int n, Goffset offset) const {
+  DWORD m;
+  
+  LARGE_INTEGER largeInteger = {0};
+  largeInteger.QuadPart = offset;
+  
+  OVERLAPPED overlapped = {0};
+  overlapped.Offset = largeInteger.LowPart;
+  overlapped.OffsetHigh = largeInteger.HighPart;
+
+  return FALSE == ReadFile(handle, buf, n, &m, &overlapped) ? -1 : m;
+}
+
+Goffset GooFile::size() const {
+  LARGE_INTEGER size = {(DWORD)-1,-1};
+  
+  GetFileSizeEx(handle, &size);
+
+  return size.QuadPart;
+}
+
+GooFile* GooFile::open(const GooString *fileName) {
+  HANDLE handle = CreateFile(fileName->getCString(),
+                              GENERIC_READ,
+                              FILE_SHARE_READ | FILE_SHARE_WRITE,
+                              NULL,
+                              OPEN_EXISTING,
+                              FILE_ATTRIBUTE_NORMAL, NULL);
+  
+  return handle == INVALID_HANDLE_VALUE ? NULL : new GooFile(handle);
+}
+
+GooFile* GooFile::open(const wchar_t *fileName) {
+  HANDLE handle = CreateFileW(fileName,
+                              GENERIC_READ,
+                              FILE_SHARE_READ | FILE_SHARE_WRITE,
+                              NULL,
+                              OPEN_EXISTING,
+                              FILE_ATTRIBUTE_NORMAL, NULL);
+  
+  return handle == INVALID_HANDLE_VALUE ? NULL : new GooFile(handle);
+}
+
+#else
+
+int GooFile::read(char *buf, int n, Goffset offset) const {
+#ifdef HAVE_PREAD64
+  return pread64(fd, buf, n, offset);
+#else
+  return pread(fd, buf, n, offset);
+#endif
+}
+
+Goffset GooFile::size() const {
+#ifdef HAVE_LSEEK64
+  return lseek64(fd, 0, SEEK_END);
+#else
+  return lseek(fd, 0, SEEK_END);
+#endif
+}
+
+GooFile* GooFile::open(const GooString *fileName) {
+#ifdef VMS
+  int fd = ::open(fileName->getCString(), Q_RDONLY, "ctx=stm");
+#else
+  int fd = ::open(fileName->getCString(), O_RDONLY);
+#endif
+  
+  return fd < 0 ? NULL : new GooFile(fd);
+}
+
+#endif // _WIN32
 
 //------------------------------------------------------------------------
 // GDir and GDirEntry
@@ -623,7 +748,7 @@ GDir::~GDir() {
 }
 
 GDirEntry *GDir::getNextEntry() {
-  GDirEntry *e;
+  GDirEntry *e = NULL;
 
 #if defined(_WIN32)
   if (hnd != INVALID_HANDLE_VALUE) {
@@ -632,14 +757,11 @@ GDirEntry *GDir::getNextEntry() {
       FindClose(hnd);
       hnd = INVALID_HANDLE_VALUE;
     }
-  } else {
-    e = NULL;
   }
 #elif defined(ACORN)
 #elif defined(MACOS)
 #elif defined(VMS)
   struct dirent *ent;
-  e = NULL;
   if (dir) {
     if (needParent) {
       e = new GDirEntry(path->getCString(), "-", doStat);
@@ -653,7 +775,6 @@ GDirEntry *GDir::getNextEntry() {
   }
 #else
   struct dirent *ent;
-  e = NULL;
   if (dir) {
     do {
       ent = readdir(dir);

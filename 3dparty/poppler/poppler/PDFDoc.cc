@@ -14,20 +14,23 @@
 // under GPL version 2 or later
 //
 // Copyright (C) 2005, 2006, 2008 Brad Hards <bradh@frogmouth.net>
-// Copyright (C) 2005, 2007-2009, 2011, 2012 Albert Astals Cid <aacid@kde.org>
+// Copyright (C) 2005, 2007-2009, 2011-2014 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2008 Julien Rebetez <julienr@svn.gnome.org>
 // Copyright (C) 2008, 2010 Pino Toscano <pino@kde.org>
 // Copyright (C) 2008, 2010, 2011 Carlos Garcia Campos <carlosgc@gnome.org>
 // Copyright (C) 2009 Eric Toombs <ewtoombs@uwaterloo.ca>
 // Copyright (C) 2009 Kovid Goyal <kovid@kovidgoyal.net>
 // Copyright (C) 2009, 2011 Axel Struebing <axel.struebing@freenet.de>
-// Copyright (C) 2010-2012 Hib Eris <hib@hiberis.nl>
+// Copyright (C) 2010-2012, 2014 Hib Eris <hib@hiberis.nl>
 // Copyright (C) 2010 Jakub Wilk <ubanus@users.sf.net>
 // Copyright (C) 2010 Ilya Gorenbein <igorenbein@finjan.com>
 // Copyright (C) 2010 Srinivas Adicherla <srinivas.adicherla@geodesic.com>
 // Copyright (C) 2010 Philip Lorenz <lorenzph+freedesktop@gmail.com>
-// Copyright (C) 2011, 2012 Thomas Freitag <Thomas.Freitag@alfa.de>
-// Copyright (C) 2012 Fabio D'Urso <fabiodurso@hotmail.it>
+// Copyright (C) 2011-2014 Thomas Freitag <Thomas.Freitag@alfa.de>
+// Copyright (C) 2012, 2013 Fabio D'Urso <fabiodurso@hotmail.it>
+// Copyright (C) 2013, 2014 Adrian Johnson <ajohnson@redneon.com>
+// Copyright (C) 2013 Adam Reichold <adamreichold@myopera.com>
+// Copyright (C) 2014 Bogdan Cristea <cristeab@gmail.com>
 //
 // To see a description of the changes please see the Changelog file that
 // came with your tarball or type make ChangeLog if you are building from git
@@ -48,12 +51,10 @@
 #include <stddef.h>
 #include <string.h>
 #include <time.h>
-#ifdef _WIN32
-#  include <windows.h>
-#endif
 #include <sys/stat.h>
 #include "goo/gstrtod.h"
 #include "goo/GooString.h"
+#include "goo/gfile.h"
 #include "poppler-config.h"
 #include "GlobalParams.h"
 #include "Page.h"
@@ -75,6 +76,12 @@
 #include "PDFDoc.h"
 #include "Hints.h"
 
+#if MULTITHREADED
+#  define pdfdocLocker()   MutexLocker locker(&mutex)
+#else
+#  define pdfdocLocker()
+#endif
+
 //------------------------------------------------------------------------
 
 #define headerSearchSize 1024	// read this many bytes at beginning of
@@ -94,6 +101,9 @@
 
 void PDFDoc::init()
 {
+#if MULTITHREADED
+  gInitMutex(&mutex);
+#endif
   ok = gFalse;
   errCode = errNone;
   fileName = NULL;
@@ -106,7 +116,7 @@ void PDFDoc::init()
 #ifndef DISABLE_OUTLINE
   outline = NULL;
 #endif
-  startXRefPos = ~(Guint)0;
+  startXRefPos = -1;
   secHdlr = NULL;
   pageCache = NULL;
 }
@@ -119,7 +129,6 @@ PDFDoc::PDFDoc()
 PDFDoc::PDFDoc(GooString *fileNameA, GooString *ownerPassword,
 	       GooString *userPassword, void *guiDataA) {
   Object obj;
-  int size = 0;
 #ifdef _WIN32
   int n, i;
 #endif
@@ -137,17 +146,8 @@ PDFDoc::PDFDoc(GooString *fileNameA, GooString *ownerPassword,
   fileNameU[n] = L'\0';
 #endif
 
-  struct stat buf;
-  if (stat(fileName->getCString(), &buf) == 0) {
-     size = buf.st_size;
-  }
-
   // try to open file
-#ifdef VMS
-  file = fopen(fileName->getCString(), "rb", "ctx=stm");
-#else
-  file = fopen(fileName->getCString(), "rb");
-#endif
+  file = GooFile::open(fileName);
   if (file == NULL) {
     // fopen() has failed.
     // Keep a copy of the errno returned by fopen so that it can be 
@@ -160,7 +160,7 @@ PDFDoc::PDFDoc(GooString *fileNameA, GooString *ownerPassword,
 
   // create stream
   obj.initNull();
-  str = new FileStream(file, 0, gFalse, size, &obj);
+  str = new FileStream(file, 0, gFalse, file->size(), &obj);
 
   ok = setup(ownerPassword, userPassword);
 }
@@ -184,26 +184,17 @@ PDFDoc::PDFDoc(wchar_t *fileNameA, int fileNameLen, GooString *ownerPassword,
     fileNameU[i] = fileNameA[i];
   }
   fileNameU[fileNameLen] = L'\0';
-
-
+  
   // try to open file
   // NB: _wfopen is only available in NT
-  struct _stat buf;
-  int size = 0;
   version.dwOSVersionInfoSize = sizeof(version);
   GetVersionEx(&version);
   if (version.dwPlatformId == VER_PLATFORM_WIN32_NT) {
-    if (_wstat(fileNameU, &buf) == 0) {
-      size = buf.st_size;
-    }
-    file = _wfopen(fileNameU, L"rb");
+    file = GooFile::open(fileNameU);
   } else {
-    if (_stat(fileName->getCString(), &buf) == 0) {
-      size = buf.st_size;
-    }
-    file = fopen(fileName->getCString(), "rb");
+    file = GooFile::open(fileName);
   }
-  if (!size || !file) {
+  if (!file) {
     error(errIO, -1, "Couldn't open file '{0:t}'", fileName);
     errCode = errOpenFile;
     return;
@@ -211,7 +202,7 @@ PDFDoc::PDFDoc(wchar_t *fileNameA, int fileNameLen, GooString *ownerPassword,
 
   // create stream
   obj.initNull();
-  str = new FileStream(file, 0, gFalse, size, &obj);
+  str = new FileStream(file, 0, gFalse, file->size(), &obj);
 
   ok = setup(ownerPassword, userPassword);
 }
@@ -246,6 +237,7 @@ PDFDoc::PDFDoc(BaseStream *strA, GooString *ownerPassword,
 }
 
 GBool PDFDoc::setup(GooString *ownerPassword, GooString *userPassword) {
+  pdfdocLocker();
   str->setPos(0, -1);
   if (str->getPos() < 0)
   {
@@ -267,9 +259,16 @@ GBool PDFDoc::setup(GooString *ownerPassword, GooString *userPassword) {
   // read xref table
   xref = new XRef(str, getStartXRef(), getMainXRefEntriesOffset(), &wasReconstructed);
   if (!xref->isOk()) {
-    error(errSyntaxError, -1, "Couldn't read xref table");
-    errCode = xref->getErrorCode();
-    return gFalse;
+    if (wasReconstructed) {
+      delete xref;
+      startXRefPos = -1;
+      xref = new XRef(str, getStartXRef(gTrue), getMainXRefEntriesOffset(gTrue), &wasReconstructed);
+    }
+    if (!xref->isOk()) {
+      error(errSyntaxError, -1, "Couldn't read xref table");
+      errCode = xref->getErrorCode();
+      return gFalse;
+    }
   }
 
   // check for encryption
@@ -332,7 +331,7 @@ PDFDoc::~PDFDoc() {
     delete str;
   }
   if (file) {
-    fclose(file);
+    delete file;
   }
   if (fileName) {
     delete fileName;
@@ -342,6 +341,9 @@ PDFDoc::~PDFDoc() {
     gfree(fileNameU);
   }
 #endif
+#if MULTITHREADED
+  gDestroyMutex(&mutex);
+#endif
 }
 
 
@@ -349,7 +351,7 @@ PDFDoc::~PDFDoc() {
 GBool PDFDoc::checkFooter() {
   // we look in the last 1024 chars because Adobe does the same
   char *eof = new char[1025];
-  int pos = str->getPos();
+  Goffset pos = str->getPos();
   str->setPos(1024, -1);
   int i, ch;
   for (i = 0; i < 1024; i++)
@@ -455,7 +457,7 @@ void PDFDoc::displayPage(OutputDev *out, int page,
 			 GBool (*abortCheckCbk)(void *data),
 			 void *abortCheckCbkData,
                          GBool (*annotDisplayDecideCbk)(Annot *annot, void *user_data),
-                         void *annotDisplayDecideCbkData) {
+                         void *annotDisplayDecideCbkData, GBool copyXRef) {
   if (globalParams->getPrintCommands()) {
     printf("***** page %d *****\n", page);
   }
@@ -464,7 +466,7 @@ void PDFDoc::displayPage(OutputDev *out, int page,
     getPage(page)->display(out, hDPI, vDPI,
 				    rotate, useMediaBox, crop, printing,
 				    abortCheckCbk, abortCheckCbkData,
-				    annotDisplayDecideCbk, annotDisplayDecideCbkData);
+				    annotDisplayDecideCbk, annotDisplayDecideCbkData, copyXRef);
 
 }
 
@@ -491,14 +493,14 @@ void PDFDoc::displayPageSlice(OutputDev *out, int page,
 			      GBool (*abortCheckCbk)(void *data),
 			      void *abortCheckCbkData,
                               GBool (*annotDisplayDecideCbk)(Annot *annot, void *user_data),
-                              void *annotDisplayDecideCbkData) {
+                              void *annotDisplayDecideCbkData, GBool copyXRef) {
   if (getPage(page))
     getPage(page)->displaySlice(out, hDPI, vDPI,
 					 rotate, useMediaBox, crop,
 					 sliceX, sliceY, sliceW, sliceH,
 					 printing,
 					 abortCheckCbk, abortCheckCbkData,
-					 annotDisplayDecideCbk, annotDisplayDecideCbkData);
+					 annotDisplayDecideCbk, annotDisplayDecideCbkData, copyXRef);
 }
 
 Links *PDFDoc::getLinks(int page) {
@@ -522,12 +524,16 @@ Linearization *PDFDoc::getLinearization()
   return linearization;
 }
 
-GBool PDFDoc::isLinearized() {
+GBool PDFDoc::isLinearized(GBool tryingToReconstruct) {
   if ((str->getLength()) &&
       (getLinearization()->getLength() == str->getLength()))
     return gTrue;
-  else
-    return gFalse;
+  else {
+    if (tryingToReconstruct)
+      return getLinearization()->getLength() > 0;
+    else
+      return gFalse;
+  }
 }
 
 static GBool
@@ -620,7 +626,7 @@ int PDFDoc::savePageAs(GooString *name, int pageNo)
   int keyLength;
   xref->getEncryptionParameters(&fileKey, &encAlgorithm, &keyLength);
 
-  if (pageNo < 1 || pageNo > getNumPages()) {
+  if (pageNo < 1 || pageNo > getNumPages() || !getCatalog()->getPage(pageNo)) {
     error(errInternal, -1, "Illegal pageNo: {0:d}({1:d})", pageNo, getNumPages() );
     return errOpenFile;
   }
@@ -631,7 +637,7 @@ int PDFDoc::savePageAs(GooString *name, int pageNo)
   replacePageDict(pageNo, 
     getCatalog()->getPage(pageNo)->getRotate(),
     getCatalog()->getPage(pageNo)->getMediaBox(),
-    cropBox, NULL);
+    cropBox);
   Ref *refPage = getCatalog()->getPageRef(pageNo);
   Object page;
   getXRef()->fetch(refPage->num, refPage->gen, &page);
@@ -643,8 +649,6 @@ int PDFDoc::savePageAs(GooString *name, int pageNo)
   outStr = new FileOutStream(f,0);
 
   yRef = new XRef(getXRef()->getTrailerDict());
-  Object encrypt;
-  getXRef()->getTrailerDict()->dictLookup("Encrypt", &encrypt);
 
   if (secHdlr != NULL && !secHdlr->isUnencrypted()) {
     yRef->setEncryption(secHdlr->getPermissionFlags(), 
@@ -653,7 +657,7 @@ int PDFDoc::savePageAs(GooString *name, int pageNo)
   countRef = new XRef();
   Object *trailerObj = getXRef()->getTrailerDict();
   if (trailerObj->isDict()) {
-    markPageObjects(trailerObj->getDict(), yRef, countRef, 0);
+    markPageObjects(trailerObj->getDict(), yRef, countRef, 0, refPage->num, rootNum + 2);
   }
   yRef->add(0, 65535, 0, gFalse);
   writeHeader(outStr, getPDFMajorVersion(), getPDFMinorVersion());
@@ -663,7 +667,7 @@ int PDFDoc::savePageAs(GooString *name, int pageNo)
   getXRef()->getDocInfo(&infoObj);
   if (infoObj.isDict()) {
     Dict *infoDict = infoObj.getDict();
-    markPageObjects(infoDict, yRef, countRef, 0);
+    markPageObjects(infoDict, yRef, countRef, 0, refPage->num, rootNum + 2);
     if (trailerObj->isDict()) {
       Dict *trailerDict = trailerObj->getDict();
       Object ref;
@@ -680,20 +684,30 @@ int PDFDoc::savePageAs(GooString *name, int pageNo)
   infoObj.free();
   
   // get and mark output intents etc.
-  Object catObj, pagesObj, resourcesObj;
+  Object catObj, pagesObj, resourcesObj, annotsObj, afObj;
   getXRef()->getCatalog(&catObj);
   Dict *catDict = catObj.getDict();
   catDict->lookup("Pages", &pagesObj);
+  catDict->lookupNF("AcroForm", &afObj);
+  if (!afObj.isNull()) {
+    markAcroForm(&afObj, yRef, countRef, 0, refPage->num, rootNum + 2);
+    afObj.free();
+  }
   Dict *pagesDict = pagesObj.getDict();
   pagesDict->lookup("Resources", &resourcesObj);
   if (resourcesObj.isDict())
-    markPageObjects(resourcesObj.getDict(), yRef, countRef, 0);
-  markPageObjects(catDict, yRef, countRef, 0);
+    markPageObjects(resourcesObj.getDict(), yRef, countRef, 0, refPage->num, rootNum + 2);
+  markPageObjects(catDict, yRef, countRef, 0, refPage->num, rootNum + 2);
 
   Dict *pageDict = page.getDict();
-  markPageObjects(pageDict, yRef, countRef, 0);
+  markPageObjects(pageDict, yRef, countRef, 0, refPage->num, rootNum + 2);
+  pageDict->lookupNF("Annots", &annotsObj);
+  if (!annotsObj.isNull()) {
+    markAnnotations(&annotsObj, yRef, countRef, 0, refPage->num, rootNum + 2);
+    annotsObj.free();
+  }
   yRef->markUnencrypted();
-  Guint objectsCount = writePageObjects(outStr, yRef, 0);
+  writePageObjects(outStr, yRef, 0);
 
   yRef->add(rootNum,0,outStr->getPos(),gTrue);
   outStr->printf("%d 0 obj\n", rootNum);
@@ -714,7 +728,6 @@ int PDFDoc::savePageAs(GooString *name, int pageNo)
   catObj.free();
   pagesObj.free();
   outStr->printf(">>\nendobj\n");
-  objectsCount++;
 
   yRef->add(rootNum + 1,0,outStr->getPos(),gTrue);
   outStr->printf("%d 0 obj\n", rootNum + 1);
@@ -726,7 +739,6 @@ int PDFDoc::savePageAs(GooString *name, int pageNo)
   }
   outStr->printf(">>\n");
   outStr->printf("endobj\n");
-  objectsCount++;
 
   yRef->add(rootNum + 2,0,outStr->getPos(),gTrue);
   outStr->printf("%d 0 obj\n", rootNum + 2);
@@ -744,14 +756,13 @@ int PDFDoc::savePageAs(GooString *name, int pageNo)
     value.free();
   }
   outStr->printf(" >>\nendobj\n");
-  objectsCount++;
   page.free();
 
-  Guint uxrefOffset = outStr->getPos();
+  Goffset uxrefOffset = outStr->getPos();
   Ref ref;
   ref.num = rootNum;
   ref.gen = 0;
-  Dict *trailerDict = createTrailerDict(objectsCount, gFalse, 0, &ref, getXRef(),
+  Dict *trailerDict = createTrailerDict(rootNum + 3, gFalse, 0, &ref, getXRef(),
                                         name->getCString(), uxrefOffset);
   writeXRefTableTrailer(trailerDict, yRef, gFalse /* do not write unnecessary entries */,
                         uxrefOffset, outStr, getXRef());
@@ -761,6 +772,7 @@ int PDFDoc::savePageAs(GooString *name, int pageNo)
   fclose(f);
   delete yRef;
   delete countRef;
+  delete outStr;
 
   return errNone;
 }
@@ -795,7 +807,7 @@ int PDFDoc::saveAs(OutStream *outStr, PDFWriteMode mode) {
   if (!updated && mode == writeStandard) {
     // simply copy the original file
     saveWithoutChangesAs (outStr);
-  } if (mode == writeForceRewrite) {
+  } else if (mode == writeForceRewrite) {
     saveCompleteRewrite(outStr);
   } else {
     saveIncrementalUpdate(outStr);
@@ -826,11 +838,13 @@ int PDFDoc::saveWithoutChangesAs(GooString *name) {
 int PDFDoc::saveWithoutChangesAs(OutStream *outStr) {
   int c;
   
-  str->reset();
-  while ((c = str->getChar()) != EOF) {
+  BaseStream *copyStr = str->copy();
+  copyStr->reset();
+  while ((c = copyStr->getChar()) != EOF) {
     outStr->put(c);
   }
-  str->close();
+  copyStr->close();
+  delete copyStr;
 
   return errNone;
 }
@@ -840,11 +854,13 @@ void PDFDoc::saveIncrementalUpdate (OutStream* outStr)
   XRef *uxref;
   int c;
   //copy the original file
-  str->reset();
-  while ((c = str->getChar()) != EOF) {
+  BaseStream *copyStr = str->copy();
+  copyStr->reset();
+  while ((c = copyStr->getChar()) != EOF) {
     outStr->put(c);
   }
-  str->close();
+  copyStr->close();
+  delete copyStr;
 
   Guchar *fileKey;
   CryptAlgorithm encAlgorithm;
@@ -853,6 +869,7 @@ void PDFDoc::saveIncrementalUpdate (OutStream* outStr)
 
   uxref = new XRef();
   uxref->add(0, 65535, 0, gFalse);
+  xref->lock();
   for(int i=0; i<xref->getNumObjects(); i++) {
     if ((xref->getEntry(i)->type == xrefEntryFree) && 
         (xref->getEntry(i)->gen == 0)) //we skip the irrelevant free objects
@@ -864,8 +881,8 @@ void PDFDoc::saveIncrementalUpdate (OutStream* outStr)
       ref.gen = xref->getEntry(i)->type == xrefEntryCompressed ? 0 : xref->getEntry(i)->gen;
       if (xref->getEntry(i)->type != xrefEntryFree) {
         Object obj1;
-        xref->fetch(ref.num, ref.gen, &obj1);
-        Guint offset = writeObjectHeader(&ref, outStr);
+        xref->fetch(ref.num, ref.gen, &obj1, 1);
+        Goffset offset = writeObjectHeader(&ref, outStr);
         writeObject(&obj1, outStr, fileKey, encAlgorithm, keyLength, ref.num, ref.gen);
         writeObjectFooter(outStr);
         uxref->add(ref.num, ref.gen, offset, gTrue);
@@ -875,12 +892,13 @@ void PDFDoc::saveIncrementalUpdate (OutStream* outStr)
       }
     }
   }
+  xref->unlock();
   if (uxref->getNumObjects() == 0) { //we have nothing to update
     delete uxref;
     return;
   }
 
-  Guint uxrefOffset = outStr->getPos();
+  Goffset uxrefOffset = outStr->getPos();
   int numobjects = xref->getNumObjects();
   const char *fileNameA = fileName ? fileName->getCString() : NULL;
   Ref rootRef, uxrefStreamRef;
@@ -922,6 +940,7 @@ void PDFDoc::saveCompleteRewrite (OutStream* outStr)
   outStr->printf("%%PDF-%d.%d\r\n",pdfMajorVersion,pdfMinorVersion);
   XRef *uxref = new XRef();
   uxref->add(0, 65535, 0, gFalse);
+  xref->lock();
   for(int i=0; i<xref->getNumObjects(); i++) {
     Object obj1;
     Ref ref;
@@ -941,8 +960,8 @@ void PDFDoc::saveCompleteRewrite (OutStream* outStr)
     } else if (type == xrefEntryUncompressed){ 
       ref.num = i;
       ref.gen = xref->getEntry(i)->gen;
-      xref->fetch(ref.num, ref.gen, &obj1);
-      Guint offset = writeObjectHeader(&ref, outStr);
+      xref->fetch(ref.num, ref.gen, &obj1, 1);
+      Goffset offset = writeObjectHeader(&ref, outStr);
       // Write unencrypted objects in unencrypted form
       if (xref->getEntry(i)->getFlag(XRefEntry::Unencrypted)) {
         writeObject(&obj1, outStr, NULL, cryptRC4, 0, 0, 0);
@@ -955,15 +974,16 @@ void PDFDoc::saveCompleteRewrite (OutStream* outStr)
     } else if (type == xrefEntryCompressed) {
       ref.num = i;
       ref.gen = 0; //compressed entries have gen == 0
-      xref->fetch(ref.num, ref.gen, &obj1);
-      Guint offset = writeObjectHeader(&ref, outStr);
+      xref->fetch(ref.num, ref.gen, &obj1, 1);
+      Goffset offset = writeObjectHeader(&ref, outStr);
       writeObject(&obj1, outStr, fileKey, encAlgorithm, keyLength, ref.num, ref.gen);
       writeObjectFooter(outStr);
       uxref->add(ref.num, ref.gen, offset, gTrue);
       obj1.free();
     }
   }
-  Guint uxrefOffset = outStr->getPos();
+  xref->unlock();
+  Goffset uxrefOffset = outStr->getPos();
   writeXRefTableTrailer(uxrefOffset, uxref, gTrue /* write all entries */,
                         uxref->getNumObjects(), outStr, gFalse /* complete rewrite */);
   delete uxref;
@@ -999,18 +1019,26 @@ void PDFDoc::writeRawStream (Stream* str, OutStream* outStr)
 {
   Object obj1;
   str->getDict()->lookup("Length", &obj1);
-  if (!obj1.isInt()) {
+  if (!obj1.isInt() && !obj1.isInt64()) {
     error (errSyntaxError, -1, "PDFDoc::writeRawStream, no Length in stream dict");
     return;
   }
 
-  const int length = obj1.getInt();
+  Goffset length;
+  if (obj1.isInt())
+    length = obj1.getInt();
+  else
+    length = obj1.getInt64();
   obj1.free();
 
   outStr->printf("stream\r\n");
   str->unfilteredReset();
-  for (int i=0; i<length; i++) {
+  for (Goffset i = 0; i < length; i++) {
     int c = str->getUnfilteredChar();
+    if (unlikely(c == EOF)) {
+      error (errSyntaxError, -1, "PDFDoc::writeRawStream: EOF reading stream");
+      break;
+    }
     outStr->printf("%c", c);  
   }
   str->reset();
@@ -1073,9 +1101,9 @@ void PDFDoc::writeString (GooString* s, OutStream* outStr, Guchar *fileKey,
   delete sEnc;
 }
 
-Guint PDFDoc::writeObjectHeader (Ref *ref, OutStream* outStr)
+Goffset PDFDoc::writeObjectHeader (Ref *ref, OutStream* outStr)
 {
-  Guint offset = outStr->getPos();
+  Goffset offset = outStr->getPos();
   outStr->printf("%i %i obj ", ref->num, ref->gen);
   return offset;
 }
@@ -1085,7 +1113,7 @@ void PDFDoc::writeObject (Object* obj, OutStream* outStr, XRef *xRef, Guint numO
 {
   Array *array;
   Object obj1;
-  int tmp;
+  Goffset tmp;
 
   switch (obj->getType()) {
     case objBool:
@@ -1094,8 +1122,8 @@ void PDFDoc::writeObject (Object* obj, OutStream* outStr, XRef *xRef, Guint numO
     case objInt:
       outStr->printf("%i ", obj->getInt());
       break;
-    case objUint:
-      outStr->printf("%u ", obj->getUint());
+    case objInt64:
+      outStr->printf("%lli ", obj->getInt64());
       break;
     case objReal:
     {
@@ -1135,12 +1163,42 @@ void PDFDoc::writeObject (Object* obj, OutStream* outStr, XRef *xRef, Guint numO
         //We can't modify stream with the current implementation (no write functions in Stream API)
         // => the only type of streams which that have been modified are internal streams (=strWeird)
         Stream *stream = obj->getStream();
-        if (stream->getKind() == strWeird) {
+        if (stream->getKind() == strWeird || stream->getKind() == strCrypt) {
           //we write the stream unencoded => TODO: write stream encoder
 
           // Encrypt stream
           EncryptStream *encStream = NULL;
-          if (fileKey) {
+          GBool removeFilter = gTrue;
+          if (stream->getKind() == strWeird && fileKey) {
+            Object filter;
+            stream->getDict()->lookup("Filter", &filter);
+            if (!filter.isName("Crypt")) {
+              if (filter.isArray()) {
+                for (int i = 0; i < filter.arrayGetLength(); i++) {
+                  Object filterEle;
+                  filter.arrayGet(i, &filterEle);
+                  if (filterEle.isName("Crypt")) {
+                    filterEle.free();
+                    removeFilter = gFalse;
+                    break;
+                  }
+                  filterEle.free();
+                }
+                if (removeFilter) {
+                  encStream = new EncryptStream(stream, fileKey, encAlgorithm, keyLength, objNum, objGen);
+                  encStream->setAutoDelete(gFalse);
+                  stream = encStream;
+                }
+              } else {
+                encStream = new EncryptStream(stream, fileKey, encAlgorithm, keyLength, objNum, objGen);
+                encStream->setAutoDelete(gFalse);
+                stream = encStream;
+              }
+            } else {
+              removeFilter = gFalse;
+            }
+            filter.free();
+          } else if (fileKey != NULL) { // Encrypt stream
             encStream = new EncryptStream(stream, fileKey, encAlgorithm, keyLength, objNum, objGen);
             encStream->setAutoDelete(gFalse);
             stream = encStream;
@@ -1152,11 +1210,13 @@ void PDFDoc::writeObject (Object* obj, OutStream* outStr, XRef *xRef, Guint numO
           for (int c=stream->getChar(); c!=EOF; c=stream->getChar()) {
             tmp++;
           }
-          obj1.initInt(tmp);
+          obj1.initInt64(tmp);
           stream->getDict()->set("Length", &obj1);
 
           //Remove Stream encoding
-          stream->getDict()->remove("Filter");
+          if (removeFilter) {
+            stream->getDict()->remove("Filter");
+          }
           stream->getDict()->remove("DecodeParms");
 
           writeDictionnary (stream->getDict(),outStr, xRef, numOffset, fileKey, encAlgorithm, keyLength, objNum, objGen);
@@ -1169,10 +1229,10 @@ void PDFDoc::writeObject (Object* obj, OutStream* outStr, XRef *xRef, Guint numO
           if (fs) {
             BaseStream *bs = fs->getBaseStream();
             if (bs) {
-              Guint streamEnd;
+              Goffset streamEnd;
                 if (xRef->getStreamEnd(bs->getStart(), &streamEnd)) {
                   Object val;
-                  val.initInt(streamEnd - bs->getStart());
+                  val.initInt64(streamEnd - bs->getStart());
                   stream->getDict()->set("Length", &val);
                 }
               }
@@ -1208,8 +1268,8 @@ void PDFDoc::writeObjectFooter (OutStream* outStr)
   outStr->printf("endobj\r\n");
 }
 
-Dict *PDFDoc::createTrailerDict(int uxrefSize, GBool incrUpdate, Guint startxRef,
-                                Ref *root, XRef *xRef, const char *fileName, Guint fileSize)
+Dict *PDFDoc::createTrailerDict(int uxrefSize, GBool incrUpdate, Goffset startxRef,
+                                Ref *root, XRef *xRef, const char *fileName, Goffset fileSize)
 {
   Dict *trailerDict = new Dict(xRef);
   Object obj1;
@@ -1230,7 +1290,7 @@ Dict *PDFDoc::createTrailerDict(int uxrefSize, GBool incrUpdate, Guint startxRef
   if (fileName)
     message.append(fileName);
 
-  sprintf(buffer, "%i", fileSize);
+  sprintf(buffer, "%lli", (long long)fileSize);
   message.append(buffer);
 
   //info dict -- only use text string
@@ -1294,7 +1354,7 @@ Dict *PDFDoc::createTrailerDict(int uxrefSize, GBool incrUpdate, Guint startxRef
   trailerDict->set("Root", &obj1);
 
   if (incrUpdate) { 
-    obj1.initInt(startxRef);
+    obj1.initInt64(startxRef);
     trailerDict->set("Prev", &obj1);
   }
   
@@ -1308,17 +1368,17 @@ Dict *PDFDoc::createTrailerDict(int uxrefSize, GBool incrUpdate, Guint startxRef
   return trailerDict;
 }
 
-void PDFDoc::writeXRefTableTrailer(Dict *trailerDict, XRef *uxref, GBool writeAllEntries, Guint uxrefOffset, OutStream* outStr, XRef *xRef)
+void PDFDoc::writeXRefTableTrailer(Dict *trailerDict, XRef *uxref, GBool writeAllEntries, Goffset uxrefOffset, OutStream* outStr, XRef *xRef)
 {
   uxref->writeTableToFile( outStr, writeAllEntries );
   outStr->printf( "trailer\r\n");
   writeDictionnary(trailerDict, outStr, xRef, 0, NULL, cryptRC4, 0, 0, 0);
   outStr->printf( "\r\nstartxref\r\n");
-  outStr->printf( "%i\r\n", uxrefOffset);
+  outStr->printf( "%lli\r\n", uxrefOffset);
   outStr->printf( "%%%%EOF\r\n");
 }
 
-void PDFDoc::writeXRefStreamTrailer (Dict *trailerDict, XRef *uxref, Ref *uxrefStreamRef, Guint uxrefOffset, OutStream* outStr, XRef *xRef)
+void PDFDoc::writeXRefStreamTrailer (Dict *trailerDict, XRef *uxref, Ref *uxrefStreamRef, Goffset uxrefOffset, OutStream* outStr, XRef *xRef)
 {
   GooString stmData;
 
@@ -1335,11 +1395,11 @@ void PDFDoc::writeXRefStreamTrailer (Dict *trailerDict, XRef *uxref, Ref *uxrefS
   obj1.free();
 
   outStr->printf( "startxref\r\n");
-  outStr->printf( "%i\r\n", uxrefOffset);
+  outStr->printf( "%lli\r\n", uxrefOffset);
   outStr->printf( "%%%%EOF\r\n");
 }
 
-void PDFDoc::writeXRefTableTrailer(Guint uxrefOffset, XRef *uxref, GBool writeAllEntries,
+void PDFDoc::writeXRefTableTrailer(Goffset uxrefOffset, XRef *uxref, GBool writeAllEntries,
                                    int uxrefSize, OutStream* outStr, GBool incrUpdate)
 {
   const char *fileNameA = fileName ? fileName->getCString() : NULL;
@@ -1366,16 +1426,26 @@ void PDFDoc::writeHeader(OutStream *outStr, int major, int minor)
    outStr->printf("%%\xE2\xE3\xCF\xD3\n");
 }
 
-void PDFDoc::markDictionnary (Dict* dict, XRef * xRef, XRef *countRef, Guint numOffset)
+void PDFDoc::markDictionnary (Dict* dict, XRef * xRef, XRef *countRef, Guint numOffset, int oldRefNum, int newRefNum)
 {
   Object obj1;
   for (int i=0; i<dict->getLength(); i++) {
-    markObject(dict->getValNF(i, &obj1), xRef, countRef, numOffset);
+    const char *key = dict->getKey(i);
+    if (strcmp(key, "Annots") != 0) {
+      markObject(dict->getValNF(i, &obj1), xRef, countRef, numOffset, oldRefNum, newRefNum);
+    } else {
+      Object annotsObj;
+      dict->getValNF(i, &annotsObj);
+      if (!annotsObj.isNull()) {
+        markAnnotations(&annotsObj, xRef, countRef, 0, oldRefNum, newRefNum);
+        annotsObj.free();
+      }
+    }
     obj1.free();
   }
 }
 
-void PDFDoc::markObject (Object* obj, XRef *xRef, XRef *countRef, Guint numOffset)
+void PDFDoc::markObject (Object* obj, XRef *xRef, XRef *countRef, Guint numOffset, int oldRefNum, int newRefNum)
 {
   Array *array;
   Object obj1;
@@ -1384,17 +1454,17 @@ void PDFDoc::markObject (Object* obj, XRef *xRef, XRef *countRef, Guint numOffse
     case objArray:
       array = obj->getArray();
       for (int i=0; i<array->getLength(); i++) {
-        markObject(array->getNF(i, &obj1), xRef, countRef, numOffset);
+        markObject(array->getNF(i, &obj1), xRef, countRef, numOffset, oldRefNum, newRefNum);
         obj1.free();
       }
       break;
     case objDict:
-      markDictionnary (obj->getDict(), xRef, countRef, numOffset);
+      markDictionnary (obj->getDict(), xRef, countRef, numOffset, oldRefNum, newRefNum);
       break;
     case objStream: 
       {
         Stream *stream = obj->getStream();
-        markDictionnary (stream->getDict(), xRef, countRef, numOffset);
+        markDictionnary (stream->getDict(), xRef, countRef, numOffset, oldRefNum, newRefNum);
       }
       break;
     case objRef:
@@ -1420,7 +1490,7 @@ void PDFDoc::markObject (Object* obj, XRef *xRef, XRef *countRef, Guint numOffse
         } 
         Object obj1;
         getXRef()->fetch(obj->getRef().num, obj->getRef().gen, &obj1);
-        markObject(&obj1, xRef, countRef, numOffset);
+        markObject(&obj1, xRef, countRef, numOffset, oldRefNum, newRefNum);
         obj1.free();
       }
       break;
@@ -1431,83 +1501,64 @@ void PDFDoc::markObject (Object* obj, XRef *xRef, XRef *countRef, Guint numOffse
 
 void PDFDoc::replacePageDict(int pageNo, int rotate,
                              PDFRectangle *mediaBox, 
-                             PDFRectangle *cropBox, Object *pageCTM)
+                             PDFRectangle *cropBox)
 {
   Ref *refPage = getCatalog()->getPageRef(pageNo);
   Object page;
   getXRef()->fetch(refPage->num, refPage->gen, &page);
   Dict *pageDict = page.getDict();
+  pageDict->remove("MediaBoxssdf");
   pageDict->remove("MediaBox");
   pageDict->remove("CropBox");
   pageDict->remove("ArtBox");
   pageDict->remove("BleedBox");
   pageDict->remove("TrimBox");
   pageDict->remove("Rotate");
-  Object *mediaBoxObj = new Object();
-  mediaBoxObj->initArray(getXRef());
-  Object *murx = new Object();
-  murx->initReal(mediaBox->x1);
-  Object *mury = new Object();
-  mury->initReal(mediaBox->y1);
-  Object *mllx = new Object();
-  mllx->initReal(mediaBox->x2);
-  Object *mlly = new Object();
-  mlly->initReal(mediaBox->y2);
-  mediaBoxObj->arrayAdd(murx);
-  mediaBoxObj->arrayAdd(mury);
-  mediaBoxObj->arrayAdd(mllx);
-  mediaBoxObj->arrayAdd(mlly);
-  pageDict->add(copyString("MediaBox"), mediaBoxObj);
+  Object mediaBoxObj;
+  mediaBoxObj.initArray(getXRef());
+  Object murx;
+  murx.initReal(mediaBox->x1);
+  Object mury;
+  mury.initReal(mediaBox->y1);
+  Object mllx;
+  mllx.initReal(mediaBox->x2);
+  Object mlly;
+  mlly.initReal(mediaBox->y2);
+  mediaBoxObj.arrayAdd(&murx);
+  mediaBoxObj.arrayAdd(&mury);
+  mediaBoxObj.arrayAdd(&mllx);
+  mediaBoxObj.arrayAdd(&mlly);
+  pageDict->add(copyString("MediaBox"), &mediaBoxObj);
   if (cropBox != NULL) {
-    Object *cropBoxObj = new Object();
-    cropBoxObj->initArray(getXRef());
-    Object *curx = new Object();
-    curx->initReal(cropBox->x1);
-    Object *cury = new Object();
-    cury->initReal(cropBox->y1);
-    Object *cllx = new Object();
-    cllx->initReal(cropBox->x2);
-    Object *clly = new Object();
-    clly->initReal(cropBox->y2);
-    cropBoxObj->arrayAdd(curx);
-    cropBoxObj->arrayAdd(cury);
-    cropBoxObj->arrayAdd(cllx);
-    cropBoxObj->arrayAdd(clly);
-    pageDict->add(copyString("CropBox"), cropBoxObj);
-    pageDict->add(copyString("TrimBox"), cropBoxObj);
+    Object cropBoxObj;
+    cropBoxObj.initArray(getXRef());
+    Object curx;
+    curx.initReal(cropBox->x1);
+    Object cury;
+    cury.initReal(cropBox->y1);
+    Object cllx;
+    cllx.initReal(cropBox->x2);
+    Object clly;
+    clly.initReal(cropBox->y2);
+    cropBoxObj.arrayAdd(&curx);
+    cropBoxObj.arrayAdd(&cury);
+    cropBoxObj.arrayAdd(&cllx);
+    cropBoxObj.arrayAdd(&clly);
+    pageDict->add(copyString("CropBox"), &cropBoxObj);
+    cropBoxObj.getArray()->incRef();
+    pageDict->add(copyString("TrimBox"), &cropBoxObj);
   } else {
-    pageDict->add(copyString("TrimBox"), mediaBoxObj);
+    mediaBoxObj.getArray()->incRef();
+    pageDict->add(copyString("TrimBox"), &mediaBoxObj);
   }
-  Object *rotateObj = new Object();
-  rotateObj->initInt(rotate);
-  pageDict->add(copyString("Rotate"), rotateObj);
-  if (pageCTM != NULL) {
-    Object *contents = new Object();
-    Ref cmRef = getXRef()->addIndirectObject(pageCTM);
-    Object *ref = new Object();
-    ref->initRef(cmRef.num, cmRef.gen);
-    pageDict->lookupNF("Contents", contents);
-    Object *newContents = new Object();
-    newContents->initArray(getXRef());
-    if (contents->getType() == objRef) {
-      newContents->arrayAdd(ref);
-      newContents->arrayAdd(contents);
-    } else {
-      newContents->arrayAdd(ref);
-      for (int i = 0; i < contents->arrayGetLength(); i++) {
-        Object *contentEle = new Object();
-        contents->arrayGetNF(i, contentEle);
-        newContents->arrayAdd(contentEle);
-      }
-    }
-    pageDict->remove("Contents");
-    pageDict->add(copyString("Contents"), newContents);
-  }
+  Object rotateObj;
+  rotateObj.initInt(rotate);
+  pageDict->add(copyString("Rotate"), &rotateObj);
   getXRef()->setModifiedObject(&page, *refPage);
   page.free();
 }
 
-void PDFDoc::markPageObjects(Dict *pageDict, XRef *xRef, XRef *countRef, Guint numOffset) 
+void PDFDoc::markPageObjects(Dict *pageDict, XRef *xRef, XRef *countRef, Guint numOffset, int oldRefNum, int newRefNum) 
 {
   pageDict->remove("Names");
   pageDict->remove("OpenAction");
@@ -1519,11 +1570,150 @@ void PDFDoc::markPageObjects(Dict *pageDict, XRef *xRef, XRef *countRef, Guint n
     Object value; pageDict->getValNF(n, &value);
     if (strcmp(key, "Parent") != 0 &&
 	      strcmp(key, "Pages") != 0 &&
+	      strcmp(key, "AcroForm") != 0 &&
+	      strcmp(key, "Annots") != 0 &&
+	      strcmp(key, "P") != 0 &&
         strcmp(key, "Root") != 0) {
-      markObject(&value, xRef, countRef, numOffset);
+      markObject(&value, xRef, countRef, numOffset, oldRefNum, newRefNum);
     }
     value.free();
   }
+}
+
+GBool PDFDoc::markAnnotations(Object *annotsObj, XRef *xRef, XRef *countRef, Guint numOffset, int oldPageNum, int newPageNum) {
+  Object annots;
+  GBool modified = gFalse;
+  annotsObj->fetch(getXRef(), &annots);
+  if (annots.isArray()) {
+      Array *array = annots.getArray();
+      for (int i=array->getLength() - 1; i >= 0; i--) {
+        Object obj1;
+        if (array->get(i, &obj1)->isDict()) {
+          Object type;
+          Dict *dict = obj1.getDict();
+          dict->lookup("Type", &type);
+          if (type.isName() && strcmp(type.getName(), "Annot") == 0) {
+            Object obj2;
+            if (dict->lookupNF("P", &obj2)->isRef()) {
+              if (obj2.getRef().num == oldPageNum) {
+                Object obj3;
+                array->getNF(i, &obj3);
+                if (obj3.isRef()) {
+                  Object *newRef = new Object();
+                  newRef->initRef(newPageNum, 0);
+                  dict->set("P", newRef);
+                  getXRef()->setModifiedObject(&obj1, obj3.getRef());
+                }
+                obj3.free();
+              } else if (obj2.getRef().num == newPageNum) {
+                obj1.free();
+                obj2.free();
+                type.free();
+                continue;
+              } else {
+                array->remove(i);
+                obj1.free();
+                obj2.free();
+                type.free();
+                modified = gTrue;
+                continue;
+              }
+            }
+            obj2.free();
+          }
+          type.free();
+          markPageObjects(dict, xRef, countRef, numOffset, oldPageNum, newPageNum);
+        }
+        obj1.free();
+        array->getNF(i, &obj1);
+        if (obj1.isRef()) {
+          if (obj1.getRef().num + (int) numOffset >= xRef->getNumObjects() || xRef->getEntry(obj1.getRef().num + numOffset)->type == xrefEntryFree) {
+            if (getXRef()->getEntry(obj1.getRef().num)->type == xrefEntryFree) {
+              continue;  // already marked as free => should be replaced
+            }
+            xRef->add(obj1.getRef().num + numOffset, obj1.getRef().gen, 0, gTrue);
+            if (getXRef()->getEntry(obj1.getRef().num)->type == xrefEntryCompressed) {
+              xRef->getEntry(obj1.getRef().num + numOffset)->type = xrefEntryCompressed;
+            }
+          }
+          if (obj1.getRef().num + (int) numOffset >= countRef->getNumObjects() || 
+              countRef->getEntry(obj1.getRef().num + numOffset)->type == xrefEntryFree)
+          {
+            countRef->add(obj1.getRef().num + numOffset, 1, 0, gTrue);
+          } else {
+            XRefEntry *entry = countRef->getEntry(obj1.getRef().num + numOffset);
+            entry->gen++;
+          } 
+        }
+        obj1.free();
+      }
+  }
+  if (annotsObj->isRef()) {
+    if (annotsObj->getRef().num + (int) numOffset >= xRef->getNumObjects() || xRef->getEntry(annotsObj->getRef().num + numOffset)->type == xrefEntryFree) {
+      if (getXRef()->getEntry(annotsObj->getRef().num)->type == xrefEntryFree) {
+        return modified;  // already marked as free => should be replaced
+      }
+      xRef->add(annotsObj->getRef().num + numOffset, annotsObj->getRef().gen, 0, gTrue);
+      if (getXRef()->getEntry(annotsObj->getRef().num)->type == xrefEntryCompressed) {
+        xRef->getEntry(annotsObj->getRef().num + numOffset)->type = xrefEntryCompressed;
+      }
+    }
+    if (annotsObj->getRef().num + (int) numOffset >= countRef->getNumObjects() || 
+        countRef->getEntry(annotsObj->getRef().num + numOffset)->type == xrefEntryFree)
+    {
+      countRef->add(annotsObj->getRef().num + numOffset, 1, 0, gTrue);
+    } else {
+      XRefEntry *entry = countRef->getEntry(annotsObj->getRef().num + numOffset);
+      entry->gen++;
+    } 
+    getXRef()->setModifiedObject(&annots, annotsObj->getRef());
+  }
+  annots.free();
+  return modified;
+}
+
+void PDFDoc::markAcroForm(Object *afObj, XRef *xRef, XRef *countRef, Guint numOffset, int oldRefNum, int newRefNum) {
+  Object acroform;
+  GBool modified = gFalse;
+  afObj->fetch(getXRef(), &acroform);
+  if (acroform.isDict()) {
+      Dict *dict = acroform.getDict();
+      for (int i=0; i < dict->getLength(); i++) {
+        if (strcmp(dict->getKey(i), "Fields") == 0) {
+          Object fields;
+          modified = markAnnotations(dict->getValNF(i, &fields), xRef, countRef, numOffset, oldRefNum, newRefNum);
+          fields.free();
+        } else {
+          Object obj;
+          markObject(dict->getValNF(i, &obj), xRef, countRef, numOffset, oldRefNum, newRefNum);
+          obj.free();
+        }
+      }
+  }
+  if (afObj->isRef()) {
+    if (afObj->getRef().num + (int) numOffset >= xRef->getNumObjects() || xRef->getEntry(afObj->getRef().num + numOffset)->type == xrefEntryFree) {
+      if (getXRef()->getEntry(afObj->getRef().num)->type == xrefEntryFree) {
+        return;  // already marked as free => should be replaced
+      }
+      xRef->add(afObj->getRef().num + numOffset, afObj->getRef().gen, 0, gTrue);
+      if (getXRef()->getEntry(afObj->getRef().num)->type == xrefEntryCompressed) {
+        xRef->getEntry(afObj->getRef().num + numOffset)->type = xrefEntryCompressed;
+      }
+    }
+    if (afObj->getRef().num + (int) numOffset >= countRef->getNumObjects() || 
+        countRef->getEntry(afObj->getRef().num + numOffset)->type == xrefEntryFree)
+    {
+      countRef->add(afObj->getRef().num + numOffset, 1, 0, gTrue);
+    } else {
+      XRefEntry *entry = countRef->getEntry(afObj->getRef().num + numOffset);
+      entry->gen++;
+    } 
+    if (modified){
+      getXRef()->setModifiedObject(&acroform, afObj->getRef());
+    }
+  }
+  acroform.free();
+  return;
 }
 
 Guint PDFDoc::writePageObjects(OutStream *outStr, XRef *xRef, Guint numOffset, GBool combine) 
@@ -1542,7 +1732,7 @@ Guint PDFDoc::writePageObjects(OutStream *outStr, XRef *xRef, Guint numOffset, G
       ref.gen = xRef->getEntry(n)->gen;
       objectsCount++;
       getXRef()->fetch(ref.num - numOffset, ref.gen, &obj);
-      Guint offset = writeObjectHeader(&ref, outStr);
+      Goffset offset = writeObjectHeader(&ref, outStr);
       if (combine) {
         writeObject(&obj, outStr, getXRef(), numOffset, NULL, cryptRC4, 0, 0, 0);
       } else if (xRef->getEntry(n)->getFlag(XRefEntry::Unencrypted)) {
@@ -1562,6 +1752,7 @@ Guint PDFDoc::writePageObjects(OutStream *outStr, XRef *xRef, Guint numOffset, G
 Outline *PDFDoc::getOutline()
 {
   if (!outline) {
+    pdfdocLocker();
     // read outline
     outline = new Outline(catalog->getOutline(), xref);
   }
@@ -1579,14 +1770,14 @@ PDFDoc *PDFDoc::ErrorPDFDoc(int errorCode, GooString *fileNameA)
   return doc;
 }
 
-Guint PDFDoc::strToUnsigned(char *s) {
-  Guint x, d;
+long long PDFDoc::strToLongLong(char *s) {
+  long long x, d;
   char *p;
 
   x = 0;
   for (p = s; *p && isdigit(*p & 0xff); ++p) {
     d = *p - '0';
-    if (x > (UINT_MAX - d) / 10) {
+    if (x > (LLONG_MAX - d) / 10) {
       break;
     }
     x = 10 * x + d;
@@ -1595,11 +1786,11 @@ Guint PDFDoc::strToUnsigned(char *s) {
 }
 
 // Read the 'startxref' position.
-Guint PDFDoc::getStartXRef()
+Goffset PDFDoc::getStartXRef(GBool tryingToReconstruct)
 {
-  if (startXRefPos == ~(Guint)0) {
+  if (startXRefPos == -1) {
 
-    if (isLinearized()) {
+    if (isLinearized(tryingToReconstruct)) {
       char buf[linearizationSearchSize+1];
       int c, n, i;
 
@@ -1648,7 +1839,7 @@ Guint PDFDoc::getStartXRef()
         startXRefPos = 0;
       } else {
         for (p = &buf[i+9]; isspace(*p); ++p) ;
-        startXRefPos =  strToUnsigned(p);
+        startXRefPos =  strToLongLong(p);
       }
     }
 
@@ -1657,11 +1848,11 @@ Guint PDFDoc::getStartXRef()
   return startXRefPos;
 }
 
-Guint PDFDoc::getMainXRefEntriesOffset()
+Goffset PDFDoc::getMainXRefEntriesOffset(GBool tryingToReconstruct)
 {
   Guint mainXRefEntriesOffset = 0;
 
-  if (isLinearized()) {
+  if (isLinearized(tryingToReconstruct)) {
     mainXRefEntriesOffset = getLinearization()->getMainXRefEntriesOffset();
   }
 
@@ -1720,6 +1911,7 @@ Page *PDFDoc::getPage(int page)
   if ((page < 1) || page > getNumPages()) return NULL;
 
   if (isLinearized()) {
+    pdfdocLocker();
     if (!pageCache) {
       pageCache = (Page **) gmallocn(getNumPages(), sizeof(Page *));
       for (int i = 0; i < getNumPages(); i++) {

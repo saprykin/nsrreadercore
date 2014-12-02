@@ -16,9 +16,11 @@
 // Copyright (C) 2005 Kristian Høgsberg <krh@redhat.com>
 // Copyright (C) 2006 Krzysztof Kowalczyk <kkowalczyk@gmail.com>
 // Copyright (C) 2007-2008 Julien Rebetez <julienr@svn.gnome.org>
-// Copyright (C) 2008, 2010 Albert Astals Cid <aacid@kde.org>
+// Copyright (C) 2008, 2010, 2013, 2014 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2010 Paweł Wiejacha <pawel.wiejacha@gmail.com>
 // Copyright (C) 2012 Fabio D'Urso <fabiodurso@hotmail.it>
+// Copyright (C) 2013 Thomas Freitag <Thomas.Freitag@alfa.de>
+// Copyright (C) 2014 Scott West <scott.gregory.west@gmail.com>
 //
 // To see a description of the changes please see the Changelog file that
 // came with your tarball or type make ChangeLog if you are building from git
@@ -39,6 +41,11 @@
 #include "XRef.h"
 #include "Dict.h"
 
+#if MULTITHREADED
+#  define dictLocker()   MutexLocker locker(&mutex)
+#else
+#  define dictLocker()
+#endif
 //------------------------------------------------------------------------
 // Dict
 //------------------------------------------------------------------------
@@ -74,19 +81,42 @@ Dict::Dict(XRef *xrefA) {
   size = length = 0;
   ref = 1;
   sorted = gFalse;
+#if MULTITHREADED
+  gInitMutex(&mutex);
+#endif
 }
 
 Dict::Dict(Dict* dictA) {
   xref = dictA->xref;
   size = length = dictA->length;
   ref = 1;
+#if MULTITHREADED
+  gInitMutex(&mutex);
+#endif
 
   sorted = dictA->sorted;
   entries = (DictEntry *)gmallocn(size, sizeof(DictEntry));
   for (int i=0; i<length; i++) {
-    entries[i].key = strdup(dictA->entries[i].key);
+    entries[i].key = copyString(dictA->entries[i].key);
     dictA->entries[i].val.copy(&entries[i].val);
   }
+}
+
+Dict *Dict::copy(XRef *xrefA) {
+  dictLocker();
+  Dict *dictA = new Dict(this);
+  dictA->xref = xrefA;
+  for (int i=0; i<length; i++) {
+    if (dictA->entries[i].val.getType() == objDict) {
+       Dict *dict = dictA->entries[i].val.getDict();
+       Object obj;
+       obj.initDict(dict->copy(xrefA));
+       dictA->entries[i].val.free();
+       dictA->entries[i].val = obj;
+       obj.free();
+    }
+  }
+  return dictA;
 }
 
 Dict::~Dict() {
@@ -97,9 +127,25 @@ Dict::~Dict() {
     entries[i].val.free();
   }
   gfree(entries);
+#if MULTITHREADED
+  gDestroyMutex(&mutex);
+#endif
+}
+
+int Dict::incRef() {
+  dictLocker();
+  ++ref;
+  return ref;
+}
+
+int Dict::decRef() {
+  dictLocker();
+  --ref;
+  return ref;
 }
 
 void Dict::add(char *key, Object *val) {
+  dictLocker();
   if (sorted) {
     // We use add on very few occasions so
     // virtually this will never be hit
@@ -122,6 +168,7 @@ void Dict::add(char *key, Object *val) {
 inline DictEntry *Dict::find(const char *key) {
   if (!sorted && length >= SORT_LENGTH_LOWER_LIMIT)
   {
+      dictLocker();
       sorted = gTrue;
       std::sort(entries, entries+length, cmpDictEntries);
   }
@@ -147,10 +194,13 @@ GBool Dict::hasKey(const char *key) {
 }
 
 void Dict::remove(const char *key) {
+  dictLocker();
   if (sorted) {
     const int pos = binarySearch(key, entries, length);
     if (pos != -1) {
       length -= 1;
+      gfree(entries[pos].key);
+      entries[pos].val.free();
       if (pos != length) {
         memmove(&entries[pos], &entries[pos + 1], (length - pos) * sizeof(DictEntry));
       }
@@ -159,7 +209,9 @@ void Dict::remove(const char *key) {
     int i; 
     bool found = false;
     DictEntry tmp;
-    if(length == 0) return;
+    if(length == 0) {
+      return;
+    }
 
     for(i=0; i<length; i++) {
       if (!strcmp(key, entries[i].key)) {
@@ -167,8 +219,12 @@ void Dict::remove(const char *key) {
         break;
       }
     }
-    if(!found) return;
+    if(!found) {
+      return;
+    }
     //replace the deleted entry with the last entry
+    gfree(entries[i].key);
+    entries[i].val.free();
     length -= 1;
     tmp = entries[length];
     if (i!=length) //don't copy the last entry if it is deleted 
@@ -184,6 +240,7 @@ void Dict::set(const char *key, Object *val) {
   }
   e = find (key);
   if (e) {
+    dictLocker();
     e->val.free();
     e->val = *val;
   } else {

@@ -16,6 +16,7 @@
 // Copyright (C) 2005, 2008, 2010 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2005 Kristian Høgsberg <krh@redhat.com>
 // Copyright (C) 2010 Jakub Wilk <ubanus@users.sf.net>
+// Copyright (C) 2014 Carlos Garcia Campos <carlosgc@gnome.org>
 //
 // To see a description of the changes please see the Changelog file that
 // came with your tarball or type make ChangeLog if you are building from git
@@ -136,7 +137,7 @@ void FoFiType1::writeEncoded(const char **newEncoding,
     }
   }
   (*outputFunc)(outputStream, "readonly def\n", 13);
-
+  
   // find the end of the encoding data
   //~ this ought to parse PostScript tokens
   if (!strncmp(line, "/Encoding StandardEncoding def", 30)) {
@@ -243,7 +244,7 @@ void FoFiType1::parse() {
       for (j = 0, line = getNextLine(line);
 	   j < 300 && line && (line1 = getNextLine(line));
 	   ++j, line = line1) {
-	if ((n = (int)(line1 - line)) > 255) {
+        if ((n = (int)(line1 - line)) > 255) {
 	  error(errSyntaxWarning, -1, "FoFiType1::parse a line has more than 255 characters, we don't support this");
 	  n = 255;
 	}
@@ -263,7 +264,7 @@ void FoFiType1::parse() {
 	    } else {
 	      break;
 	    }
-	    for (; *p >= '0' && *p < '0' + base; ++p) {
+	    for (; *p >= '0' && *p < '0' + base && code < INT_MAX / (base + (*p - '0')); ++p) {
 	      code = code * base + (*p - '0');
 	    }
 	    for (; *p == ' ' || *p == '\t'; ++p) ;
