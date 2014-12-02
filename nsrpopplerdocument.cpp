@@ -99,8 +99,8 @@ NSRPopplerDocument::renderPage (int page)
 
 	bool isLandscape = (qAbs (_page->getRotate ()) % 180) == 90;
 
-	double pageWidth = (((getRotation () % 180) == 90 & !isLandscape) ||
-			    ((getRotation () % 180) == 0 & isLandscape)) ?
+	double pageWidth = (((getRotation () % 180) == 90 && !isLandscape) ||
+			    ((getRotation () % 180) == 0 && isLandscape)) ?
 				_page->getCropHeight () : _page->getCropWidth ();
 
 	double minZoom, maxZoom;
