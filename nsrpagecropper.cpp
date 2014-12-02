@@ -84,8 +84,8 @@ NSRPageCropper::findCropPads (unsigned char *data,
 			bDelta = (blue - dataPtr[col * px + pxShift + 2]) / blue;
 
 			if (fabs (rDelta) > NSR_CORE_CROP_AGGRESSIVE_VALUE ||
-			    fabs (gDelta > NSR_CORE_CROP_AGGRESSIVE_VALUE) ||
-			    fabs (bDelta > NSR_CORE_CROP_AGGRESSIVE_VALUE))
+			    fabs (gDelta) > NSR_CORE_CROP_AGGRESSIVE_VALUE ||
+			    fabs (bDelta) > NSR_CORE_CROP_AGGRESSIVE_VALUE)
 				++badCount;
 		}
 
@@ -110,8 +110,8 @@ NSRPageCropper::findCropPads (unsigned char *data,
 			bDelta = (blue - dataPtr[col * px + pxShift + 2]) / blue;
 
 			if (fabs (rDelta) > NSR_CORE_CROP_AGGRESSIVE_VALUE ||
-			    fabs (gDelta > NSR_CORE_CROP_AGGRESSIVE_VALUE) ||
-			    fabs (bDelta > NSR_CORE_CROP_AGGRESSIVE_VALUE))
+			    fabs (gDelta) > NSR_CORE_CROP_AGGRESSIVE_VALUE ||
+			    fabs (bDelta) > NSR_CORE_CROP_AGGRESSIVE_VALUE)
 				++badCount;
 		}
 
@@ -136,8 +136,8 @@ NSRPageCropper::findCropPads (unsigned char *data,
 			bDelta = (blue - dataPtr[row * stride + col * px + pxShift + 2]) / blue;
 
 			if (fabs (rDelta) > NSR_CORE_CROP_AGGRESSIVE_VALUE ||
-			    fabs (gDelta > NSR_CORE_CROP_AGGRESSIVE_VALUE) ||
-			    fabs (bDelta > NSR_CORE_CROP_AGGRESSIVE_VALUE))
+			    fabs (gDelta) > NSR_CORE_CROP_AGGRESSIVE_VALUE ||
+			    fabs (bDelta) > NSR_CORE_CROP_AGGRESSIVE_VALUE)
 				++badCount;		}
 
 		if (badCount > NSR_CORE_CROP_PIXEL_THRESHOLD) {
@@ -159,8 +159,8 @@ NSRPageCropper::findCropPads (unsigned char *data,
 			bDelta = (blue - dataPtr[row * stride + col * px + pxShift + 2]) / blue;
 
 			if (fabs (rDelta) > NSR_CORE_CROP_AGGRESSIVE_VALUE ||
-			    fabs (gDelta > NSR_CORE_CROP_AGGRESSIVE_VALUE) ||
-			    fabs (bDelta > NSR_CORE_CROP_AGGRESSIVE_VALUE))
+			    fabs (gDelta) > NSR_CORE_CROP_AGGRESSIVE_VALUE ||
+			    fabs (bDelta) > NSR_CORE_CROP_AGGRESSIVE_VALUE)
 				++badCount;
 		}
 
