@@ -11,7 +11,9 @@
 
 typedef uint32_t nsresult;
 
-#define nullptr NULL
+#ifndef nullptr
+#  define nullptr NULL
+#endif
 
 class nsCharSetProber;
 
