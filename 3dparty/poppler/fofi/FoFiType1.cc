@@ -75,7 +75,7 @@ FoFiType1::~FoFiType1() {
   if (name) {
     gfree(name);
   }
-  if (encoding && encoding != fofiType1StandardEncoding) {
+  if (encoding && encoding != (char **) fofiType1StandardEncoding) {
     for (i = 0; i < 256; ++i) {
       gfree(encoding[i]);
     }
@@ -136,7 +136,7 @@ void FoFiType1::writeEncoded(const char **newEncoding,
     }
   }
   (*outputFunc)(outputStream, "readonly def\n", 13);
-  
+
   // find the end of the encoding data
   //~ this ought to parse PostScript tokens
   if (!strncmp(line, "/Encoding StandardEncoding def", 30)) {
@@ -243,7 +243,7 @@ void FoFiType1::parse() {
       for (j = 0, line = getNextLine(line);
 	   j < 300 && line && (line1 = getNextLine(line));
 	   ++j, line = line1) {
-        if ((n = (int)(line1 - line)) > 255) {
+	if ((n = (int)(line1 - line)) > 255) {
 	  error(errSyntaxWarning, -1, "FoFiType1::parse a line has more than 255 characters, we don't support this");
 	  n = 255;
 	}

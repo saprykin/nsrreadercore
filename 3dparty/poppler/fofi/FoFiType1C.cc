@@ -89,8 +89,8 @@ FoFiType1C::~FoFiType1C() {
     delete name;
   }
   if (encoding &&
-      encoding != fofiType1StandardEncoding &&
-      encoding != fofiType1ExpertEncoding) {
+      encoding != (char **) fofiType1StandardEncoding &&
+      encoding != (char **) fofiType1ExpertEncoding) {
     for (i = 0; i < 256; ++i) {
       gfree(encoding[i]);
     }
@@ -168,7 +168,7 @@ void FoFiType1C::getFontMatrix(double *mat) {
       mat[0] = topDict.fontMatrix[0] * privateDicts[0].fontMatrix[0] +
 	       topDict.fontMatrix[1] * privateDicts[0].fontMatrix[2];
       mat[1] = topDict.fontMatrix[0] * privateDicts[0].fontMatrix[1] +
-               topDict.fontMatrix[1] * privateDicts[0].fontMatrix[3];
+	       topDict.fontMatrix[1] * privateDicts[0].fontMatrix[3];
       mat[2] = topDict.fontMatrix[2] * privateDicts[0].fontMatrix[0] +
 	       topDict.fontMatrix[3] * privateDicts[0].fontMatrix[2];
       mat[3] = topDict.fontMatrix[2] * privateDicts[0].fontMatrix[1] +
@@ -304,7 +304,7 @@ void FoFiType1C::convertToType1(char *psName, const char **newEncoding, GBool as
 
   // write the encoding
   (*outputFunc)(outputStream, "/Encoding ", 10);
-  if (!newEncoding && encoding == fofiType1StandardEncoding) {
+  if (!newEncoding && encoding == (char **) fofiType1StandardEncoding) {
     (*outputFunc)(outputStream, "StandardEncoding def\n", 21);
   } else {
     (*outputFunc)(outputStream, "256 array\n", 10);
@@ -889,10 +889,10 @@ void FoFiType1C::convertToType0(char *psName, int *codeMap, int nCodes,
     // if fdSelect is NULL, we have an 8-bit font, so just leave fd=0
     if (fdSelect) {
       for (j = i==0 ? 1 : 0; j < 256 && i+j < nCIDs; ++j) {
-        if (cidMap[i+j] >= 0) {
-          fd = fdSelect[cidMap[i+j]];
-          break;
-        }
+	if (cidMap[i+j] >= 0) {
+	  fd = fdSelect[cidMap[i+j]];
+	  break;
+	}
       }
     }
 
@@ -1348,7 +1348,7 @@ void FoFiType1C::cvtGlyph(int offset, int nBytes, GooString *charBuf,
       case 0x000a:		// callsubr
 	if (nOps >= 1) {
 	  subrBias = (subrIdx->len < 1240)
-	               ? 107 : (subrIdx->len < 33900) ? 1131 : 32768;
+		       ? 107 : (subrIdx->len < 33900) ? 1131 : 32768;
 	  k = subrBias + (int)ops[nOps - 1].num;
 	  --nOps;
 	  ok = gTrue;
@@ -1991,7 +1991,7 @@ GBool FoFiType1C::parse() {
     return gFalse;
   }
   gsubrBias = (gsubrIdx.len < 1240) ? 107
-                                    : (gsubrIdx.len < 33900) ? 1131 : 32768;
+				    : (gsubrIdx.len < 33900) ? 1131 : 32768;
 
   // read the first font name
   getIndexVal(&nameIdx, 0, &val, &parsedOk);
@@ -2016,7 +2016,7 @@ GBool FoFiType1C::parse() {
       }
       nFDs = fdIdx.len;
       privateDicts = (Type1CPrivateDict *)
-	                 gmallocn(nFDs, sizeof(Type1CPrivateDict));
+			 gmallocn(nFDs, sizeof(Type1CPrivateDict));
       for (i = 0; i < nFDs; ++i) {
 	getIndexVal(&fdIdx, i, &val, &parsedOk);
 	if (!parsedOk) {
@@ -2143,25 +2143,25 @@ void FoFiType1C::readTopDict() {
       case 0x0c05: topDict.paintType = (int)ops[0].num; break;
       case 0x0c06: topDict.charstringType = (int)ops[0].num; break;
       case 0x0c07: topDict.fontMatrix[0] = ops[0].num;
-	           topDict.fontMatrix[1] = ops[1].num;
-	           topDict.fontMatrix[2] = ops[2].num;
-	           topDict.fontMatrix[3] = ops[3].num;
-	           topDict.fontMatrix[4] = ops[4].num;
-	           topDict.fontMatrix[5] = ops[5].num;
+		   topDict.fontMatrix[1] = ops[1].num;
+		   topDict.fontMatrix[2] = ops[2].num;
+		   topDict.fontMatrix[3] = ops[3].num;
+		   topDict.fontMatrix[4] = ops[4].num;
+		   topDict.fontMatrix[5] = ops[5].num;
 		   topDict.hasFontMatrix = gTrue; break;
       case 0x000d: topDict.uniqueID = (int)ops[0].num; break;
       case 0x0005: topDict.fontBBox[0] = ops[0].num;
-	           topDict.fontBBox[1] = ops[1].num;
-	           topDict.fontBBox[2] = ops[2].num;
-	           topDict.fontBBox[3] = ops[3].num; break;
+		   topDict.fontBBox[1] = ops[1].num;
+		   topDict.fontBBox[2] = ops[2].num;
+		   topDict.fontBBox[3] = ops[3].num; break;
       case 0x0c08: topDict.strokeWidth = ops[0].num; break;
       case 0x000f: topDict.charsetOffset = (int)ops[0].num; break;
       case 0x0010: topDict.encodingOffset = (int)ops[0].num; break;
       case 0x0011: topDict.charStringsOffset = (int)ops[0].num; break;
       case 0x0012: topDict.privateSize = (int)ops[0].num;
-	           topDict.privateOffset = (int)ops[1].num; break;
+		   topDict.privateOffset = (int)ops[1].num; break;
       case 0x0c1e: topDict.registrySID = (int)ops[0].num;
-	           topDict.orderingSID = (int)ops[1].num;
+		   topDict.orderingSID = (int)ops[1].num;
 		   topDict.supplement = (int)ops[2].num; break;
       case 0x0c24: topDict.fdArrayOffset = (int)ops[0].num; break;
       case 0x0c25: topDict.fdSelectOffset = (int)ops[0].num; break;
@@ -2192,21 +2192,21 @@ void FoFiType1C::readFD(int offset, int length, Type1CPrivateDict *pDict) {
     }
     if (!ops[nOps - 1].isNum) {
       if (ops[nOps - 1].op == 0x0012) {
-        if (nOps < 3) {
-          parsedOk = gFalse;
-          return;
-        }
-        pSize = (int)ops[0].num;
-        pOffset = (int)ops[1].num;
-        break;
+	if (nOps < 3) {
+	  parsedOk = gFalse;
+	  return;
+	}
+	pSize = (int)ops[0].num;
+	pOffset = (int)ops[1].num;
+	break;
       } else if (ops[nOps - 1].op == 0x0c07) {
-        fontMatrix[0] = ops[0].num;
-        fontMatrix[1] = ops[1].num;
-        fontMatrix[2] = ops[2].num;
-        fontMatrix[3] = ops[3].num;
-        fontMatrix[4] = ops[4].num;
-        fontMatrix[5] = ops[5].num;
-        hasFontMatrix = gTrue;
+	fontMatrix[0] = ops[0].num;
+	fontMatrix[1] = ops[1].num;
+	fontMatrix[2] = ops[2].num;
+	fontMatrix[3] = ops[3].num;
+	fontMatrix[4] = ops[4].num;
+	fontMatrix[5] = ops[5].num;
+	hasFontMatrix = gTrue;
       }
       nOps = 0;
     }
