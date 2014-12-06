@@ -61,14 +61,14 @@ SecurityHandler *SecurityHandler::make(PDFDoc *docA, Object *encryptDictA) {
     } else {
 #endif
       error(errSyntaxError, -1, "Couldn't find the '{0:s}' security handler",
-	    filterObj.getName());
+            filterObj.getName());
       secHdlr = NULL;
 #ifdef ENABLE_PLUGINS
     }
 #endif
   } else {
     error(errSyntaxError, -1,
-	  "Missing or invalid 'Filter' entry in encryption dictionary");
+          "Missing or invalid 'Filter' entry in encryption dictionary");
     secHdlr = NULL;
   }
   filterObj.free();
@@ -83,7 +83,7 @@ SecurityHandler::~SecurityHandler() {
 }
 
 GBool SecurityHandler::checkEncryption(GooString *ownerPassword,
-				       GooString *userPassword) {
+                                       GooString *userPassword) {
   void *authData;
   GBool ok;
   int i;
@@ -111,8 +111,8 @@ GBool SecurityHandler::checkEncryption(GooString *ownerPassword,
       GooString dummy;
       return checkEncryption(&dummy, &dummy);
     } else {
-      error(errCommandLine, -1, "Incorrect password");
-    }
+    error(errCommandLine, -1, "Incorrect password");
+  }
   }
   return ok;
 }
@@ -143,7 +143,7 @@ public:
 };
 
 StandardSecurityHandler::StandardSecurityHandler(PDFDoc *docA,
-						 Object *encryptDictA):
+                                                 Object *encryptDictA):
   SecurityHandler(docA)
 {
   Object versionObj, revisionObj, lengthObj;
@@ -184,23 +184,23 @@ StandardSecurityHandler::StandardSecurityHandler(PDFDoc *docA,
     encVersion = versionObj.getInt();
     encRevision = revisionObj.getInt();
     if ((encRevision <= 4 &&
-	 ownerKeyObj.getString()->getLength() == 32 &&
-	 userKeyObj.getString()->getLength() == 32) ||
-	(encRevision == 5 &&
-	 // the spec says 48 bytes, but Acrobat pads them out longer
-	 ownerKeyObj.getString()->getLength() >= 48 &&
-	 userKeyObj.getString()->getLength() >= 48 &&
-	 ownerEncObj.isString() &&
-	 ownerEncObj.getString()->getLength() == 32 &&
-	 userEncObj.isString() &&
-	 userEncObj.getString()->getLength() == 32)) {
+         ownerKeyObj.getString()->getLength() == 32 &&
+         userKeyObj.getString()->getLength() == 32) ||
+        ((encRevision == 5 || encRevision == 6) &&
+         // the spec says 48 bytes, but Acrobat pads them out longer
+         ownerKeyObj.getString()->getLength() >= 48 &&
+         userKeyObj.getString()->getLength() >= 48 &&
+         ownerEncObj.isString() &&
+         ownerEncObj.getString()->getLength() == 32 &&
+         userEncObj.isString() &&
+         userEncObj.getString()->getLength() == 32)) {
       encAlgorithm = cryptRC4;
       // revision 2 forces a 40-bit key - some buggy PDF generators
       // set the Length value incorrectly
       if (encRevision == 2 || !lengthObj.isInt()) {
-	fileKeyLength = 5;
+        fileKeyLength = 5;
       } else {
-	fileKeyLength = lengthObj.getInt() / 8;
+        fileKeyLength = lengthObj.getInt() / 8;
       }
       encryptMetadata = gTrue;
       //~ this currently only handles a subset of crypt filter functionality
@@ -208,96 +208,98 @@ StandardSecurityHandler::StandardSecurityHandler(PDFDoc *docA,
       //~ doesn't handle the case where StmF, StrF, and EFF are not all the
       //~ same)
       if ((encVersion == 4 || encVersion == 5) &&
-	  (encRevision == 4 || encRevision == 5)) {
-	encryptDictA->dictLookup("CF", &cryptFiltersObj);
-	encryptDictA->dictLookup("StmF", &streamFilterObj);
-	encryptDictA->dictLookup("StrF", &stringFilterObj);
-	if (cryptFiltersObj.isDict() &&
-	    streamFilterObj.isName() &&
-	    stringFilterObj.isName() &&
-	    !strcmp(streamFilterObj.getName(), stringFilterObj.getName())) {
-	  if (!strcmp(streamFilterObj.getName(), "Identity")) {
-	    // no encryption on streams or strings
-	    encVersion = encRevision = -1;
-	  } else {
-	    if (cryptFiltersObj.dictLookup(streamFilterObj.getName(),
-					   &cryptFilterObj)->isDict()) {
-	      cryptFilterObj.dictLookup("CFM", &cfmObj);
-	      if (cfmObj.isName("V2")) {
-		encVersion = 2;
-		encRevision = 3;
-		if (cryptFilterObj.dictLookup("Length",
-					      &cfLengthObj)->isInt()) {
-		  //~ according to the spec, this should be cfLengthObj / 8
-		  fileKeyLength = cfLengthObj.getInt();
-		}
-		cfLengthObj.free();
-	      } else if (cfmObj.isName("AESV2")) {
-		encVersion = 2;
-		encRevision = 3;
-		encAlgorithm = cryptAES;
-		if (cryptFilterObj.dictLookup("Length",
-					      &cfLengthObj)->isInt()) {
-		  //~ according to the spec, this should be cfLengthObj / 8
-		  fileKeyLength = cfLengthObj.getInt();
-		}
-		cfLengthObj.free();
-	      } else if (cfmObj.isName("AESV3")) {
-		encVersion = 5;
-		encRevision = 5;
-		encAlgorithm = cryptAES256;
-		if (cryptFilterObj.dictLookup("Length",
-					      &cfLengthObj)->isInt()) {
-		  //~ according to the spec, this should be cfLengthObj / 8
-		  fileKeyLength = cfLengthObj.getInt();
-		}
-		cfLengthObj.free();
-	      }
-	      cfmObj.free();
-	    }
-	    cryptFilterObj.free();
-	  }
-	}
-	stringFilterObj.free();
-	streamFilterObj.free();
-	cryptFiltersObj.free();
-	if (encryptDictA->dictLookup("EncryptMetadata",
-				     &encryptMetadataObj)->isBool()) {
-	  encryptMetadata = encryptMetadataObj.getBool();
-	}
-	encryptMetadataObj.free();
+          (encRevision == 4 || encRevision == 5 || encRevision == 6)) {
+        encryptDictA->dictLookup("CF", &cryptFiltersObj);
+        encryptDictA->dictLookup("StmF", &streamFilterObj);
+        encryptDictA->dictLookup("StrF", &stringFilterObj);
+        if (cryptFiltersObj.isDict() &&
+            streamFilterObj.isName() &&
+            stringFilterObj.isName() &&
+            !strcmp(streamFilterObj.getName(), stringFilterObj.getName())) {
+          if (!strcmp(streamFilterObj.getName(), "Identity")) {
+            // no encryption on streams or strings
+            encVersion = encRevision = -1;
+          } else {
+            if (cryptFiltersObj.dictLookup(streamFilterObj.getName(),
+                                           &cryptFilterObj)->isDict()) {
+              cryptFilterObj.dictLookup("CFM", &cfmObj);
+              if (cfmObj.isName("V2")) {
+                encVersion = 2;
+                encRevision = 3;
+                if (cryptFilterObj.dictLookup("Length",
+                                              &cfLengthObj)->isInt()) {
+                  //~ according to the spec, this should be cfLengthObj / 8
+                  fileKeyLength = cfLengthObj.getInt();
+                }
+                cfLengthObj.free();
+              } else if (cfmObj.isName("AESV2")) {
+                encVersion = 2;
+                encRevision = 3;
+                encAlgorithm = cryptAES;
+                if (cryptFilterObj.dictLookup("Length",
+                                              &cfLengthObj)->isInt()) {
+                  //~ according to the spec, this should be cfLengthObj / 8
+                  fileKeyLength = cfLengthObj.getInt();
+                }
+                cfLengthObj.free();
+              } else if (cfmObj.isName("AESV3")) {
+                encVersion = 5;
+                if (encRevision != 5 && encRevision != 6) {
+                  encRevision = 6;
+                }
+                encAlgorithm = cryptAES256;
+                if (cryptFilterObj.dictLookup("Length",
+                                              &cfLengthObj)->isInt()) {
+                  //~ according to the spec, this should be cfLengthObj / 8
+                  fileKeyLength = cfLengthObj.getInt();
+                }
+                cfLengthObj.free();
+              }
+              cfmObj.free();
+            }
+            cryptFilterObj.free();
+          }
+        }
+        stringFilterObj.free();
+        streamFilterObj.free();
+        cryptFiltersObj.free();
+        if (encryptDictA->dictLookup("EncryptMetadata",
+                                     &encryptMetadataObj)->isBool()) {
+          encryptMetadata = encryptMetadataObj.getBool();
+        }
+        encryptMetadataObj.free();
       }
       permFlags = permObj.getInt();
       ownerKey = ownerKeyObj.getString()->copy();
       userKey = userKeyObj.getString()->copy();
       if (encVersion >= 1 && encVersion <= 2 &&
-	  encRevision >= 2 && encRevision <= 3) {
-	if (fileIDObj.isArray()) {
-	  if (fileIDObj.arrayGet(0, &fileIDObj1)->isString()) {
-	    fileID = fileIDObj1.getString()->copy();
-	  } else {
-	    fileID = new GooString();
-	  }
-	  fileIDObj1.free();
-	} else {
-	  fileID = new GooString();
-	}
-	if (fileKeyLength > 16 || fileKeyLength < 0) {
-	  fileKeyLength = 16;
-	}
-	ok = gTrue;
-      } else if (encVersion == 5 && encRevision == 5) {
-	fileID = new GooString(); // unused for V=R=5
-	ownerEnc = ownerEncObj.getString()->copy();
-	userEnc = userEncObj.getString()->copy();
-	if (fileKeyLength > 32 || fileKeyLength < 0) {
-	  fileKeyLength = 32;
-	}
-	ok = gTrue;
+          encRevision >= 2 && encRevision <= 3) {
+        if (fileIDObj.isArray()) {
+          if (fileIDObj.arrayGet(0, &fileIDObj1)->isString()) {
+            fileID = fileIDObj1.getString()->copy();
+          } else {
+            fileID = new GooString();
+          }
+          fileIDObj1.free();
+        } else {
+          fileID = new GooString();
+        }
+        if (fileKeyLength > 16 || fileKeyLength <= 0) {
+          fileKeyLength = 16;
+        }
+        ok = gTrue;
+      } else if (encVersion == 5 && (encRevision == 5 || encRevision == 6)) {
+        fileID = new GooString(); // unused for V=R=5
+        ownerEnc = ownerEncObj.getString()->copy();
+        userEnc = userEncObj.getString()->copy();
+        if (fileKeyLength > 32 || fileKeyLength <= 0) {
+          fileKeyLength = 32;
+        }
+        ok = gTrue;
       } else if (!(encVersion == -1 && encRevision == -1)) {
-	error(errUnimplemented, -1,
-	      "Unsupported version/revision ({0:d}/{1:d}) of Standard security handler",
-	      encVersion, encRevision);
+        error(errUnimplemented, -1,
+              "Unsupported version/revision ({0:d}/{1:d}) of Standard security handler",
+              encVersion, encRevision);
       }
     } else {
       error(errSyntaxError, -1, "Invalid encryption key length");
@@ -339,16 +341,16 @@ GBool StandardSecurityHandler::isUnencrypted() {
 }
 
 void *StandardSecurityHandler::makeAuthData(GooString *ownerPassword,
-					    GooString *userPassword) {
+                                            GooString *userPassword) {
   return new StandardAuthData(ownerPassword ? ownerPassword->copy()
-			                    : (GooString *)NULL,
-			      userPassword ? userPassword->copy()
-			                   : (GooString *)NULL);
+                                            : (GooString *)NULL,
+                              userPassword ? userPassword->copy()
+                                           : (GooString *)NULL);
 }
 
 void *StandardSecurityHandler::getAuthData() {
-  return NULL;
-}
+    return NULL;
+  }
 
 void StandardSecurityHandler::freeAuthData(void *authData) {
   delete (StandardAuthData *)authData;
@@ -367,11 +369,12 @@ GBool StandardSecurityHandler::authorize(void *authData) {
     ownerPassword = NULL;
     userPassword = NULL;
   }
+
   if (!Decrypt::makeFileKey(encVersion, encRevision, fileKeyLength,
-			    ownerKey, userKey, ownerEnc, userEnc,
-			    permFlags, fileID,
-			    ownerPassword, userPassword, fileKey,
-			    encryptMetadata, &ownerPasswordOk)) {
+                            ownerKey, userKey, ownerEnc, userEnc,
+                            permFlags, fileID,
+                            ownerPassword, userPassword, fileKey,
+                            encryptMetadata, &ownerPasswordOk)) {
     return gFalse;
   }
   return gTrue;
@@ -394,7 +397,7 @@ ExternalSecurityHandler::ExternalSecurityHandler(PDFDoc *docA,
   ok = gFalse;
 
   if (!(*xsh->newDoc)(xsh->handlerData, (XpdfDoc)docA,
-		      (XpdfObject)encryptDictA, &docData)) {
+                      (XpdfObject)encryptDictA, &docData)) {
     return;
   }
 
@@ -407,7 +410,7 @@ ExternalSecurityHandler::~ExternalSecurityHandler() {
 }
 
 void *ExternalSecurityHandler::makeAuthData(GooString *ownerPassword,
-					    GooString *userPassword) {
+                                            GooString *userPassword) {
   char *opw, *upw;
   void *authData;
 
@@ -443,7 +446,7 @@ GBool ExternalSecurityHandler::authorize(void *authData) {
   if (!(permFlags & xpdfPermissionOpen)) {
     return gFalse;
   }
-  if (!(*xsh->getKey)(xsh->handlerData, docData, &key, &length, &encVersion, &encRevision)) {
+  if (!(*xsh->getKey)(xsh->handlerData, docData, &key, &length, &encVersion)) {
     return gFalse;
   }
   if ((fileKeyLength = length) > 16) {

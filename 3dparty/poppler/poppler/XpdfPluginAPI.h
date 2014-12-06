@@ -192,7 +192,7 @@ typedef struct {
    * document.  Returns non-zero if successful.
    */
   XpdfBool (*getKey)(void *handlerData, void *docData,
-		     char **key, int *keyLen, int *cryptVersion, int *cryptRevision);
+		     char **key, int *keyLen, int *cryptVersion);
 
   /*
    * Free the data allocated by getKey.
@@ -226,6 +226,24 @@ XpdfObject (*_xpdfGetInfoDict)(XpdfDoc doc);
  * must be freed with xpdfFreeObj.)
  */
 XpdfObject (*_xpdfGetCatalog)(XpdfDoc doc);
+
+#ifdef _WIN32
+
+/*
+ * Get the handle for the viewer window associated with the specified
+ * document.  [Win32 only]
+ */
+HWND (*_xpdfWin32GetWindow)(XpdfDoc doc);
+
+#else
+
+/*
+ * Get the Motif widget for the viewer window associated with the
+ * specified document.  [X only]
+ */
+Widget (*_xpdfXGetWindow)(XpdfDoc doc);
+
+#endif
 
 /*------------------------------------------------------------------------
  * Object access functions

@@ -59,6 +59,8 @@ public:
 
 private:
 
+  static void r6Hash(Guchar *key, int keyLen, const char *pwd, int pwdLen,
+         char *userKey);
   static GBool makeFileKey2(int encVersion, int encRevision, int keyLength,
 			    GooString *ownerKey, GooString *userKey,
 			    int permissions, GooString *fileID,

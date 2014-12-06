@@ -51,11 +51,13 @@ static void aes256EncryptBlock(DecryptAES256State *s, Guchar *in);
 static void aes256DecryptBlock(DecryptAES256State *s, Guchar *in, GBool last);
 
 static void sha256(Guchar *msg, int msgLen, Guchar *hash);
+static void sha384(Guchar *msg, int msgLen, Guchar *hash);
+static void sha512(Guchar *msg, int msgLen, Guchar *hash);
 
 static const Guchar passwordPad[32] = {
   0x28, 0xbf, 0x4e, 0x5e, 0x4e, 0x75, 0x8a, 0x41,
-  0x64, 0x00, 0x4e, 0x56, 0xff, 0xfa, 0x01, 0x08, 
-  0x2e, 0x2e, 0x00, 0xb6, 0xd0, 0x68, 0x3e, 0x80, 
+  0x64, 0x00, 0x4e, 0x56, 0xff, 0xfa, 0x01, 0x08,
+  0x2e, 0x2e, 0x00, 0xb6, 0xd0, 0x68, 0x3e, 0x80,
   0x2f, 0x0c, 0xa9, 0xfe, 0x64, 0x53, 0x69, 0x7a
 };
 
@@ -73,6 +75,7 @@ GBool Decrypt::makeFileKey(int encVersion, int encRevision, int keyLength,
   DecryptAES256State state;
   Guchar test[127 + 56], test2[32];
   GooString *userPassword2;
+  const char *userPW;
   Guchar fState[256];
   Guchar tmpKey[16];
   Guchar fx, fy;
@@ -80,19 +83,25 @@ GBool Decrypt::makeFileKey(int encVersion, int encRevision, int keyLength,
 
   *ownerPasswordOk = gFalse;
 
-  if (encRevision == 5) {
+  if (encRevision == 5 || encRevision == 6) {
 
     // check the owner password
     if (ownerPassword) {
       //~ this is supposed to convert the password to UTF-8 using "SASLprep"
       len = ownerPassword->getLength();
       if (len > 127) {
-	len = 127;
+        len = 127;
       }
       memcpy(test, ownerPassword->getCString(), len);
       memcpy(test + len, ownerKey->getCString() + 32, 8);
       memcpy(test + len + 8, userKey->getCString(), 48);
       sha256(test, len + 56, test);
+
+      if (encRevision == 6) {
+          r6Hash(test, 32, ownerPassword->getCString(), len,
+                 userKey->getCString());
+      }
+
       if (!memcmp(test, ownerKey->getCString(), 32)) {
 
 	// compute the file key from the owner password
@@ -100,6 +109,12 @@ GBool Decrypt::makeFileKey(int encVersion, int encRevision, int keyLength,
 	memcpy(test + len, ownerKey->getCString() + 40, 8);
 	memcpy(test + len + 8, userKey->getCString(), 48);
 	sha256(test, len + 56, test);
+
+	if (encRevision == 6) {
+		r6Hash(test, 32, ownerPassword->getCString(), len,
+		       userKey->getCString());
+	 }
+
 	aes256KeyExpansion(&state, test, 32, gTrue);
 	for (i = 0; i < 16; ++i) {
 	  state.cbc[i] = 0;
@@ -118,19 +133,35 @@ GBool Decrypt::makeFileKey(int encVersion, int encRevision, int keyLength,
     // check the user password
     if (userPassword) {
       //~ this is supposed to convert the password to UTF-8 using "SASLprep"
+      userPW = userPassword->getCString();
       len = userPassword->getLength();
       if (len > 127) {
-	len = 127;
+        len = 127;
       }
-      memcpy(test, userPassword->getCString(), len);
+    } else {
+      userPW = "";
+      len = 0;
+    }
+
+      memcpy(test, userPW, len);
       memcpy(test + len, userKey->getCString() + 32, 8);
       sha256(test, len + 8, test);
+
+      if (encRevision == 6) {
+        r6Hash(test, 32, userPW, len, NULL);
+      }
+
       if (!memcmp(test, userKey->getCString(), 32)) {
 
 	// compute the file key from the user password
-	memcpy(test, userPassword->getCString(), len);
+	memcpy(test, userPW, len);
 	memcpy(test + len, userKey->getCString() + 40, 8);
 	sha256(test, len + 8, test);
+
+	if (encRevision == 6) {
+	    r6Hash(test, 32, userPW, len, NULL);
+	}
+
 	aes256KeyExpansion(&state, test, 32, gTrue);
 	for (i = 0; i < 16; ++i) {
 	  state.cbc[i] = 0;
@@ -141,9 +172,8 @@ GBool Decrypt::makeFileKey(int encVersion, int encRevision, int keyLength,
 			   gFalse);
 	memcpy(fileKey + 16, state.buf, 16);
 
-	return gTrue; 
+        return gTrue;
       }
-    }
 
     return gFalse;
   } else {
@@ -152,51 +182,106 @@ GBool Decrypt::makeFileKey(int encVersion, int encRevision, int keyLength,
     if (ownerPassword) {
       len = ownerPassword->getLength();
       if (len < 32) {
-	memcpy(test, ownerPassword->getCString(), len);
-	memcpy(test + len, passwordPad, 32 - len);
+        memcpy(test, ownerPassword->getCString(), len);
+        memcpy(test + len, passwordPad, 32 - len);
       } else {
-	memcpy(test, ownerPassword->getCString(), 32);
+        memcpy(test, ownerPassword->getCString(), 32);
       }
       md5(test, 32, test);
       if (encRevision == 3) {
-	for (i = 0; i < 50; ++i) {
-	  md5(test, keyLength, test);
-	}
+        for (i = 0; i < 50; ++i) {
+          md5(test, keyLength, test);
+        }
       }
       if (encRevision == 2) {
-	rc4InitKey(test, keyLength, fState);
-	fx = fy = 0;
-	for (i = 0; i < 32; ++i) {
-	  test2[i] = rc4DecryptByte(fState, &fx, &fy, ownerKey->getChar(i));
-	}
+        rc4InitKey(test, keyLength, fState);
+        fx = fy = 0;
+        for (i = 0; i < 32; ++i) {
+          test2[i] = rc4DecryptByte(fState, &fx, &fy, ownerKey->getChar(i));
+        }
       } else {
-	memcpy(test2, ownerKey->getCString(), 32);
-	for (i = 19; i >= 0; --i) {
-	  for (j = 0; j < keyLength; ++j) {
-	    tmpKey[j] = test[j] ^ i;
-	  }
-	  rc4InitKey(tmpKey, keyLength, fState);
-	  fx = fy = 0;
-	  for (j = 0; j < 32; ++j) {
-	    test2[j] = rc4DecryptByte(fState, &fx, &fy, test2[j]);
-	  }
-	}
+        memcpy(test2, ownerKey->getCString(), 32);
+        for (i = 19; i >= 0; --i) {
+          for (j = 0; j < keyLength; ++j) {
+            tmpKey[j] = test[j] ^ i;
+          }
+          rc4InitKey(tmpKey, keyLength, fState);
+          fx = fy = 0;
+          for (j = 0; j < 32; ++j) {
+            test2[j] = rc4DecryptByte(fState, &fx, &fy, test2[j]);
+          }
+        }
       }
       userPassword2 = new GooString((char *)test2, 32);
       if (makeFileKey2(encVersion, encRevision, keyLength, ownerKey, userKey,
-		       permissions, fileID, userPassword2, fileKey,
-		       encryptMetadata)) {
-	*ownerPasswordOk = gTrue;
-	delete userPassword2;
-	return gTrue;
+                       permissions, fileID, userPassword2, fileKey,
+                       encryptMetadata)) {
+        *ownerPasswordOk = gTrue;
+        delete userPassword2;
+        return gTrue;
       }
       delete userPassword2;
     }
 
     // try using the supplied user password
     return makeFileKey2(encVersion, encRevision, keyLength, ownerKey, userKey,
-			permissions, fileID, userPassword, fileKey,
-			encryptMetadata);
+                        permissions, fileID, userPassword, fileKey,
+                        encryptMetadata);
+  }
+}
+
+void Decrypt::r6Hash(Guchar *key, int keyLen, const char *pwd, int pwdLen,
+         char *userKey) {
+  Guchar key1[64*(127+64+48)];
+  DecryptAESState state128;
+  int n, i, j, k;
+
+  i = 0;
+  while (1) {
+    memcpy(key1, pwd, pwdLen);
+    memcpy(key1 + pwdLen, key, keyLen);
+    n = pwdLen + keyLen;
+    if (userKey) {
+      memcpy(key1 + pwdLen + keyLen, userKey, 48);
+      n += 48;
+    }
+    for (j = 1; j < 64; ++j) {
+      memcpy(key1 + j * n, key1, n);
+    }
+    n *= 64;
+    aesKeyExpansion(&state128, key, 16, gFalse);
+    for (j = 0; j < 16; ++j) {
+      state128.cbc[j] = key[16+j];
+    }
+    for (j = 0; j < n; j += 16) {
+      aesEncryptBlock(&state128, key1 + j);
+      memcpy(key1 + j, state128.buf, 16);
+    }
+    k = 0;
+    for (j = 0; j < 16; ++j) {
+      k += key1[j] % 3;
+    }
+    k %= 3;
+    switch (k) {
+    case 0:
+      sha256(key1, n, key);
+      keyLen = 32;
+      break;
+    case 1:
+      sha384(key1, n, key);
+      keyLen = 48;
+      break;
+    case 2:
+      sha512(key1, n, key);
+      keyLen = 64;
+      break;
+    }
+    // from the spec, it appears that i should be incremented after
+    // the test, but that doesn't match what Adobe does
+    ++i;
+    if (i >= 64 && key1[n - 1] <= i - 32) {
+      break;
+    }
   }
 }
 
@@ -258,12 +343,12 @@ GBool Decrypt::makeFileKey2(int encVersion, int encRevision, int keyLength,
     memcpy(test, userKey->getCString(), 32);
     for (i = 19; i >= 0; --i) {
       for (j = 0; j < keyLength; ++j) {
-	tmpKey[j] = fileKey[j] ^ i;
+        tmpKey[j] = fileKey[j] ^ i;
       }
       rc4InitKey(tmpKey, keyLength, fState);
       fx = fy = 0;
       for (j = 0; j < 32; ++j) {
-	test[j] = rc4DecryptByte(fState, &fx, &fy, test[j]);
+        test[j] = rc4DecryptByte(fState, &fx, &fy, test[j]);
       }
     }
     memcpy(buf, passwordPad, 32);
@@ -283,7 +368,7 @@ GBool Decrypt::makeFileKey2(int encVersion, int encRevision, int keyLength,
 //------------------------------------------------------------------------
 
 BaseCryptStream::BaseCryptStream(Stream *strA, Guchar *fileKey, CryptAlgorithm algoA,
-				 int keyLength, int objNum, int objGen):
+                                 int keyLength, int objNum, int objGen):
   FilterStream(strA)
 {
   int i;
@@ -369,7 +454,7 @@ void BaseCryptStream::setAutoDelete(GBool val) {
 //------------------------------------------------------------------------
 
 EncryptStream::EncryptStream(Stream *strA, Guchar *fileKey, CryptAlgorithm algoA,
-			     int keyLength, int objNum, int objGen):
+                             int keyLength, int objNum, int objGen):
   BaseCryptStream(strA, fileKey, algoA, keyLength, objNum, objGen)
 {
   // Fill the CBC initialization vector for AES and AES-256
@@ -457,7 +542,7 @@ int EncryptStream::lookChar() {
 //------------------------------------------------------------------------
 
 DecryptStream::DecryptStream(Stream *strA, Guchar *fileKey, CryptAlgorithm algoA,
-			     int keyLength, int objNum, int objGen):
+                             int keyLength, int objNum, int objGen):
   BaseCryptStream(strA, fileKey, algoA, keyLength, objNum, objGen)
 {
 }
@@ -476,16 +561,12 @@ void DecryptStream::reset() {
     break;
   case cryptAES:
     aesKeyExpansion(&state.aes, objKey, objKeyLength, gTrue);
-    for (i = 0; i < 16; ++i) {
-      state.aes.cbc[i] = str->getChar();
-    }
+    str->doGetChars (16, state.aes.cbc);
     state.aes.bufIdx = 16;
     break;
   case cryptAES256:
     aes256KeyExpansion(&state.aes256, objKey, objKeyLength, gTrue);
-    for (i = 0; i < 16; ++i) {
-      state.aes256.cbc[i] = str->getChar();
-    }
+    str->doGetChars (16, state.aes256.cbc);
     state.aes256.bufIdx = 16;
     break;
   }
@@ -507,8 +588,8 @@ int DecryptStream::lookChar() {
     break;
   case cryptAES:
     if (state.aes.bufIdx == 16) {
-      if (aesReadBlock(str, in, gFalse)) {
-        aesDecryptBlock(&state.aes, in, str->lookChar() == EOF);
+        if (str->doGetChars (16, in) == 16) {
+            aesDecryptBlock(&state.aes, in, str->lookChar() == EOF);
       }
     }
     if (state.aes.bufIdx == 16) {
@@ -519,7 +600,7 @@ int DecryptStream::lookChar() {
     break;
   case cryptAES256:
     if (state.aes256.bufIdx == 16) {
-      if (aesReadBlock(str, in, gFalse)) {
+      if (str->doGetChars (16, in) == 16) {
         aes256DecryptBlock(&state.aes256, in, str->lookChar() == EOF);
       }
     }
@@ -836,7 +917,7 @@ static inline void addRoundKey(Guchar *state, Guint *w) {
 }
 
 static void aesKeyExpansion(DecryptAESState *s,
-			    Guchar *objKey, int /*objKeyLen*/, GBool decrypt) {
+                            Guchar *objKey, int /*objKeyLen*/, GBool decrypt) {
   Guint temp;
   int i, round;
 
@@ -865,12 +946,12 @@ static void aesKeyExpansion(DecryptAESState *s,
 static void aesEncryptBlock(DecryptAESState *s, Guchar *in) {
   int c, round;
 
-  // initial state (input is xor'd with previous output because of CBC)
+  // initial state + CBC
   for (c = 0; c < 4; ++c) {
-    s->state[c] = in[4*c] ^ s->buf[4*c];
-    s->state[4+c] = in[4*c+1] ^ s->buf[4*c+1];
-    s->state[8+c] = in[4*c+2] ^ s->buf[4*c+2];
-    s->state[12+c] = in[4*c+3] ^ s->buf[4*c+3];
+    s->state[c] = in[4*c] ^ s->cbc[4*c];
+    s->state[4+c] = in[4*c+1] ^ s->cbc[4*c+1];
+    s->state[8+c] = in[4*c+2] ^ s->cbc[4*c+2];
+    s->state[12+c] = in[4*c+3] ^ s->cbc[4*c+3];
   }
 
   // round 0
@@ -889,14 +970,13 @@ static void aesEncryptBlock(DecryptAESState *s, Guchar *in) {
   shiftRows(s->state);
   addRoundKey(s->state, &s->w[10 * 4]);
 
+  // output + save for next CBC
   for (c = 0; c < 4; ++c) {
-    s->buf[4*c] = s->state[c];
-    s->buf[4*c+1] = s->state[4+c];
-    s->buf[4*c+2] = s->state[8+c];
-    s->buf[4*c+3] = s->state[12+c];
+    s->buf[4*c] = s->cbc[4*c] = s->state[c];
+    s->buf[4*c+1] = s->cbc[4*c+1] = s->state[4+c];
+    s->buf[4*c+2] = s->cbc[4*c+2] = s->state[8+c];
+    s->buf[4*c+3] = s->cbc[4*c+3] = s->state[12+c];
   }
-
-  s->bufIdx = 0;
 }
 
 static void aesDecryptBlock(DecryptAESState *s, Guchar *in, GBool last) {
@@ -958,7 +1038,7 @@ static void aesDecryptBlock(DecryptAESState *s, Guchar *in, GBool last) {
 //------------------------------------------------------------------------
 
 static void aes256KeyExpansion(DecryptAES256State *s,
-			       Guchar *objKey, int objKeyLen, GBool decrypt) {
+                               Guchar *objKey, int objKeyLen, GBool decrypt) {
   Guint temp;
   int i, round;
 
@@ -1074,11 +1154,6 @@ static void aes256DecryptBlock(DecryptAES256State *s, Guchar *in, GBool last) {
       s->buf[i] = s->buf[i-n];
     }
     s->bufIdx = n;
-    if (n > 16)
-    {
-      error(errSyntaxError, -1, "Reducing bufIdx from {0:d} to 16 to not crash", n);
-      s->bufIdx = 16;
-    }
   }
 }
 
@@ -1093,22 +1168,22 @@ static inline Gulong rotateLeft(Gulong x, int r) {
 }
 
 static inline Gulong md5Round1(Gulong a, Gulong b, Gulong c, Gulong d,
-			       Gulong Xk,  Gulong s, Gulong Ti) {
+                               Gulong Xk,  Gulong s, Gulong Ti) {
   return b + rotateLeft((a + ((b & c) | (~b & d)) + Xk + Ti), s);
 }
 
 static inline Gulong md5Round2(Gulong a, Gulong b, Gulong c, Gulong d,
-			       Gulong Xk,  Gulong s, Gulong Ti) {
+                               Gulong Xk,  Gulong s, Gulong Ti) {
   return b + rotateLeft((a + ((b & d) | (c & ~d)) + Xk + Ti), s);
 }
 
 static inline Gulong md5Round3(Gulong a, Gulong b, Gulong c, Gulong d,
-			       Gulong Xk,  Gulong s, Gulong Ti) {
+                               Gulong Xk,  Gulong s, Gulong Ti) {
   return b + rotateLeft((a + (b ^ c ^ d) + Xk + Ti), s);
 }
 
 static inline Gulong md5Round4(Gulong a, Gulong b, Gulong c, Gulong d,
-			       Gulong Xk,  Gulong s, Gulong Ti) {
+                               Gulong Xk,  Gulong s, Gulong Ti) {
   return b + rotateLeft((a + (c ^ (b | ~d)) + Xk + Ti), s);
 }
 
@@ -1142,16 +1217,16 @@ void md5(Guchar *msg, int msgLen, Guchar *digest) {
       x[j] = (((((msg[k+3] << 8) + msg[k+2]) << 8) + msg[k+1]) << 8) + msg[k];
     if (i == n64 - 1) {
       if (k == msgLen - 3)
-	x[j] = 0x80000000 + (((msg[k+2] << 8) + msg[k+1]) << 8) + msg[k];
+        x[j] = 0x80000000 + (((msg[k+2] << 8) + msg[k+1]) << 8) + msg[k];
       else if (k == msgLen - 2)
-	x[j] = 0x800000 + (msg[k+1] << 8) + msg[k];
+        x[j] = 0x800000 + (msg[k+1] << 8) + msg[k];
       else if (k == msgLen - 1)
-	x[j] = 0x8000 + msg[k];
+        x[j] = 0x8000 + msg[k];
       else
-	x[j] = 0x80;
+        x[j] = 0x80;
       ++j;
       while (j < 16)
-	x[j++] = 0;
+        x[j++] = 0;
       x[14] = msgLen << 3;
     }
 
@@ -1413,5 +1488,272 @@ static void sha256(Guchar *msg, int msgLen, Guchar *hash) {
     hash[i*4 + 1] = (Guchar)(H[i] >> 16);
     hash[i*4 + 2] = (Guchar)(H[i] >> 8);
     hash[i*4 + 3] = (Guchar)H[i];
+  }
+}
+
+//------------------------------------------------------------------------
+// SHA-384 and SHA-512 hashes
+//------------------------------------------------------------------------
+
+typedef unsigned long long SHA512Uint64;
+
+static SHA512Uint64 sha512K[80] = {
+  0x428a2f98d728ae22LL, 0x7137449123ef65cdLL,
+  0xb5c0fbcfec4d3b2fLL, 0xe9b5dba58189dbbcLL,
+  0x3956c25bf348b538LL, 0x59f111f1b605d019LL,
+  0x923f82a4af194f9bLL, 0xab1c5ed5da6d8118LL,
+  0xd807aa98a3030242LL, 0x12835b0145706fbeLL,
+  0x243185be4ee4b28cLL, 0x550c7dc3d5ffb4e2LL,
+  0x72be5d74f27b896fLL, 0x80deb1fe3b1696b1LL,
+  0x9bdc06a725c71235LL, 0xc19bf174cf692694LL,
+  0xe49b69c19ef14ad2LL, 0xefbe4786384f25e3LL,
+  0x0fc19dc68b8cd5b5LL, 0x240ca1cc77ac9c65LL,
+  0x2de92c6f592b0275LL, 0x4a7484aa6ea6e483LL,
+  0x5cb0a9dcbd41fbd4LL, 0x76f988da831153b5LL,
+  0x983e5152ee66dfabLL, 0xa831c66d2db43210LL,
+  0xb00327c898fb213fLL, 0xbf597fc7beef0ee4LL,
+  0xc6e00bf33da88fc2LL, 0xd5a79147930aa725LL,
+  0x06ca6351e003826fLL, 0x142929670a0e6e70LL,
+  0x27b70a8546d22ffcLL, 0x2e1b21385c26c926LL,
+  0x4d2c6dfc5ac42aedLL, 0x53380d139d95b3dfLL,
+  0x650a73548baf63deLL, 0x766a0abb3c77b2a8LL,
+  0x81c2c92e47edaee6LL, 0x92722c851482353bLL,
+  0xa2bfe8a14cf10364LL, 0xa81a664bbc423001LL,
+  0xc24b8b70d0f89791LL, 0xc76c51a30654be30LL,
+  0xd192e819d6ef5218LL, 0xd69906245565a910LL,
+  0xf40e35855771202aLL, 0x106aa07032bbd1b8LL,
+  0x19a4c116b8d2d0c8LL, 0x1e376c085141ab53LL,
+  0x2748774cdf8eeb99LL, 0x34b0bcb5e19b48a8LL,
+  0x391c0cb3c5c95a63LL, 0x4ed8aa4ae3418acbLL,
+  0x5b9cca4f7763e373LL, 0x682e6ff3d6b2b8a3LL,
+  0x748f82ee5defb2fcLL, 0x78a5636f43172f60LL,
+  0x84c87814a1f0ab72LL, 0x8cc702081a6439ecLL,
+  0x90befffa23631e28LL, 0xa4506cebde82bde9LL,
+  0xbef9a3f7b2c67915LL, 0xc67178f2e372532bLL,
+  0xca273eceea26619cLL, 0xd186b8c721c0c207LL,
+  0xeada7dd6cde0eb1eLL, 0xf57d4f7fee6ed178LL,
+  0x06f067aa72176fbaLL, 0x0a637dc5a2c898a6LL,
+  0x113f9804bef90daeLL, 0x1b710b35131c471bLL,
+  0x28db77f523047d84LL, 0x32caab7b40c72493LL,
+  0x3c9ebe0a15c9bebcLL, 0x431d67c49c100d4cLL,
+  0x4cc5d4becb3e42b6LL, 0x597f299cfc657e2aLL,
+  0x5fcb6fab3ad6faecLL, 0x6c44198c4a475817LL
+};
+
+static inline SHA512Uint64 rotr64(SHA512Uint64 x, Guint n) {
+  return (x >> n) | (x << (64 - n));
+}
+
+static inline SHA512Uint64 sha512Ch(SHA512Uint64 x, SHA512Uint64 y,
+            SHA512Uint64 z) {
+  return (x & y) ^ (~x & z);
+}
+
+static inline SHA512Uint64 sha512Maj(SHA512Uint64 x, SHA512Uint64 y,
+             SHA512Uint64 z) {
+  return (x & y) ^ (x & z) ^ (y & z);
+}
+
+static inline SHA512Uint64 sha512Sigma0(SHA512Uint64 x) {
+  return rotr64(x, 28) ^ rotr64(x, 34) ^ rotr64(x, 39);
+}
+
+static inline SHA512Uint64 sha512Sigma1(SHA512Uint64 x) {
+  return rotr64(x, 14) ^ rotr64(x, 18) ^ rotr64(x, 41);
+}
+
+static inline SHA512Uint64 sha512sigma0(SHA512Uint64 x) {
+  return rotr64(x, 1) ^ rotr64(x, 8) ^ (x >> 7);
+}
+
+static inline SHA512Uint64 sha512sigma1(SHA512Uint64 x) {
+  return rotr64(x, 19) ^ rotr64(x, 61) ^ (x >> 6);
+}
+
+static void sha512HashBlock(Guchar *blk, SHA512Uint64 *H) {
+  SHA512Uint64 W[80];
+  SHA512Uint64 a, b, c, d, e, f, g, h;
+  SHA512Uint64 T1, T2;
+  Guint t;
+
+  // 1. prepare the message schedule
+  for (t = 0; t < 16; ++t) {
+    W[t] = ((SHA512Uint64)blk[t*8] << 56) |
+           ((SHA512Uint64)blk[t*8 + 1] << 48) |
+           ((SHA512Uint64)blk[t*8 + 2] << 40) |
+           ((SHA512Uint64)blk[t*8 + 3] << 32) |
+           ((SHA512Uint64)blk[t*8 + 4] << 24) |
+           ((SHA512Uint64)blk[t*8 + 5] << 16) |
+           ((SHA512Uint64)blk[t*8 + 6] << 8) |
+           (SHA512Uint64)blk[t*8 + 7];
+  }
+  for (t = 16; t < 80; ++t) {
+    W[t] = sha512sigma1(W[t-2]) + W[t-7] + sha512sigma0(W[t-15]) + W[t-16];
+  }
+
+  // 2. initialize the eight working variables
+  a = H[0];
+  b = H[1];
+  c = H[2];
+  d = H[3];
+  e = H[4];
+  f = H[5];
+  g = H[6];
+  h = H[7];
+
+  // 3.
+  for (t = 0; t < 80; ++t) {
+    T1 = h + sha512Sigma1(e) + sha512Ch(e,f,g) + sha512K[t] + W[t];
+    T2 = sha512Sigma0(a) + sha512Maj(a,b,c);
+    h = g;
+    g = f;
+    f = e;
+    e = d + T1;
+    d = c;
+    c = b;
+    b = a;
+    a = T1 + T2;
+  }
+
+  // 4. compute the intermediate hash value
+  H[0] += a;
+  H[1] += b;
+  H[2] += c;
+  H[3] += d;
+  H[4] += e;
+  H[5] += f;
+  H[6] += g;
+  H[7] += h;
+}
+
+static void sha512(Guchar *msg, int msgLen, Guchar *hash) {
+  Guchar blk[128];
+  SHA512Uint64 H[8];
+  int blkLen, i;
+
+  H[0] = 0x6a09e667f3bcc908LL;
+  H[1] = 0xbb67ae8584caa73bLL;
+  H[2] = 0x3c6ef372fe94f82bLL;
+  H[3] = 0xa54ff53a5f1d36f1LL;
+  H[4] = 0x510e527fade682d1LL;
+  H[5] = 0x9b05688c2b3e6c1fLL;
+  H[6] = 0x1f83d9abfb41bd6bLL;
+  H[7] = 0x5be0cd19137e2179LL;
+
+  blkLen = 0;
+  for (i = 0; i + 128 <= msgLen; i += 128) {
+    sha512HashBlock(msg + i, H);
+  }
+  blkLen = msgLen - i;
+  if (blkLen > 0) {
+    memcpy(blk, msg + i, blkLen);
+  }
+
+  // pad the message
+  blk[blkLen++] = 0x80;
+  if (blkLen > 112) {
+    while (blkLen < 128) {
+      blk[blkLen++] = 0;
+    }
+    sha512HashBlock(blk, H);
+    blkLen = 0;
+  }
+  while (blkLen < 112) {
+    blk[blkLen++] = 0;
+  }
+  blk[112] = 0;
+  blk[113] = 0;
+  blk[114] = 0;
+  blk[115] = 0;
+  blk[116] = 0;
+  blk[117] = 0;
+  blk[118] = 0;
+  blk[119] = 0;
+  blk[120] = 0;
+  blk[121] = 0;
+  blk[122] = 0;
+  blk[123] = 0;
+  blk[124] = (Guchar)(msgLen >> 21);
+  blk[125] = (Guchar)(msgLen >> 13);
+  blk[126] = (Guchar)(msgLen >> 5);
+  blk[127] = (Guchar)(msgLen << 3);
+  sha512HashBlock(blk, H);
+
+  // copy the output into the buffer (convert words to bytes)
+  for (i = 0; i < 8; ++i) {
+    hash[i*8]     = (Guchar)(H[i] >> 56);
+    hash[i*8 + 1] = (Guchar)(H[i] >> 48);
+    hash[i*8 + 2] = (Guchar)(H[i] >> 40);
+    hash[i*8 + 3] = (Guchar)(H[i] >> 32);
+    hash[i*8 + 4] = (Guchar)(H[i] >> 24);
+    hash[i*8 + 5] = (Guchar)(H[i] >> 16);
+    hash[i*8 + 6] = (Guchar)(H[i] >> 8);
+    hash[i*8 + 7] = (Guchar)H[i];
+  }
+}
+
+static void sha384(Guchar *msg, int msgLen, Guchar *hash) {
+  Guchar blk[128];
+  SHA512Uint64 H[8];
+  int blkLen, i;
+
+  H[0] = 0xcbbb9d5dc1059ed8LL;
+  H[1] = 0x629a292a367cd507LL;
+  H[2] = 0x9159015a3070dd17LL;
+  H[3] = 0x152fecd8f70e5939LL;
+  H[4] = 0x67332667ffc00b31LL;
+  H[5] = 0x8eb44a8768581511LL;
+  H[6] = 0xdb0c2e0d64f98fa7LL;
+  H[7] = 0x47b5481dbefa4fa4LL;
+
+  blkLen = 0;
+  for (i = 0; i + 128 <= msgLen; i += 128) {
+    sha512HashBlock(msg + i, H);
+  }
+  blkLen = msgLen - i;
+  if (blkLen > 0) {
+    memcpy(blk, msg + i, blkLen);
+  }
+
+  // pad the message
+  blk[blkLen++] = 0x80;
+  if (blkLen > 112) {
+    while (blkLen < 128) {
+      blk[blkLen++] = 0;
+    }
+    sha512HashBlock(blk, H);
+    blkLen = 0;
+  }
+  while (blkLen < 112) {
+    blk[blkLen++] = 0;
+  }
+  blk[112] = 0;
+  blk[113] = 0;
+  blk[114] = 0;
+  blk[115] = 0;
+  blk[116] = 0;
+  blk[117] = 0;
+  blk[118] = 0;
+  blk[119] = 0;
+  blk[120] = 0;
+  blk[121] = 0;
+  blk[122] = 0;
+  blk[123] = 0;
+  blk[124] = (Guchar)(msgLen >> 21);
+  blk[125] = (Guchar)(msgLen >> 13);
+  blk[126] = (Guchar)(msgLen >> 5);
+  blk[127] = (Guchar)(msgLen << 3);
+  sha512HashBlock(blk, H);
+
+  // copy the output into the buffer (convert words to bytes)
+  for (i = 0; i < 6; ++i) {
+    hash[i*8]     = (Guchar)(H[i] >> 56);
+    hash[i*8 + 1] = (Guchar)(H[i] >> 48);
+    hash[i*8 + 2] = (Guchar)(H[i] >> 40);
+    hash[i*8 + 3] = (Guchar)(H[i] >> 32);
+    hash[i*8 + 4] = (Guchar)(H[i] >> 24);
+    hash[i*8 + 5] = (Guchar)(H[i] >> 16);
+    hash[i*8 + 6] = (Guchar)(H[i] >> 8);
+    hash[i*8 + 7] = (Guchar)H[i];
   }
 }
