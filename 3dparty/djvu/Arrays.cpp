@@ -14,7 +14,7 @@
 //C- but WITHOUT ANY WARRANTY; without even the implied warranty of
 //C- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //C- GNU General Public License for more details.
-//C- 
+//C-
 //C- DjVuLibre-3.5 is derived from the DjVu(r) Reference Library from
 //C- Lizardtech Software.  Lizardtech Software has authorized us to
 //C- replace the original DjVu(r) Reference Library notice by the following
@@ -35,16 +35,16 @@
 //C- | The computer code originally released by LizardTech under this
 //C- | license and unmodified by other parties is deemed "the LIZARDTECH
 //C- | ORIGINAL CODE."  Subject to any third party intellectual property
-//C- | claims, LizardTech grants recipient a worldwide, royalty-free, 
-//C- | non-exclusive license to make, use, sell, or otherwise dispose of 
-//C- | the LIZARDTECH ORIGINAL CODE or of programs derived from the 
-//C- | LIZARDTECH ORIGINAL CODE in compliance with the terms of the GNU 
-//C- | General Public License.   This grant only confers the right to 
-//C- | infringe patent claims underlying the LIZARDTECH ORIGINAL CODE to 
-//C- | the extent such infringement is reasonably necessary to enable 
-//C- | recipient to make, have made, practice, sell, or otherwise dispose 
-//C- | of the LIZARDTECH ORIGINAL CODE (or portions thereof) and not to 
-//C- | any greater extent that may be necessary to utilize further 
+//C- | claims, LizardTech grants recipient a worldwide, royalty-free,
+//C- | non-exclusive license to make, use, sell, or otherwise dispose of
+//C- | the LIZARDTECH ORIGINAL CODE or of programs derived from the
+//C- | LIZARDTECH ORIGINAL CODE in compliance with the terms of the GNU
+//C- | General Public License.   This grant only confers the right to
+//C- | infringe patent claims underlying the LIZARDTECH ORIGINAL CODE to
+//C- | the extent such infringement is reasonably necessary to enable
+//C- | recipient to make, have made, practice, sell, or otherwise dispose
+//C- | of the LIZARDTECH ORIGINAL CODE (or portions thereof) and not to
+//C- | any greater extent that may be necessary to utilize further
 //C- | modifications or combinations.
 //C- |
 //C- | The LIZARDTECH ORIGINAL CODE is provided "AS IS" WITHOUT WARRANTY
@@ -109,7 +109,7 @@ ArrayRep::ArrayRep(int xelsize,
    resize(lo,hi);
 }
 
-ArrayRep::ArrayRep(const ArrayRep & arr) : data(0), minlo(0), maxhi(-1),
+ArrayRep::ArrayRep(const ArrayRep & arr) : _ArrayRep (arr), data(0), minlo(0), maxhi(-1),
    lobound(0), hibound(-1), elsize(arr.elsize), destroy(arr.destroy),
    init1(arr.init1), init2(arr.init2), copy(arr.copy), insert(arr.insert)
 {
@@ -125,7 +125,7 @@ ArrayRep::~ArrayRep()
    data=0;
 }
 
-ArrayRep & 
+ArrayRep &
 ArrayRep::operator= (const ArrayRep & rep)
 {
    if (&rep == this) return *this;
@@ -149,8 +149,8 @@ ArrayRep::resize(int lo, int hi)
       destroy(data, lobound-minlo, hibound-minlo);
       operator delete(data);
       data = 0;
-      lobound = minlo = lo; 
-      hibound = maxhi = hi; 
+      lobound = minlo = lo;
+      hibound = maxhi = hi;
       return;
     }
   // Simple extension
@@ -185,7 +185,7 @@ ArrayRep::resize(int lo, int hi)
   // initialize
   init1(ndata, lo-nminlo, lobound-1-nminlo);
   init2(ndata, lobound-nminlo, hibound-nminlo,
-        data, lobound-minlo, hibound-minlo);
+	data, lobound-minlo, hibound-minlo);
   init1(ndata, hibound+1-nminlo, hi-nminlo);
   destroy(data, lobound-minlo, hibound-minlo);
 

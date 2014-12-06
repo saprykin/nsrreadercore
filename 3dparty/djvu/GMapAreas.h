@@ -14,7 +14,7 @@
 //C- but WITHOUT ANY WARRANTY; without even the implied warranty of
 //C- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //C- GNU General Public License for more details.
-//C- 
+//C-
 //C- DjVuLibre-3.5 is derived from the DjVu(r) Reference Library from
 //C- Lizardtech Software.  Lizardtech Software has authorized us to
 //C- replace the original DjVu(r) Reference Library notice by the following
@@ -35,16 +35,16 @@
 //C- | The computer code originally released by LizardTech under this
 //C- | license and unmodified by other parties is deemed "the LIZARDTECH
 //C- | ORIGINAL CODE."  Subject to any third party intellectual property
-//C- | claims, LizardTech grants recipient a worldwide, royalty-free, 
-//C- | non-exclusive license to make, use, sell, or otherwise dispose of 
-//C- | the LIZARDTECH ORIGINAL CODE or of programs derived from the 
-//C- | LIZARDTECH ORIGINAL CODE in compliance with the terms of the GNU 
-//C- | General Public License.   This grant only confers the right to 
-//C- | infringe patent claims underlying the LIZARDTECH ORIGINAL CODE to 
-//C- | the extent such infringement is reasonably necessary to enable 
-//C- | recipient to make, have made, practice, sell, or otherwise dispose 
-//C- | of the LIZARDTECH ORIGINAL CODE (or portions thereof) and not to 
-//C- | any greater extent that may be necessary to utilize further 
+//C- | claims, LizardTech grants recipient a worldwide, royalty-free,
+//C- | non-exclusive license to make, use, sell, or otherwise dispose of
+//C- | the LIZARDTECH ORIGINAL CODE or of programs derived from the
+//C- | LIZARDTECH ORIGINAL CODE in compliance with the terms of the GNU
+//C- | General Public License.   This grant only confers the right to
+//C- | infringe patent claims underlying the LIZARDTECH ORIGINAL CODE to
+//C- | the extent such infringement is reasonably necessary to enable
+//C- | recipient to make, have made, practice, sell, or otherwise dispose
+//C- | of the LIZARDTECH ORIGINAL CODE (or portions thereof) and not to
+//C- | any greater extent that may be necessary to utilize further
 //C- | modifications or combinations.
 //C- |
 //C- | The LIZARDTECH ORIGINAL CODE is provided "AS IS" WITHOUT WARRANTY
@@ -106,15 +106,15 @@ namespace DJVU {
     describes the area itsef:
     \begin{itemize}
        \item #url# If the optional #URL# is specified, the map area will
-             also work as a hyperlink meaning that if you click it with
+	     also work as a hyperlink meaning that if you click it with
 	     your mouse pointer, the browser will be advised to load
 	     the page referenced by the #URL#.
        \item #target# Defines where the specified #URL# should be loaded
        \item #comment# This is a string displayed in a status line or in
-             a popup window when the mouse pointer moves over the hyperlink
+	     a popup window when the mouse pointer moves over the hyperlink
 	     area
        \item #border_type#, #border_color# and #border_width# describes
-             how the area border should be drawn
+	     how the area border should be drawn
        \item #area_color# describes how the area should be highlighted.
     \end{itemize}
 
@@ -122,11 +122,11 @@ namespace DJVU {
     can be combined together:
     \begin{itemize}
        \item Visible border. The border of a map area can be drawn in several
-             different ways (like #XOR_BORDER# or #SHADOW_IN_BORDER#).
+	     different ways (like #XOR_BORDER# or #SHADOW_IN_BORDER#).
 	     It can be made always visible, or appearing only when the
 	     mouse pointer moves over the map area.
        \item Highlighted contents. Contents of rectangular map areas can
-             also be highlighted with some given color.
+	     also be highlighted with some given color.
     \end{itemize}
 */
 
@@ -171,7 +171,7 @@ public:
 	  If it's not empty then clicking this map area with the mouse
 	  will make the browser load the HTML page referenced by
 	  this #url#.  Note: This may also be a relative URL, so the
-          GURL class is not used. */
+	  GURL class is not used. */
    GUTF8String	url;
       /** The target for the #URL#. Standard targets are:
 	  \begin{itemize}
@@ -188,12 +188,12 @@ public:
 	     \item #NO_BORDER# - No border drawn
 	     \item #XOR_BORDER# - The border is drawn using XOR method.
 	     \item #SOLID_BORDER# - The border is drawn as a solid line
-	           of a given color.
+		   of a given color.
 	     \item #SHADOW_IN_BORDER# - Supported for \Ref{GMapRect} only.
-	     	   The map area area looks as if it was "pushed-in".
+		   The map area area looks as if it was "pushed-in".
 	     \item #SHADOW_OUT_BORDER# - The opposite of #SHADOW_OUT_BORDER#
 	     \item #SHADOW_EIN_BORDER# - Also for \Ref{GMapRect} only.
-	     	   Is translated as "shadow etched in"
+		   Is translated as "shadow etched in"
 	     \item #SHADOW_EOUT_BORDER# - The opposite of #SHADOW_EIN_BORDER#.
 	  \end{itemize} */
    BorderType	border_type;
@@ -207,7 +207,7 @@ public:
       /** Specified a color for highlighting the internal area of the map
 	  area. Will work with rectangular map areas only. The color is
 	  specified in \#00RRGGBB format. A special value of \#FFFFFFFF disables
-          highlighting and \#FF000000 is for XOR highlighting. */
+	  highlighting and \#FF000000 is for XOR highlighting. */
    unsigned long int	hilite_color;
 
       /// Returns 1 if the given point is inside the hyperlink area
@@ -238,7 +238,7 @@ public:
       /** Checks if the object is OK. Especially useful with \Ref{GMapPoly}
 	  where edges may intersect. If there is a problem it returns a
 	  string describing it. */
-   char const *	const check_object(void);
+   char const *	check_object(void);
       /** Stores the contents of the hyperlink object in a lisp-like format
 	  for saving into #ANTa# chunk (see \Ref{DjVuAnno}) */
    GUTF8String	print(void);
@@ -246,9 +246,9 @@ public:
    virtual GUTF8String get_xmltag(const int height) const=0;
 
       /// Virtual function returning the shape type.
-   virtual MapAreaType const get_shape_type( void ) const { return UNKNOWN; };
+   virtual MapAreaType get_shape_type( void ) const { return UNKNOWN; };
       /// Virtual function returning the shape name.
-   virtual char const * const	get_shape_name(void) const=0;
+   virtual char const * get_shape_name(void) const=0;
       /// Virtual function generating a copy of this object
    virtual GP<GMapArea>	get_copy(void) const=0;
       /// Virtual function generating a list of defining coordinates
@@ -268,9 +268,9 @@ protected:
    virtual void		gma_resize(int new_width, int new_height)=0;
    virtual void		gma_transform(const GRect & grect)=0;
    virtual bool		gma_is_point_inside(const int x, const int y) const=0;
-   virtual char const * const	gma_check_object(void) const=0;
+   virtual char const * gma_check_object(void) const=0;
    virtual GUTF8String	gma_print(void)=0;
-   
+
    void		clear_bounds(void) { bounds_initialized=0; }
 private:
    int		xmin, xmax, ymin, ymax;
@@ -308,12 +308,12 @@ public:
 
       /// Returns \Ref{GRect} describing the map area's rectangle
    operator GRect(void);
-   
+
    virtual GUTF8String get_xmltag(const int height) const;
       /// Returns MapRect
-   virtual MapAreaType const get_shape_type( void ) const { return RECT; };
+   virtual MapAreaType get_shape_type( void ) const { return RECT; };
       /// Returns #"rect"#
-   virtual char const * const	get_shape_name(void) const;
+   virtual char const * get_shape_name(void) const;
       /// Returns a copy of the rectangle
    virtual GP<GMapArea>	get_copy(void) const;
       /// Virtual function maps rectangle from one area to another using mapper
@@ -330,7 +330,7 @@ protected:
    virtual void		gma_resize(int new_width, int new_height);
    virtual void		gma_transform(const GRect & grect);
    virtual bool		gma_is_point_inside(const int x, const int y) const;
-   virtual char const * const gma_check_object(void) const;
+   virtual char const * gma_check_object(void) const;
    virtual GUTF8String	gma_print(void);
 };
 
@@ -371,7 +371,7 @@ public:
 
       /// Returns x coordinate of vertex number #i#
    int		get_x(int i) const;
-   
+
       /// Returns y coordinate of vertex number #i#
    int		get_y(int i) const;
 
@@ -383,16 +383,16 @@ public:
 
       /// Closes the polygon if it is not closed
    void     close_poly();
-      /// Optimizes the polygon 
+      /// Optimizes the polygon
    void		optimize_data(void);
-      /// Checks validity of the polygon 
-   char const * const	check_data(void);
+      /// Checks validity of the polygon
+   char const * check_data(void);
 
    virtual GUTF8String get_xmltag(const int height) const;
       /// Returns MapPoly
-   virtual MapAreaType const get_shape_type( void ) const { return POLY; };
+   virtual MapAreaType get_shape_type( void ) const { return POLY; };
       /// Returns #"poly"# all the time
-   virtual char const * const 	get_shape_name(void) const;
+   virtual char const * get_shape_name(void) const;
       /// Returns a copy of the polygon
    virtual GP<GMapArea>	get_copy(void) const;
       /// Virtual function generating a list of defining coordinates
@@ -410,7 +410,7 @@ protected:
    virtual void		gma_resize(int new_width, int new_height);
    virtual void		gma_transform(const GRect & grect);
    virtual bool		gma_is_point_inside(const int x, const int y) const;
-   virtual char const * const gma_check_object(void) const;
+   virtual char const * gma_check_object(void) const;
    virtual GUTF8String	gma_print(void);
 private:
    bool		open;
@@ -442,7 +442,7 @@ public:
    /// Create from the specified GRect.
    static GP<GMapOval> create(const GRect &rect) {return new GMapOval(rect);}
 
-   /// Virtual destructor. 
+   /// Virtual destructor.
    virtual ~GMapOval();
 
       /// Returns (xmax-xmin)/2
@@ -456,9 +456,9 @@ public:
 
    virtual GUTF8String get_xmltag(const int height) const;
       /// Returns MapOval
-   virtual MapAreaType const get_shape_type( void ) const { return OVAL; };
+   virtual MapAreaType get_shape_type( void ) const { return OVAL; };
       /// Returns #"oval"#
-   virtual char const * const get_shape_name(void) const;
+   virtual char const * get_shape_name(void) const;
       /// Returns a copy of the oval
    virtual GP<GMapArea>	get_copy(void) const;
       /// Virtual function maps oval from one area to another using mapper
@@ -474,14 +474,14 @@ protected:
    virtual void		gma_resize(int new_width, int new_height);
    virtual void		gma_transform(const GRect & grect);
    virtual bool		gma_is_point_inside(const int x, const int y) const;
-   virtual char const * const	gma_check_object(void) const;
+   virtual const char * gma_check_object(void) const;
    virtual GUTF8String	gma_print(void);
 private:
    int		rmax, rmin;
    int		a, b;
    int		xf1, yf1, xf2, yf2;
    int		xmin, ymin, xmax, ymax;
-   
+
    void		initialize(void);
 };
 
@@ -503,10 +503,10 @@ GMapRect::gma_get_xmax(void) const { return xmax; }
 inline int
 GMapRect::gma_get_ymax(void) const { return ymax; }
 
-inline char const * const
+inline char const *
 GMapRect::gma_check_object(void)  const{ return ""; }
 
-inline char const * const 
+inline char const *
 GMapRect::get_shape_name(void) const { return RECT_TAG; }
 
 inline int
@@ -521,7 +521,7 @@ GMapPoly::get_x(int i) const { return xx[i]; }
 inline int
 GMapPoly::get_y(int i) const { return yy[i]; }
 
-inline char const * const
+inline char const *
 GMapPoly::get_shape_name(void) const { return POLY_TAG; }
 
 inline int
@@ -548,8 +548,7 @@ GMapOval::gma_get_xmax(void) const { return xmax; }
 inline int
 GMapOval::gma_get_ymax(void) const { return ymax; }
 
-inline char const * const
-GMapOval::get_shape_name(void) const { return OVAL_TAG; }
+inline const char *GMapOval::get_shape_name(void) const { return OVAL_TAG; }
 
 //@}
 

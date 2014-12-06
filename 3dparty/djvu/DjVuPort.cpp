@@ -14,7 +14,7 @@
 //C- but WITHOUT ANY WARRANTY; without even the implied warranty of
 //C- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //C- GNU General Public License for more details.
-//C- 
+//C-
 //C- DjVuLibre-3.5 is derived from the DjVu(r) Reference Library from
 //C- Lizardtech Software.  Lizardtech Software has authorized us to
 //C- replace the original DjVu(r) Reference Library notice by the following
@@ -35,16 +35,16 @@
 //C- | The computer code originally released by LizardTech under this
 //C- | license and unmodified by other parties is deemed "the LIZARDTECH
 //C- | ORIGINAL CODE."  Subject to any third party intellectual property
-//C- | claims, LizardTech grants recipient a worldwide, royalty-free, 
-//C- | non-exclusive license to make, use, sell, or otherwise dispose of 
-//C- | the LIZARDTECH ORIGINAL CODE or of programs derived from the 
-//C- | LIZARDTECH ORIGINAL CODE in compliance with the terms of the GNU 
-//C- | General Public License.   This grant only confers the right to 
-//C- | infringe patent claims underlying the LIZARDTECH ORIGINAL CODE to 
-//C- | the extent such infringement is reasonably necessary to enable 
-//C- | recipient to make, have made, practice, sell, or otherwise dispose 
-//C- | of the LIZARDTECH ORIGINAL CODE (or portions thereof) and not to 
-//C- | any greater extent that may be necessary to utilize further 
+//C- | claims, LizardTech grants recipient a worldwide, royalty-free,
+//C- | non-exclusive license to make, use, sell, or otherwise dispose of
+//C- | the LIZARDTECH ORIGINAL CODE or of programs derived from the
+//C- | LIZARDTECH ORIGINAL CODE in compliance with the terms of the GNU
+//C- | General Public License.   This grant only confers the right to
+//C- | infringe patent claims underlying the LIZARDTECH ORIGINAL CODE to
+//C- | the extent such infringement is reasonably necessary to enable
+//C- | recipient to make, have made, practice, sell, or otherwise dispose
+//C- | of the LIZARDTECH ORIGINAL CODE (or portions thereof) and not to
+//C- | any greater extent that may be necessary to utilize further
 //C- | modifications or combinations.
 //C- |
 //C- | The LIZARDTECH ORIGINAL CODE is provided "AS IS" WITHOUT WARRANTY
@@ -120,7 +120,7 @@ void *
 DjVuPort::operator new (size_t sz)
 {
   if (!corpse_lock) corpse_lock=new GCriticalSection();
-  
+
   // Loop until we manage to allocate smth, which is not mentioned in
   // the 'corpse' list. Thus we will avoid allocating a new DjVuPort
   // on place of a dead one. Not *absolutely* secure (only 64 items
@@ -128,12 +128,12 @@ DjVuPort::operator new (size_t sz)
   void * addr=0;
   {
     GCriticalSectionLock lock(corpse_lock);
-    
+
     // Store here addresses, which were found in 'corpse' list.
     // We will free then in the end
     int addr_num=0;
     static void * addr_arr[MAX_CORPSE_NUM];
-    
+
     // Make at most MAX_CORPSE_NUM attempts. During each attempt
     // we try to allocate a block of memory for DjVuPort. If
     // the address of this block is not in the corpse list, we break
@@ -143,30 +143,30 @@ DjVuPort::operator new (size_t sz)
     {
       void * test_addr=::operator new (sz);
       addr_arr[addr_num++]=test_addr;
-      
+
       // See if 'test_addr' is in the 'corpse' list (was recently used)
       DjVuPortCorpse * corpse;
       for(corpse=corpse_head;corpse;corpse=corpse->next)
-        if (test_addr==corpse->port) break;
-        if (!corpse)
-        {
-          addr=test_addr;
-          addr_num--;
-          break;
-        }
+	if (test_addr==corpse->port) break;
+	if (!corpse)
+	{
+	  addr=test_addr;
+	  addr_num--;
+	  break;
+	}
     }
     // If all attempts failed (all addresses generated are already
     // in the list of corpses, allocate a new one and proceed
     // w/o additional checks
     if (!addr) addr=::operator new(sz);
-    
+
     // Here 'addr_arr[0<=i<addr_num]' contains addresses, that we
     // tried to allocate, and which need to be freed now
     // 'addr' contains address we want to use.
     addr_num--;
     while(addr_num>=0) ::operator delete(addr_arr[addr_num--]);
   }
-  
+
   DjVuPortcaster * pcaster=get_portcaster();
   GCriticalSectionLock lock(&pcaster->map_lock);
   pcaster->cont_map[addr]=0;
@@ -179,7 +179,7 @@ DjVuPort::operator delete(void * addr)
   if (corpse_lock)
   {
     GCriticalSectionLock lock(corpse_lock);
-    
+
     // Add 'addr' to the list of corpses
     if (corpse_tail)
     {
@@ -212,7 +212,7 @@ DjVuPort::DjVuPort()
   pcaster->cont_map[p] = (void*)this;
 }
 
-DjVuPort::DjVuPort(const DjVuPort & port)
+DjVuPort::DjVuPort(const DjVuPort & port) : GPEnabled (port)
 {
   DjVuPortcaster *pcaster = get_portcaster();
   GCriticalSectionLock lock(& pcaster->map_lock );
@@ -323,12 +323,12 @@ DjVuPortcaster::prefix_to_ports(const GUTF8String &prefix)
     {
       GCriticalSectionLock lock(&map_lock);
       for(GPosition pos=a2p_map;pos;++pos)
-        if (!prefix.cmp(a2p_map.key(pos), length))
-        {
-          DjVuPort * port=(DjVuPort *) a2p_map[pos];
-          GP<DjVuPort> gp_port=is_port_alive(port);
-          if (gp_port) list.append(gp_port);
-        }
+	if (!prefix.cmp(a2p_map.key(pos), length))
+	{
+	  DjVuPort * port=(DjVuPort *) a2p_map[pos];
+	  GP<DjVuPort> gp_port=is_port_alive(port);
+	  if (gp_port) list.append(gp_port);
+	}
     }
   }
   return list;
@@ -338,15 +338,15 @@ void
 DjVuPortcaster::del_port(const DjVuPort * port)
 {
   GCriticalSectionLock lock(&map_lock);
-  
+
   GPosition pos;
-  
+
   // Update the "aliases map"
   clear_aliases(port);
-  
+
   // Update "contents map"
   if (cont_map.contains(port, pos)) cont_map.del(pos);
-  
+
   // Update "route map"
   if (route_map.contains(port, pos))
   {
@@ -387,7 +387,7 @@ DjVuPortcaster::del_route(const DjVuPort * src, DjVuPort * dst)
 // Deletes route src->dst
 {
   GCriticalSectionLock lock(&map_lock);
-  
+
   if (route_map.contains(src))
   {
     GList<void *> & list=*(GList<void *> *) route_map[src];
@@ -408,19 +408,19 @@ DjVuPortcaster::copy_routes(DjVuPort * dst, const DjVuPort * src)
       // of a port and you want the copy to stay connected.
 {
   GCriticalSectionLock lock(&map_lock);
-  
+
   if (!cont_map.contains(src) || src->get_count()<=0 ||
     !cont_map.contains(dst) || dst->get_count()<=0) return;
-  
+
   for(GPosition pos=route_map;pos;++pos)
   {
     GList<void *> & list=*(GList<void *> *) route_map[pos];
     if (route_map.key(pos) == src)
       for(GPosition pos=list;pos;++pos)
-        add_route(dst, (DjVuPort *) list[pos]);
+	add_route(dst, (DjVuPort *) list[pos]);
     for(GPosition pos=list;pos;++pos)
       if ((DjVuPort*)(list[pos]) == src)
-        add_route((DjVuPort *) route_map.key(pos), dst);
+	add_route((DjVuPort *) route_map.key(pos), dst);
   }
 }
 
@@ -435,11 +435,11 @@ DjVuPortcaster::add_to_closure(GMap<const void *, void *> & set,
     {
       GList<void *> & list=*(GList<void *> *) route_map[dst];
       for(GPosition pos=list;pos;++pos)
-        {
-          DjVuPort * new_dst=(DjVuPort *) list[pos];
-          if (!set.contains(new_dst)) 
-            add_to_closure(set, new_dst, distance+1);
-        }
+	{
+	  DjVuPort * new_dst=(DjVuPort *) list[pos];
+	  if (!set.contains(new_dst))
+	    add_to_closure(set, new_dst, distance+1);
+	}
    }
 }
 
@@ -466,26 +466,26 @@ DjVuPortcaster::compute_closure(const DjVuPort * src, GPList<DjVuPort> &list, bo
        // Sort in depth order
        int max_dist=0;
        for(pos=set;pos;++pos)
-         if (max_dist < (int)(long)set[pos])
-           max_dist = (int)(long)set[pos];
+	 if (max_dist < (int)(long)set[pos])
+	   max_dist = (int)(long)set[pos];
        GArray<GList<const void*> > lists(0,max_dist);
        for(pos=set;pos;++pos)
-         lists[(int)(long)set[pos]].append(set.key(pos));
+	 lists[(int)(long)set[pos]].append(set.key(pos));
        for(int dist=0;dist<=max_dist;dist++)
-         for(pos=lists[dist];pos;++pos)
-           {
-             GP<DjVuPort> p = is_port_alive((DjVuPort*) lists[dist][pos]);
-             if (p) list.append(p);
-           }
+	 for(pos=lists[dist];pos;++pos)
+	   {
+	     GP<DjVuPort> p = is_port_alive((DjVuPort*) lists[dist][pos]);
+	     if (p) list.append(p);
+	   }
      }
    else
      {
        // Gather ports without order
        for(pos=set;pos;++pos)
-         {
-           GP<DjVuPort> p = is_port_alive((DjVuPort*) set.key(pos));
-           if (p) list.append(p);
-         }
+	 {
+	   GP<DjVuPort> p = is_port_alive((DjVuPort*) set.key(pos));
+	   if (p) list.append(p);
+	 }
      }
 }
 

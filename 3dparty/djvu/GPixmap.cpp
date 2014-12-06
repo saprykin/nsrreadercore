@@ -14,7 +14,7 @@
 //C- but WITHOUT ANY WARRANTY; without even the implied warranty of
 //C- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //C- GNU General Public License for more details.
-//C- 
+//C-
 //C- DjVuLibre-3.5 is derived from the DjVu(r) Reference Library from
 //C- Lizardtech Software.  Lizardtech Software has authorized us to
 //C- replace the original DjVu(r) Reference Library notice by the following
@@ -35,16 +35,16 @@
 //C- | The computer code originally released by LizardTech under this
 //C- | license and unmodified by other parties is deemed "the LIZARDTECH
 //C- | ORIGINAL CODE."  Subject to any third party intellectual property
-//C- | claims, LizardTech grants recipient a worldwide, royalty-free, 
-//C- | non-exclusive license to make, use, sell, or otherwise dispose of 
-//C- | the LIZARDTECH ORIGINAL CODE or of programs derived from the 
-//C- | LIZARDTECH ORIGINAL CODE in compliance with the terms of the GNU 
-//C- | General Public License.   This grant only confers the right to 
-//C- | infringe patent claims underlying the LIZARDTECH ORIGINAL CODE to 
-//C- | the extent such infringement is reasonably necessary to enable 
-//C- | recipient to make, have made, practice, sell, or otherwise dispose 
-//C- | of the LIZARDTECH ORIGINAL CODE (or portions thereof) and not to 
-//C- | any greater extent that may be necessary to utilize further 
+//C- | claims, LizardTech grants recipient a worldwide, royalty-free,
+//C- | non-exclusive license to make, use, sell, or otherwise dispose of
+//C- | the LIZARDTECH ORIGINAL CODE or of programs derived from the
+//C- | LIZARDTECH ORIGINAL CODE in compliance with the terms of the GNU
+//C- | General Public License.   This grant only confers the right to
+//C- | infringe patent claims underlying the LIZARDTECH ORIGINAL CODE to
+//C- | the extent such infringement is reasonably necessary to enable
+//C- | recipient to make, have made, practice, sell, or otherwise dispose
+//C- | of the LIZARDTECH ORIGINAL CODE (or portions thereof) and not to
+//C- | any greater extent that may be necessary to utilize further
 //C- | modifications or combinations.
 //C- |
 //C- | The LIZARDTECH ORIGINAL CODE is provided "AS IS" WITHOUT WARRANTY
@@ -126,20 +126,20 @@ new_gray_ramp(int grays,GPixel *ramp)
 
 
 static inline int
-mini(int x, int y) 
-{ 
+mini(int x, int y)
+{
   return (x < y ? x : y);
 }
 
 
 static inline int
-maxi(int x, int y) 
-{ 
+maxi(int x, int y)
+{
   return (x > y ? x : y);
 }
 
 
-static inline void 
+static inline void
 euclidian_ratio(int a, int b, int &q, int &r)
 {
   q = a / b;
@@ -244,8 +244,8 @@ GPixmap::GPixmap(const GBitmap &ref, const GRect &rect)
   G_ENDCATCH;
 }
 
-GPixmap::GPixmap(const GPixmap &ref)
-: nrows(0), ncolumns(0), pixels(0), pixels_data(0)
+GPixmap::GPixmap(const GPixmap &ref) : GPEnabled (ref),
+  nrows(0), ncolumns(0), pixels(0), pixels_data(0)
 {
   G_TRY
   {
@@ -281,7 +281,7 @@ GPixmap::GPixmap(const GPixmap &ref, const GRect &rect)
 //////////////////////////////////////////////////
 
 
-void 
+void
 GPixmap::init(int arows, int acolumns, const GPixel *filler)
 {
   if (arows != (unsigned short) arows ||
@@ -296,15 +296,15 @@ GPixmap::init(int arows, int acolumns, const GPixel *filler)
   {
     pixels = pixels_data = new GPixel[npix];
     if (filler)
-    { 
-      while (--npix>=0) 
-        pixels_data[npix] = *filler;
+    {
+      while (--npix>=0)
+	pixels_data[npix] = *filler;
     }
   }
 }
 
 
-void 
+void
 GPixmap::init(const GBitmap &ref, const GPixel *userramp)
 {
   init(ref.rows(), ref.columns(), 0);
@@ -316,8 +316,8 @@ GPixmap::init(const GBitmap &ref, const GPixel *userramp)
     const GPixel *ramp = userramp;
     if (!userramp)
 	{
-          gxramp.resize(256);
-          gxramp.clear();
+	  gxramp.resize(256);
+	  gxramp.clear();
 	  ramp = new_gray_ramp(ref.get_grays(),xramp);
 	}
     // Copy pixels
@@ -326,7 +326,7 @@ GPixmap::init(const GBitmap &ref, const GPixel *userramp)
       GPixel *dst = (*this)[y];
       const unsigned char *src = ref[y];
       for (int x=0; x<ncolumns; x++)
-        dst[x] = ramp[ src[x] ];
+	dst[x] = ramp[ src[x] ];
     }
     // Free ramp
 //    if (!userramp)
@@ -335,7 +335,7 @@ GPixmap::init(const GBitmap &ref, const GPixel *userramp)
 }
 
 
-void 
+void
 GPixmap::init(const GBitmap &ref, const GRect &rect, const GPixel *userramp)
 {
   init(rect.height(), rect.width(), 0);
@@ -353,8 +353,8 @@ GPixmap::init(const GBitmap &ref, const GRect &rect, const GPixel *userramp)
     if (!userramp)
 	{
 	  gxramp.resize(256);
-          gxramp.clear();
-          ramp = new_gray_ramp(ref.get_grays(),xramp);
+	  gxramp.clear();
+	  ramp = new_gray_ramp(ref.get_grays(),xramp);
 	}
     // copy pixels
     for (int y=rect2.ymin; y<rect2.ymax; y++)
@@ -362,7 +362,7 @@ GPixmap::init(const GBitmap &ref, const GRect &rect, const GPixel *userramp)
       GPixel *dst = (*this)[y];
       const unsigned char *src = ref[y+rect.ymin] + rect.xmin;
       for (int x=rect2.xmin; x<rect2.xmax; x++)
-        dst[x] = ramp[ src[x] ];
+	dst[x] = ramp[ src[x] ];
     }
     // free ramp
 //    if (!userramp)
@@ -371,7 +371,7 @@ GPixmap::init(const GBitmap &ref, const GRect &rect, const GPixel *userramp)
 }
 
 
-void 
+void
 GPixmap::init(const GPixmap &ref)
 {
   init(ref.rows(), ref.columns(), 0);
@@ -382,13 +382,13 @@ GPixmap::init(const GPixmap &ref)
       GPixel *dst = (*this)[y];
       const GPixel *src = ref[y];
       for (int x=0; x<ncolumns; x++)
-        dst[x] = src[x];
+	dst[x] = src[x];
     }
   }
 }
 
 
-void 
+void
 GPixmap::init(const GPixmap &ref, const GRect &rect)
 {
   init(rect.height(), rect.width(), 0);
@@ -404,13 +404,13 @@ GPixmap::init(const GPixmap &ref, const GRect &rect)
       GPixel *dst = (*this)[y];
       const GPixel *src = ref[y+rect.ymin] + rect.xmin;
       for (int x=rect2.xmin; x<rect2.xmax; x++)
-        dst[x] = src[x];
+	dst[x] = src[x];
     }
   }
 }
 
 
-void 
+void
 GPixmap::donate_data(GPixel *data, int w, int h)
 {
   destroy();
@@ -437,23 +437,23 @@ GPixmap::take_data(size_t &offset)
 //////////////////////////////////////////////////
 
 
-static unsigned int 
+static unsigned int
 read_integer(char &c, ByteStream &bs)
 {
   unsigned int x = 0;
   // eat blank before integer
-  while (c==' ' || c=='\t' || c=='\r' || c=='\n' || c=='#') 
+  while (c==' ' || c=='\t' || c=='\r' || c=='\n' || c=='#')
     {
-      if (c=='#') 
-        do { } while (bs.read(&c,1) && c!='\n' && c!='\r');
-      c = 0; 
+      if (c=='#')
+	do { } while (bs.read(&c,1) && c!='\n' && c!='\r');
+      c = 0;
       bs.read(&c, 1);
     }
   // check integer
   if (c<'0' || c>'9')
     G_THROW( ERR_MSG("GPixmap.no_int") );
   // eat integer
-  while (c>='0' && c<='9') 
+  while (c>='0' && c<='9')
     {
       x = x*10 + c - '0';
       c = 0;
@@ -463,7 +463,7 @@ read_integer(char &c, ByteStream &bs)
 }
 
 
-void 
+void
 GPixmap::init(ByteStream &bs)
 {
   // Read header
@@ -484,9 +484,9 @@ GPixmap::init(ByteStream &bs)
       raw = true;
       break;
     case ('P'<<8)+'1':
-    case ('P'<<8)+'4': 
+    case ('P'<<8)+'4':
       bs.seek(0L);
-      bm = GBitmap::create(bs); 
+      bm = GBitmap::create(bs);
       init(*bm);
       return;
     default:
@@ -495,7 +495,7 @@ GPixmap::init(ByteStream &bs)
       JPEGDecoder::decode(bs,*this);
       return;
 #else
-      
+
       G_THROW( ERR_MSG("GPixmap.unk_PPM") );
 #endif
     }
@@ -523,74 +523,74 @@ GPixmap::init(ByteStream &bs)
     {
       bytesperrow = ncolumns * bytespercomp;
       GTArray<unsigned char> line(bytesperrow);
-      for (int y=nrows-1; y>=0; y--) 
-        {
-          GPixel *p = (*this)[y];
-          unsigned char *g = &line[0];
-          if ( bs.readall((void*)g, bytesperrow) < (size_t)bytesperrow)
-            G_THROW( ByteStream::EndOfFile );
-          if (bytespercomp <= 1)
-            {
-              for (int x=0; x<ncolumns; x+=1, g+=1)
-                p[x].r = p[x].g = p[x].b = bramp[g[0]];
-            }
-          else
-            {
-              for (int x=0; x<ncolumns; x+=1, g+=2)
-                p[x].r = p[x].g = p[x].b = bramp[g[0]*256+g[1]];
-            }
-        }
+      for (int y=nrows-1; y>=0; y--)
+	{
+	  GPixel *p = (*this)[y];
+	  unsigned char *g = &line[0];
+	  if ( bs.readall((void*)g, bytesperrow) < (size_t)bytesperrow)
+	    G_THROW( ByteStream::EndOfFile );
+	  if (bytespercomp <= 1)
+	    {
+	      for (int x=0; x<ncolumns; x+=1, g+=1)
+		p[x].r = p[x].g = p[x].b = bramp[g[0]];
+	    }
+	  else
+	    {
+	      for (int x=0; x<ncolumns; x+=1, g+=2)
+		p[x].r = p[x].g = p[x].b = bramp[g[0]*256+g[1]];
+	    }
+	}
     }
   else if (raw)
     {
       bytesperrow = ncolumns * bytespercomp * 3;
       GTArray<unsigned char> line(bytesperrow);
-      for (int y=nrows-1; y>=0; y--) 
-        {
-          GPixel *p = (*this)[y];
-          unsigned char *rgb = &line[0];
-          if ( bs.readall((void*)rgb, bytesperrow) < (size_t)bytesperrow)
-            G_THROW( ByteStream::EndOfFile );
-          if (bytespercomp <= 1)
-            {
-              for (int x=0; x<ncolumns; x+=1, rgb+=3)
-                {
-                  p[x].r = bramp[rgb[0]];
-                  p[x].g = bramp[rgb[1]];
-                  p[x].b = bramp[rgb[2]];
-                }
-            }
-          else
-            for (int x=0; x<ncolumns; x+=1, rgb+=6)
-              {
-                p[x].r = bramp[rgb[0]*256+rgb[1]];
-                p[x].g = bramp[rgb[2]*256+rgb[3]];
-                p[x].b = bramp[rgb[4]*256+rgb[5]];
-              }
-        }
+      for (int y=nrows-1; y>=0; y--)
+	{
+	  GPixel *p = (*this)[y];
+	  unsigned char *rgb = &line[0];
+	  if ( bs.readall((void*)rgb, bytesperrow) < (size_t)bytesperrow)
+	    G_THROW( ByteStream::EndOfFile );
+	  if (bytespercomp <= 1)
+	    {
+	      for (int x=0; x<ncolumns; x+=1, rgb+=3)
+		{
+		  p[x].r = bramp[rgb[0]];
+		  p[x].g = bramp[rgb[1]];
+		  p[x].b = bramp[rgb[2]];
+		}
+	    }
+	  else
+	    for (int x=0; x<ncolumns; x+=1, rgb+=6)
+	      {
+		p[x].r = bramp[rgb[0]*256+rgb[1]];
+		p[x].g = bramp[rgb[2]*256+rgb[3]];
+		p[x].b = bramp[rgb[4]*256+rgb[5]];
+	      }
+	}
     }
   else
     {
-      for (int y=nrows-1; y>=0; y--) 
-        {
-          GPixel *p = (*this)[y];
-          for (int x=0; x<ncolumns; x++)
-            if (grey)
-              {
-                p[x].g = p[x].b = p[x].r = ramp[(int)read_integer(lookahead, bs)];
-              }
-            else
-              {
-                p[x].r = ramp[(int)read_integer(lookahead, bs)];
-                p[x].g = ramp[(int)read_integer(lookahead, bs)];
-                p[x].b = ramp[(int)read_integer(lookahead, bs)];
-              }
-        }
+      for (int y=nrows-1; y>=0; y--)
+	{
+	  GPixel *p = (*this)[y];
+	  for (int x=0; x<ncolumns; x++)
+	    if (grey)
+	      {
+		p[x].g = p[x].b = p[x].r = ramp[(int)read_integer(lookahead, bs)];
+	      }
+	    else
+	      {
+		p[x].r = ramp[(int)read_integer(lookahead, bs)];
+		p[x].g = ramp[(int)read_integer(lookahead, bs)];
+		p[x].b = ramp[(int)read_integer(lookahead, bs)];
+	      }
+	}
     }
 }
 
 
-void 
+void
 GPixmap::save_ppm(ByteStream &bs, int raw) const
 {
   GUTF8String head;
@@ -600,34 +600,34 @@ GPixmap::save_ppm(ByteStream &bs, int raw) const
     {
       int rowsize = ncolumns+ncolumns+ncolumns;
       GTArray<unsigned char> xrgb(rowsize);
-      for (int y=nrows-1; y>=0; y--) 
-        {
-          const GPixel *p = (*this)[y];
-          unsigned char *d = xrgb;
-          for (int x=0; x<ncolumns; x++) 
-            {
-              *d++ = p[x].r;
-              *d++ = p[x].g;
-              *d++ = p[x].b;
-            }
-          bs.writall((void*)(unsigned char*)xrgb, ncolumns * 3);
-        }
+      for (int y=nrows-1; y>=0; y--)
+	{
+	  const GPixel *p = (*this)[y];
+	  unsigned char *d = xrgb;
+	  for (int x=0; x<ncolumns; x++)
+	    {
+	      *d++ = p[x].r;
+	      *d++ = p[x].g;
+	      *d++ = p[x].b;
+	    }
+	  bs.writall((void*)(unsigned char*)xrgb, ncolumns * 3);
+	}
     }
   else
     {
-      for (int y=nrows-1; y>=0; y--) 
-        {
-          const GPixel *p = (*this)[y];
-          unsigned char eol='\n';
-          for (int x=0; x<ncolumns; )
-            {
-              head.format("%d %d %d  ", p[x].r, p[x].g, p[x].b);
-              bs.writall((void*)(const char *)head, head.length());
-              x += 1;
-              if (x==ncolumns || (x&0x7)==0) 
-                bs.write((void*)&eol, 1);          
-            }
-        }
+      for (int y=nrows-1; y>=0; y--)
+	{
+	  const GPixel *p = (*this)[y];
+	  unsigned char eol='\n';
+	  for (int x=0; x<ncolumns; )
+	    {
+	      head.format("%d %d %d  ", p[x].r, p[x].g, p[x].b);
+	      bs.writall((void*)(const char *)head, head.length());
+	      x += 1;
+	      if (x==ncolumns || (x&0x7)==0)
+		bs.write((void*)&eol, 1);
+	    }
+	}
     }
 }
 
@@ -641,7 +641,7 @@ GPixmap::save_ppm(ByteStream &bs, int raw) const
 
 static void
 color_correction_table(double gamma, GPixel white,
-                       unsigned char gtable[256][3] )
+		       unsigned char gtable[256][3] )
 {
   // Check argument
   if (gamma<0.1 || gamma>10.0)
@@ -650,24 +650,24 @@ color_correction_table(double gamma, GPixel white,
     {
       // Trivial correction
       for (int i=0; i<256; i++)
-        gtable[i][0] = gtable[i][1] = gtable[i][2] = i;
+	gtable[i][0] = gtable[i][1] = gtable[i][2] = i;
     }
   else
     {
       // Must compute the correction
       for (int i=0; i<256; i++)
-        {
-          double x = (double)(i)/255.0;
+	{
+	  double x = (double)(i)/255.0;
 #ifdef BEZIERGAMMA
-          double t = ( sqrt(1.0+(gamma*gamma-1.0)*x) - 1.0 ) / (gamma - 1.0);
-          x = ( (1.0 - gamma)*t + 2.0 * gamma ) * t / (gamma + 1.0);
+	  double t = ( sqrt(1.0+(gamma*gamma-1.0)*x) - 1.0 ) / (gamma - 1.0);
+	  x = ( (1.0 - gamma)*t + 2.0 * gamma ) * t / (gamma + 1.0);
 #else
-          x = pow(x, 1.0/gamma);        
+	  x = pow(x, 1.0/gamma);
 #endif
-          gtable[i][0] = (int) floor(white.b * x + 0.5);
-          gtable[i][1] = (int) floor(white.g * x + 0.5);
-          gtable[i][2] = (int) floor(white.r * x + 0.5);
-        }
+	  gtable[i][0] = (int) floor(white.b * x + 0.5);
+	  gtable[i][1] = (int) floor(white.g * x + 0.5);
+	  gtable[i][2] = (int) floor(white.r * x + 0.5);
+	}
       // Make sure that min and max values are exactly black or white
       gtable[0][0] = 0;
       gtable[0][1] = 0;
@@ -680,7 +680,7 @@ color_correction_table(double gamma, GPixel white,
 
 static void
 color_correction_table_cache(double gamma, GPixel white,
-                             unsigned char gtable[256][3] )
+			     unsigned char gtable[256][3] )
 {
   // Compute color correction table
   if (gamma<1.001 && gamma>0.999 && white==GPixel::WHITE)
@@ -694,16 +694,16 @@ color_correction_table_cache(double gamma, GPixel white,
       static unsigned char ctable[256][3];
       GMonitorLock lock(&pixmap_monitor());
       if (gamma != lgamma || white != lwhite)
-        {
-          color_correction_table(gamma, white, ctable);
-          lgamma = gamma;
-          lwhite = white;
-        }
+	{
+	  color_correction_table(gamma, white, ctable);
+	  lgamma = gamma;
+	  lwhite = white;
+	}
       memcpy(gtable, ctable, 256*3*sizeof(unsigned char));
     }
 }
 
-void 
+void
 GPixmap::color_correct(double gamma_correction, GPixel white)
 {
   // Trivial corrections
@@ -725,7 +725,7 @@ GPixmap::color_correct(double gamma_correction, GPixel white)
   }
 }
 
-void 
+void
 GPixmap::color_correct(double gamma_correction)
 {
   // Trivial corrections
@@ -734,9 +734,9 @@ GPixmap::color_correct(double gamma_correction)
 }
 
 
-void 
+void
 GPixmap::color_correct(double gamma_correction, GPixel white,
-                       GPixel *pix, int npixels)
+		       GPixel *pix, int npixels)
 {
   // Trivial corrections
   if (gamma_correction>0.999 && gamma_correction<1.001 && white==GPixel::WHITE)
@@ -755,7 +755,7 @@ GPixmap::color_correct(double gamma_correction, GPixel white,
 }
 
 
-void 
+void
 GPixmap::color_correct(double gamma_correction, GPixel *pix, int npixels)
 {
   // Trivial corrections
@@ -775,7 +775,7 @@ GPixmap::ordered_666_dither(int xmin, int ymin)
   static unsigned char quantize[256+0x33+0x33];
   static unsigned char *quant = quantize + 0x33;
   static char  dither_ok = 0;
-  static short dither[16][16] = 
+  static short dither[16][16] =
   {
     {   0,192, 48,240, 12,204, 60,252,  3,195, 51,243, 15,207, 63,255 },
     { 128, 64,176,112,140, 76,188,124,131, 67,179,115,143, 79,191,127 },
@@ -800,11 +800,11 @@ GPixmap::ordered_666_dither(int xmin, int ymin)
     int i, j;
     for (i=0; i<16; i++)
       for (j=0; j<16; j++)
-        dither[i][j] = ((255 - 2*dither[i][j]) * 0x33) / 512;    
+	dither[i][j] = ((255 - 2*dither[i][j]) * 0x33) / 512;
     j = -0x33;
     for (i=0x19; i<256; i+=0x33)
       while (j <= i)
-        quant[j++] = i-0x19;
+	quant[j++] = i-0x19;
     assert(i-0x19 == 0xff);
     while (j< 256+0x33)
       quant[j++] = i-0x19;
@@ -829,7 +829,7 @@ GPixmap::ordered_32k_dither(int xmin, int ymin)
   static unsigned char quantize[256+8+8];
   static unsigned char *quant = quantize + 8;
   static char  dither_ok = 0;
-  static short dither[16][16] = 
+  static short dither[16][16] =
   {
     {   0,192, 48,240, 12,204, 60,252,  3,195, 51,243, 15,207, 63,255 },
     { 128, 64,176,112,140, 76,188,124,131, 67,179,115,143, 79,191,127 },
@@ -854,11 +854,11 @@ GPixmap::ordered_32k_dither(int xmin, int ymin)
     int i, j;
     for (i=0; i<16; i++)
       for (j=0; j<16; j++)
-        dither[i][j] = ((255 - 2*dither[i][j]) * 8) / 512;    
+	dither[i][j] = ((255 - 2*dither[i][j]) * 8) / 512;
     j = -8;
     for (i=3; i<256; i+=8)
       while (j <= i)
-        quant[j++] = i;
+	quant[j++] = i;
     while (j<256+8)
       quant[j++] = 0xff;
     dither_ok = 1;
@@ -882,17 +882,17 @@ GPixmap::ordered_32k_dither(int xmin, int ymin)
 //////////////////////////////////////////////////
 
 
-void  
+void
 GPixmap::downsample(const GPixmap *src, int factor, const GRect *pdr)
 {
   // check arguments
   GRect rect(0, 0, (src->columns()+factor-1)/factor, (src->rows()+factor-1)/factor);
   if (pdr != 0)
   {
-    if (pdr->xmin < rect.xmin || 
-        pdr->ymin < rect.ymin || 
-        pdr->xmax > rect.xmax || 
-        pdr->ymax > rect.ymax  )
+    if (pdr->xmin < rect.xmin ||
+	pdr->ymin < rect.ymin ||
+	pdr->xmax > rect.xmax ||
+	pdr->ymax > rect.ymax  )
       G_THROW( ERR_MSG("GPixmap.overflow1") );
     rect = *pdr;
   }
@@ -906,7 +906,7 @@ GPixmap::downsample(const GPixmap *src, int factor, const GRect *pdr)
     for (int i=1; i<(int)(sizeof(invmap)/sizeof(int)); i++)
       invmap[i] = 0x10000 / i;
   }
-  
+
   // initialise pixmap
   init(rect.height(), rect.width(), 0);
 
@@ -929,34 +929,34 @@ GPixmap::downsample(const GPixmap *src, int factor, const GRect *pdr)
       const GPixel *ksptr = sptr;
       int lsy = sy + factor;
       if (lsy > (int)src->rows())
-        lsy = (int)src->rows();
+	lsy = (int)src->rows();
       int lsx = sx + factor;
       if (lsx > (int)src->columns())
-        lsx = (int)src->columns();
+	lsx = (int)src->columns();
       // compute average
       for (int rsy=sy; rsy<lsy; rsy++)
       {
-        for (int rsx = sx; rsx<lsx; rsx++)
-        {
-          r += ksptr[rsx].r;
-          g += ksptr[rsx].g;
-          b += ksptr[rsx].b;
-          s += 1;
-        }
-        ksptr += src->rowsize();
+	for (int rsx = sx; rsx<lsx; rsx++)
+	{
+	  r += ksptr[rsx].r;
+	  g += ksptr[rsx].g;
+	  b += ksptr[rsx].b;
+	  s += 1;
+	}
+	ksptr += src->rowsize();
       }
       // set pixel color
       if (s >= (int)(sizeof(invmap)/sizeof(int)))
       {
-        dptr[x].r = r / s;
-        dptr[x].g = g / s;
-        dptr[x].b = b / s;
+	dptr[x].r = r / s;
+	dptr[x].g = g / s;
+	dptr[x].b = b / s;
       }
       else
       {
-        dptr[x].r = (r*invmap[s] + 0x8000) >> 16;
-        dptr[x].g = (g*invmap[s] + 0x8000) >> 16;
-        dptr[x].b = (b*invmap[s] + 0x8000) >> 16;
+	dptr[x].r = (r*invmap[s] + 0x8000) >> 16;
+	dptr[x].g = (g*invmap[s] + 0x8000) >> 16;
+	dptr[x].b = (b*invmap[s] + 0x8000) >> 16;
       }
       // next column
       sx = sx + factor;
@@ -968,17 +968,17 @@ GPixmap::downsample(const GPixmap *src, int factor, const GRect *pdr)
   }
 }
 
-void  
+void
 GPixmap::upsample(const GPixmap *src, int factor, const GRect *pdr)
 {
   // check arguments
   GRect rect(0, 0, src->columns()*factor, src->rows()*factor);
   if (pdr != 0)
   {
-    if (pdr->xmin < rect.xmin || 
-        pdr->ymin < rect.ymin || 
-        pdr->xmax > rect.xmax || 
-        pdr->ymax > rect.ymax  )
+    if (pdr->xmin < rect.xmin ||
+	pdr->ymin < rect.ymin ||
+	pdr->xmax > rect.xmax ||
+	pdr->ymax > rect.ymax  )
       G_THROW( ERR_MSG("GPixmap.overflow2") );
     rect = *pdr;
   }
@@ -1002,8 +1002,8 @@ GPixmap::upsample(const GPixmap *src, int factor, const GRect *pdr)
       // next column
       if (++sx1 >= factor)
       {
-        sx1 = 0;
-        sx += 1;
+	sx1 = 0;
+	sx += 1;
       }
     }
     // next row
@@ -1087,8 +1087,8 @@ upsample_2x2_to_3x3 (const GPixel *s, int sadd, GPixel *d, int dadd)
 
 static inline void
 copy_to_partial(int w, int h,
-                const GPixel *s, int sadd,
-                GPixel *d, int dadd, int xmin, int xmax, int ymin, int ymax)
+		const GPixel *s, int sadd,
+		GPixel *d, int dadd, int xmin, int xmax, int ymin, int ymax)
 {
   int y = 0;
   while (y<ymin  && y<h)
@@ -1101,10 +1101,10 @@ copy_to_partial(int w, int h,
     {
       int x = (xmin>0 ? xmin : 0);
       while (x<w && x<xmax)
-        {
-          d[x] = s[x];
-          x++;
-        }
+	{
+	  d[x] = s[x];
+	  x++;
+	}
       y += 1;
       s += sadd;
       d += dadd;
@@ -1114,31 +1114,31 @@ copy_to_partial(int w, int h,
 
 static inline void
 copy_line(const GPixel *s, int smin, int smax,
-          GPixel *d, int dmin, int dmax)
+	  GPixel *d, int dmin, int dmax)
 {
   int x = dmin;
-  while (x < smin) 
-  { 
-    d[x] = s[smin]; 
-    x++; 
-  }
-  while (x < dmax && x < smax)  
-  { 
-    d[x] = s[x]; 
-    x++; 
-  }
-  while (x < dmax)              
+  while (x < smin)
   {
-    d[x] = s[smax-1]; 
-    x++; 
+    d[x] = s[smin];
+    x++;
+  }
+  while (x < dmax && x < smax)
+  {
+    d[x] = s[x];
+    x++;
+  }
+  while (x < dmax)
+  {
+    d[x] = s[smax-1];
+    x++;
   }
 }
 
 
 static inline void
 copy_from_partial(int w, int h,
-                  const GPixel *s, int sadd, int xmin, int xmax, int ymin, int ymax,
-                  GPixel *d, int dadd)
+		  const GPixel *s, int sadd, int xmin, int xmax, int ymin, int ymax,
+		  GPixel *d, int dadd)
 {
   int y = 0;
   s += (ymin>0 ? sadd * ymin : 0);
@@ -1168,7 +1168,7 @@ copy_from_partial(int w, int h,
 
 
 
-void  
+void
 GPixmap::downsample43(const GPixmap *src, const GRect *pdr)
 {
   // check arguments
@@ -1179,10 +1179,10 @@ GPixmap::downsample43(const GPixmap *src, const GRect *pdr)
   GRect rect(0, 0, destwidth, destheight);
   if (pdr != 0)
   {
-    if (pdr->xmin < rect.xmin || 
-        pdr->ymin < rect.ymin || 
-        pdr->xmax > rect.xmax || 
-        pdr->ymax > rect.ymax  )
+    if (pdr->xmin < rect.xmin ||
+	pdr->ymin < rect.ymin ||
+	pdr->xmax > rect.xmax ||
+	pdr->ymax > rect.ymax  )
       G_THROW( ERR_MSG("GPixmap.overflow3") );
     rect = *pdr;
     destwidth = rect.width();
@@ -1196,7 +1196,7 @@ GPixmap::downsample43(const GPixmap *src, const GRect *pdr)
   int sxz, sy;   // location of bottomleft block in source image
   euclidian_ratio(rect.ymin, 3, sy, dy);
   euclidian_ratio(rect.xmin, 3, sxz, dxz);
-  sxz = 4 * sxz;   
+  sxz = 4 * sxz;
   sy  = 4 * sy;
   dxz = - dxz;
   dy  = - dy;
@@ -1220,31 +1220,31 @@ GPixmap::downsample43(const GPixmap *src, const GRect *pdr)
       GPixel xin[16], xout[9];
 
       if (dx>=0 && dy>=0 && dx+3<=destwidth && dy+3<=destheight)
-        {
-          if (sx+4<=srcwidth && sy+4<=srcheight)
-            {
-              downsample_4x4_to_3x3(sptr+sx, sadd, dptr+dx, dadd);
-            }
-          else
-            {
-              copy_from_partial(4,4, sptr+sx,sadd,-sx,srcwidth-sx,-sy,srcheight-sy, xin,4);
-              downsample_4x4_to_3x3(xin, 4, dptr+dx, dadd);
-            }
-        }
+	{
+	  if (sx+4<=srcwidth && sy+4<=srcheight)
+	    {
+	      downsample_4x4_to_3x3(sptr+sx, sadd, dptr+dx, dadd);
+	    }
+	  else
+	    {
+	      copy_from_partial(4,4, sptr+sx,sadd,-sx,srcwidth-sx,-sy,srcheight-sy, xin,4);
+	      downsample_4x4_to_3x3(xin, 4, dptr+dx, dadd);
+	    }
+	}
       else
-        {
-          if (sx+4<=srcwidth && sy+4<=srcheight)
-            {
-              downsample_4x4_to_3x3(sptr+sx, sadd, xout, 3);  
-              copy_to_partial(3,3, xout, 3, dptr+dx, dadd,-dx,destwidth-dx,-dy,destheight-dy);
-            }
-          else
-            {
-              copy_from_partial(4,4, sptr+sx,sadd,-sx,srcwidth-sx,-sy,srcheight-sy, xin,4);
-              downsample_4x4_to_3x3(xin, 4, xout, 3);  
-              copy_to_partial(3,3, xout,3, dptr+dx,dadd,-dx,destwidth-dx,-dy,destheight-dy);
-            }
-        }
+	{
+	  if (sx+4<=srcwidth && sy+4<=srcheight)
+	    {
+	      downsample_4x4_to_3x3(sptr+sx, sadd, xout, 3);
+	      copy_to_partial(3,3, xout, 3, dptr+dx, dadd,-dx,destwidth-dx,-dy,destheight-dy);
+	    }
+	  else
+	    {
+	      copy_from_partial(4,4, sptr+sx,sadd,-sx,srcwidth-sx,-sy,srcheight-sy, xin,4);
+	      downsample_4x4_to_3x3(xin, 4, xout, 3);
+	      copy_to_partial(3,3, xout,3, dptr+dx,dadd,-dx,destwidth-dx,-dy,destheight-dy);
+	    }
+	}
       // next column
       dx += 3;
       sx += 4;
@@ -1258,7 +1258,7 @@ GPixmap::downsample43(const GPixmap *src, const GRect *pdr)
 }
 
 
-void  
+void
 GPixmap::upsample23(const GPixmap *src, const GRect *pdr)
 {
   // check arguments
@@ -1269,10 +1269,10 @@ GPixmap::upsample23(const GPixmap *src, const GRect *pdr)
   GRect rect(0, 0, destwidth, destheight);
   if (pdr != 0)
   {
-    if (pdr->xmin < rect.xmin || 
-        pdr->ymin < rect.ymin || 
-        pdr->xmax > rect.xmax || 
-        pdr->ymax > rect.ymax  )
+    if (pdr->xmin < rect.xmin ||
+	pdr->ymin < rect.ymin ||
+	pdr->xmax > rect.xmax ||
+	pdr->ymax > rect.ymax  )
       G_THROW( ERR_MSG("GPixmap.overflow4") );
     rect = *pdr;
     destwidth = rect.width();
@@ -1286,7 +1286,7 @@ GPixmap::upsample23(const GPixmap *src, const GRect *pdr)
   int sxz, sy;   // location of bottomleft block in source image
   euclidian_ratio(rect.ymin, 3, sy, dy);
   euclidian_ratio(rect.xmin, 3, sxz, dxz);
-  sxz = 2 * sxz;   
+  sxz = 2 * sxz;
   sy  = 2 * sy;
   dxz = - dxz;
   dy  = - dy;
@@ -1311,29 +1311,29 @@ GPixmap::upsample23(const GPixmap *src, const GRect *pdr)
 
       if (dx>=0 && dy>=0 && dx+3<=destwidth && dy+3<=destheight)
       {
-        if (sx+2<=srcwidth && sy+2<=srcheight)
-        {
-          upsample_2x2_to_3x3( sptr+sx, sadd, dptr+dx, dadd);
-        }
-        else
-        {
-          copy_from_partial(2, 2, sptr+sx, sadd, -sx, srcwidth-sx, -sy, srcheight-sy, xin, 2);
-          upsample_2x2_to_3x3(xin, 2, dptr+dx, dadd);
-        }
+	if (sx+2<=srcwidth && sy+2<=srcheight)
+	{
+	  upsample_2x2_to_3x3( sptr+sx, sadd, dptr+dx, dadd);
+	}
+	else
+	{
+	  copy_from_partial(2, 2, sptr+sx, sadd, -sx, srcwidth-sx, -sy, srcheight-sy, xin, 2);
+	  upsample_2x2_to_3x3(xin, 2, dptr+dx, dadd);
+	}
       }
       else
       {
-        if (sx+2<=srcwidth && sy+2<=srcheight)
-        {
-          upsample_2x2_to_3x3( sptr+sx, sadd, xout, 3);  
-          copy_to_partial(3,3, xout, 3, dptr+dx, dadd, -dx, destwidth-dx, -dy, destheight-dy);
-        }
-        else
-        {
-          copy_from_partial(2, 2, sptr+sx, sadd, -sx, srcwidth-sx, -sy, srcheight-sy, xin, 2);
-          upsample_2x2_to_3x3(xin, 2, xout, 3);  
-          copy_to_partial(3,3, xout, 3, dptr+dx, dadd, -dx, destwidth-dx, -dy, destheight-dy);
-        }
+	if (sx+2<=srcwidth && sy+2<=srcheight)
+	{
+	  upsample_2x2_to_3x3( sptr+sx, sadd, xout, 3);
+	  copy_to_partial(3,3, xout, 3, dptr+dx, dadd, -dx, destwidth-dx, -dy, destheight-dy);
+	}
+	else
+	{
+	  copy_from_partial(2, 2, sptr+sx, sadd, -sx, srcwidth-sx, -sy, srcheight-sy, xin, 2);
+	  upsample_2x2_to_3x3(xin, 2, xout, 3);
+	  copy_to_partial(3,3, xout, 3, dptr+dx, dadd, -dx, destwidth-dx, -dy, destheight-dy);
+	}
       }
       // next column
       dx += 3;
@@ -1365,7 +1365,7 @@ compute_clip()
 }
 
 
-void 
+void
 GPixmap::attenuate(const GBitmap *bm, int xpos, int ypos)
 {
   // Check
@@ -1388,26 +1388,26 @@ GPixmap::attenuate(const GBitmap *bm, int xpos, int ypos)
     {
       // Loop over columns
       for (int x=0; x<xcolumns; x++)
-        {
-          unsigned char srcpix = src[x];
-          // Perform pixel operation
-          if (srcpix > 0)
-            {
-              if (srcpix >= maxgray)
-                {
-                  dst[x].b = 0;
-                  dst[x].g = 0;
-                  dst[x].r = 0;
-                }
-              else
-                {
-                  unsigned int level = multiplier[srcpix];
-                  dst[x].b -=  (dst[x].b * level) >> 16;
-                  dst[x].g -=  (dst[x].g * level) >> 16;
-                  dst[x].r -=  (dst[x].r * level) >> 16;
-                }
-            }
-        }
+	{
+	  unsigned char srcpix = src[x];
+	  // Perform pixel operation
+	  if (srcpix > 0)
+	    {
+	      if (srcpix >= maxgray)
+		{
+		  dst[x].b = 0;
+		  dst[x].g = 0;
+		  dst[x].r = 0;
+		}
+	      else
+		{
+		  unsigned int level = multiplier[srcpix];
+		  dst[x].b -=  (dst[x].b * level) >> 16;
+		  dst[x].g -=  (dst[x].g * level) >> 16;
+		  dst[x].r -=  (dst[x].r * level) >> 16;
+		}
+	    }
+	}
       // Next line
       dst += rowsize();
       src += bm->rowsize();
@@ -1415,7 +1415,7 @@ GPixmap::attenuate(const GBitmap *bm, int xpos, int ypos)
 }
 
 
-void 
+void
 GPixmap::blit(const GBitmap *bm, int xpos, int ypos, const GPixel *color)
 {
   // Check
@@ -1444,26 +1444,26 @@ GPixmap::blit(const GBitmap *bm, int xpos, int ypos, const GPixel *color)
     {
       // Loop over columns
       for (int x=0; x<xcolumns; x++)
-        {
-          unsigned char srcpix = src[x];
-          // Perform pixel operation
-          if (srcpix > 0)
-            {
-              if (srcpix >= maxgray)
-                {
-                  dst[x].b = clip[dst[x].b + gb];
-                  dst[x].g = clip[dst[x].g + gg];
-                  dst[x].r = clip[dst[x].r + gr];
-                }
-              else
-                {
-                  unsigned int level = multiplier[srcpix];
-                  dst[x].b = clip[dst[x].b + ((gb * level) >> 16)];
-                  dst[x].g = clip[dst[x].g + ((gg * level) >> 16)];
-                  dst[x].r = clip[dst[x].r + ((gr * level) >> 16)];
-                }
-            }
-        }
+	{
+	  unsigned char srcpix = src[x];
+	  // Perform pixel operation
+	  if (srcpix > 0)
+	    {
+	      if (srcpix >= maxgray)
+		{
+		  dst[x].b = clip[dst[x].b + gb];
+		  dst[x].g = clip[dst[x].g + gg];
+		  dst[x].r = clip[dst[x].r + gr];
+		}
+	      else
+		{
+		  unsigned int level = multiplier[srcpix];
+		  dst[x].b = clip[dst[x].b + ((gb * level) >> 16)];
+		  dst[x].g = clip[dst[x].g + ((gg * level) >> 16)];
+		  dst[x].r = clip[dst[x].r + ((gr * level) >> 16)];
+		}
+	    }
+	}
       // Next line
       dst += rowsize();
       src += bm->rowsize();
@@ -1471,7 +1471,7 @@ GPixmap::blit(const GBitmap *bm, int xpos, int ypos, const GPixel *color)
 }
 
 
-void 
+void
 GPixmap::blit(const GBitmap *bm, int xpos, int ypos, const GPixmap *color)
 {
   // Check
@@ -1500,26 +1500,26 @@ GPixmap::blit(const GBitmap *bm, int xpos, int ypos, const GPixmap *color)
     {
       // Loop over columns
       for (int x=0; x<xcolumns; x++)
-        {
-          unsigned char srcpix = src[x];
-          // Perform pixel operation
-          if (srcpix > 0)
-            {
-              if (srcpix >= maxgray)
-                {
-                  dst[x].b = clip[dst[x].b + src2[x].b];
-                  dst[x].g = clip[dst[x].g + src2[x].g];
-                  dst[x].r = clip[dst[x].r + src2[x].r];
-                }
-              else
-                {
-                  unsigned int level = multiplier[srcpix];
-                  dst[x].b = clip[dst[x].b + ((src2[x].b * level) >> 16)];
-                  dst[x].g = clip[dst[x].g + ((src2[x].g * level) >> 16)];
-                  dst[x].r = clip[dst[x].r + ((src2[x].r * level) >> 16)];
-                }
-            }
-        }
+	{
+	  unsigned char srcpix = src[x];
+	  // Perform pixel operation
+	  if (srcpix > 0)
+	    {
+	      if (srcpix >= maxgray)
+		{
+		  dst[x].b = clip[dst[x].b + src2[x].b];
+		  dst[x].g = clip[dst[x].g + src2[x].g];
+		  dst[x].r = clip[dst[x].r + src2[x].r];
+		}
+	      else
+		{
+		  unsigned int level = multiplier[srcpix];
+		  dst[x].b = clip[dst[x].b + ((src2[x].b * level) >> 16)];
+		  dst[x].g = clip[dst[x].g + ((src2[x].g * level) >> 16)];
+		  dst[x].r = clip[dst[x].r + ((src2[x].r * level) >> 16)];
+		}
+	    }
+	}
       // Next line
       dst += rowsize();
       src += bm->rowsize();
@@ -1529,7 +1529,7 @@ GPixmap::blit(const GBitmap *bm, int xpos, int ypos, const GPixmap *color)
 
 
 
-void 
+void
 GPixmap::blend(const GBitmap *bm, int xpos, int ypos, const GPixmap *color)
 {
   // Check
@@ -1558,26 +1558,26 @@ GPixmap::blend(const GBitmap *bm, int xpos, int ypos, const GPixmap *color)
     {
       // Loop over columns
       for (int x=0; x<xcolumns; x++)
-        {
-          unsigned char srcpix = src[x];
-          // Perform pixel operation
-          if (srcpix > 0)
-            {
-              if (srcpix >= maxgray)
-                {
-                  dst[x].b = src2[x].b;
-                  dst[x].g = src2[x].g;
-                  dst[x].r = src2[x].r;
-                }
-              else
-                {
-                  unsigned int level = multiplier[srcpix];
-                  dst[x].b -= (((int)dst[x].b - (int)src2[x].b) * level) >> 16;
-                  dst[x].g -= (((int)dst[x].g - (int)src2[x].g) * level) >> 16;
-                  dst[x].r -= (((int)dst[x].r - (int)src2[x].r) * level) >> 16;
-                }
-            }
-        }
+	{
+	  unsigned char srcpix = src[x];
+	  // Perform pixel operation
+	  if (srcpix > 0)
+	    {
+	      if (srcpix >= maxgray)
+		{
+		  dst[x].b = src2[x].b;
+		  dst[x].g = src2[x].g;
+		  dst[x].r = src2[x].r;
+		}
+	      else
+		{
+		  unsigned int level = multiplier[srcpix];
+		  dst[x].b -= (((int)dst[x].b - (int)src2[x].b) * level) >> 16;
+		  dst[x].g -= (((int)dst[x].g - (int)src2[x].g) * level) >> 16;
+		  dst[x].r -= (((int)dst[x].r - (int)src2[x].r) * level) >> 16;
+		}
+	    }
+	}
       // Next line
       dst += rowsize();
       src += bm->rowsize();
@@ -1588,20 +1588,20 @@ GPixmap::blend(const GBitmap *bm, int xpos, int ypos, const GPixmap *color)
 
 
 
-void 
-GPixmap::stencil(const GBitmap *bm, 
-                const GPixmap *pm, int pms, const GRect *pmr, 
-                 double corr, GPixel white)
+void
+GPixmap::stencil(const GBitmap *bm,
+		const GPixmap *pm, int pms, const GRect *pmr,
+		 double corr, GPixel white)
 {
   // Check arguments
   GRect rect(0, 0, pm->columns()*pms, pm->rows()*pms);
   if (pmr != 0)
     {
-      if (pmr->xmin < rect.xmin || 
-          pmr->ymin < rect.ymin || 
-          pmr->xmax > rect.xmax || 
-          pmr->ymax > rect.ymax  )
-        G_THROW( ERR_MSG("GPixmap.overflow5") );
+      if (pmr->xmin < rect.xmin ||
+	  pmr->ymin < rect.ymin ||
+	  pmr->xmax > rect.xmax ||
+	  pmr->ymax > rect.ymax  )
+	G_THROW( ERR_MSG("GPixmap.overflow5") );
       rect = *pmr;
     }
   // Compute number of rows
@@ -1643,25 +1643,25 @@ GPixmap::stencil(const GBitmap *bm,
       // Perform pixel operation
       if (srcpix > 0)
       {
-        if (srcpix >= maxgray)
-        {
-          dst[x].b = gtable[fg[fgx].b][0];
-          dst[x].g = gtable[fg[fgx].g][1];
-          dst[x].r = gtable[fg[fgx].r][2];
-        }
-        else
-        {
-          unsigned int level = multiplier[srcpix];
-          dst[x].b -= (((int)dst[x].b-(int)gtable[fg[fgx].b][0])*level) >> 16;
-          dst[x].g -= (((int)dst[x].g-(int)gtable[fg[fgx].g][1])*level) >> 16;
-          dst[x].r -= (((int)dst[x].r-(int)gtable[fg[fgx].r][2])*level) >> 16;
-        }
+	if (srcpix >= maxgray)
+	{
+	  dst[x].b = gtable[fg[fgx].b][0];
+	  dst[x].g = gtable[fg[fgx].g][1];
+	  dst[x].r = gtable[fg[fgx].r][2];
+	}
+	else
+	{
+	  unsigned int level = multiplier[srcpix];
+	  dst[x].b -= (((int)dst[x].b-(int)gtable[fg[fgx].b][0])*level) >> 16;
+	  dst[x].g -= (((int)dst[x].g-(int)gtable[fg[fgx].g][1])*level) >> 16;
+	  dst[x].r -= (((int)dst[x].r-(int)gtable[fg[fgx].r][2])*level) >> 16;
+	}
       }
       // Next column
       if (++fgx1 >= pms)
       {
-        fgx1 = 0;
-        fgx += 1;
+	fgx1 = 0;
+	fgx += 1;
       }
     }
     // Next line
@@ -1671,14 +1671,14 @@ GPixmap::stencil(const GBitmap *bm,
     {
       fgy1 = 0;
       fg += pm->rowsize();
-    } 
+    }
   }
 }
 
-void 
-GPixmap::stencil(const GBitmap *bm, 
-                const GPixmap *pm, int pms, const GRect *pmr, 
-                double corr)
+void
+GPixmap::stencil(const GBitmap *bm,
+		const GPixmap *pm, int pms, const GRect *pmr,
+		double corr)
 {
   stencil(bm, pm, pms, pmr, corr, GPixel::WHITE);
 }
@@ -1701,49 +1701,49 @@ GP<GPixmap> GPixmap::rotate(int count)
     switch(count)
     {
     case 3: //// rotate 90 counter clockwise
-        {
-            int lastrow = dpixmap.rows()-1;
+	{
+	    int lastrow = dpixmap.rows()-1;
 
-            for(int y=0; y<nrows; y++)
-            {
-                const GPixel *r=operator [] (y);
-                for(int x=0,xnew=lastrow; xnew>=0; x++,xnew--)
-                {
-                    dpixmap[xnew][y] = r[x];
-                }
-            }
-        }
-        break;
+	    for(int y=0; y<nrows; y++)
+	    {
+		const GPixel *r=operator [] (y);
+		for(int x=0,xnew=lastrow; xnew>=0; x++,xnew--)
+		{
+		    dpixmap[xnew][y] = r[x];
+		}
+	    }
+	}
+	break;
     case 2: //// rotate 180 counter clockwise
-        {
-            int lastrow = dpixmap.rows()-1;
-            int lastcolumn = dpixmap.columns()-1;
+	{
+	    int lastrow = dpixmap.rows()-1;
+	    int lastcolumn = dpixmap.columns()-1;
 
-            for(int y=0,ynew=lastrow; ynew>=0; y++,ynew--)
-            {
-                const GPixel *r=operator [] (y);
-                GPixel *d=dpixmap[ynew];
-                for(int xnew=lastcolumn; xnew>=0; r++,xnew--)
-                {
-                    d[xnew] = *r;
-                }
-            }
-        }
-        break;
+	    for(int y=0,ynew=lastrow; ynew>=0; y++,ynew--)
+	    {
+		const GPixel *r=operator [] (y);
+		GPixel *d=dpixmap[ynew];
+		for(int xnew=lastcolumn; xnew>=0; r++,xnew--)
+		{
+		    d[xnew] = *r;
+		}
+	    }
+	}
+	break;
     case 1: //// rotate 270 counter clockwise
-        {
-            int lastcolumn = dpixmap.columns()-1;
+	{
+	    int lastcolumn = dpixmap.columns()-1;
 
-            for(int y=0,ynew=lastcolumn; ynew>=0; y++,ynew--)
-            {
-                const GPixel *r=operator [] (y);
-                for(int x=0; x<ncolumns; x++)
-                {
-                    dpixmap[x][ynew] = r[x];
-                }
-            }
-        }
-        break;
+	    for(int y=0,ynew=lastcolumn; ynew>=0; y++,ynew--)
+	    {
+		const GPixel *r=operator [] (y);
+		for(int x=0; x<ncolumns; x++)
+		{
+		    dpixmap[x][ynew] = r[x];
+		}
+	    }
+	}
+	break;
     }
   }
   return newpixmap;

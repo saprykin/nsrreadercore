@@ -14,7 +14,7 @@
 //C- but WITHOUT ANY WARRANTY; without even the implied warranty of
 //C- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //C- GNU General Public License for more details.
-//C- 
+//C-
 //C- DjVuLibre-3.5 is derived from the DjVu(r) Reference Library from
 //C- Lizardtech Software.  Lizardtech Software has authorized us to
 //C- replace the original DjVu(r) Reference Library notice by the following
@@ -35,16 +35,16 @@
 //C- | The computer code originally released by LizardTech under this
 //C- | license and unmodified by other parties is deemed "the LIZARDTECH
 //C- | ORIGINAL CODE."  Subject to any third party intellectual property
-//C- | claims, LizardTech grants recipient a worldwide, royalty-free, 
-//C- | non-exclusive license to make, use, sell, or otherwise dispose of 
-//C- | the LIZARDTECH ORIGINAL CODE or of programs derived from the 
-//C- | LIZARDTECH ORIGINAL CODE in compliance with the terms of the GNU 
-//C- | General Public License.   This grant only confers the right to 
-//C- | infringe patent claims underlying the LIZARDTECH ORIGINAL CODE to 
-//C- | the extent such infringement is reasonably necessary to enable 
-//C- | recipient to make, have made, practice, sell, or otherwise dispose 
-//C- | of the LIZARDTECH ORIGINAL CODE (or portions thereof) and not to 
-//C- | any greater extent that may be necessary to utilize further 
+//C- | claims, LizardTech grants recipient a worldwide, royalty-free,
+//C- | non-exclusive license to make, use, sell, or otherwise dispose of
+//C- | the LIZARDTECH ORIGINAL CODE or of programs derived from the
+//C- | LIZARDTECH ORIGINAL CODE in compliance with the terms of the GNU
+//C- | General Public License.   This grant only confers the right to
+//C- | infringe patent claims underlying the LIZARDTECH ORIGINAL CODE to
+//C- | the extent such infringement is reasonably necessary to enable
+//C- | recipient to make, have made, practice, sell, or otherwise dispose
+//C- | of the LIZARDTECH ORIGINAL CODE (or portions thereof) and not to
+//C- | any greater extent that may be necessary to utilize further
 //C- | modifications or combinations.
 //C- |
 //C- | The LIZARDTECH ORIGINAL CODE is provided "AS IS" WITHOUT WARRANTY
@@ -71,8 +71,8 @@ namespace DJVU {
 #endif
 #endif
 
-UnicodeByteStream::UnicodeByteStream(const UnicodeByteStream &uni)
-: bs(uni.bs), buffer(uni.buffer), bufferpos(uni.bufferpos), linesread(0)
+UnicodeByteStream::UnicodeByteStream(const UnicodeByteStream &uni) : ByteStream (),
+  bs(uni.bs), buffer(uni.buffer), bufferpos(uni.bufferpos), linesread(0)
 {
   startpos=bs->tell();
 }
@@ -138,13 +138,13 @@ UnicodeByteStream::write(const void *buf, size_t size)
   return bs->write(buf,size);
 }
 
-long 
+long
 UnicodeByteStream::tell(void) const
 {
   return bs->tell();
 }
 
-UnicodeByteStream & 
+UnicodeByteStream &
 UnicodeByteStream::operator=(UnicodeByteStream &uni)
 {
   bs=uni.bs;
@@ -153,7 +153,7 @@ UnicodeByteStream::operator=(UnicodeByteStream &uni)
   return *this;
 }
 
-int 
+int
 UnicodeByteStream::seek
 (long offset, int whence, bool nothrow)
 {
@@ -163,7 +163,7 @@ UnicodeByteStream::seek
   return retval;
 }
 
-void 
+void
 UnicodeByteStream::flush(void)
 {
   bs->flush();
@@ -183,12 +183,12 @@ UnicodeByteStream::gets(
   {
     int i;
     char *buf;
-  	static const size_t bufsize=327680;
+	static const size_t bufsize=327680;
     GPBuffer<char> gbuf(buf,bufsize);
     while((i=read(buf,bufsize)>0))
     {
       if((len=buffer.length()-bufferpos))
-        break;
+	break;
     }
   }
   if(len)
@@ -198,15 +198,15 @@ UnicodeByteStream::gets(
     {
       if(inclusive)
       {
-        ++i;
+	++i;
       }
       if(t&&(i>(int)t+bufferpos))
       {
-        i=t+bufferpos;
+	i=t+bufferpos;
       }
       if(i>bufferpos)
       {
-        retval=buffer.substr(bufferpos,i-bufferpos);
+	retval=buffer.substr(bufferpos,i-bufferpos);
       }
       bufferpos=i;
       linesread+=CountLines(retval);
@@ -224,12 +224,12 @@ UnicodeByteStream::gets(
 XMLByteStream::XMLByteStream(UnicodeByteStream &uni)
 : UnicodeByteStream(uni) {}
 
-XMLByteStream::XMLByteStream(GP<ByteStream> &ibs) 
+XMLByteStream::XMLByteStream(GP<ByteStream> &ibs)
 : UnicodeByteStream(ibs,GStringRep::XOTHER)
 {}
 
 GP<XMLByteStream>
-XMLByteStream::create(GP<ByteStream> ibs) 
+XMLByteStream::create(GP<ByteStream> ibs)
 {
   XMLByteStream *xml=new XMLByteStream(ibs);
   GP<XMLByteStream> retval=xml;
@@ -252,33 +252,33 @@ XMLByteStream::init(void)
       const unsigned int j=(buf[2]<<8)+buf[3];
       switch(j)
       {
-        case 0x003C:
-        {
-          buffer=GUTF8String::create(buf,sizeof(buf),GStringRep::XUCS4BE);
-          break;
-        }
-        case 0x3C00:
-        {
-          buffer=GUTF8String::create(buf,sizeof(buf),GStringRep::XUCS4_2143);
-          break;
-        }
-        case 0xFEFF:
-        {
-          buffer=GUTF8String::create(0,0,GStringRep::XUCS4BE);
-          startpos+=sizeof(buf);
-          break;
-        }
-        case 0xFFFE:
-        {
-          buffer=GUTF8String::create(0,0,GStringRep::XUCS4_2143);
-          startpos+=sizeof(buf);
-          break;
-        }
-        default:
-        {
-          buffer=GUTF8String::create(buf,sizeof(buf),GStringRep::XUTF8);
-          break;
-        }
+	case 0x003C:
+	{
+	  buffer=GUTF8String::create(buf,sizeof(buf),GStringRep::XUCS4BE);
+	  break;
+	}
+	case 0x3C00:
+	{
+	  buffer=GUTF8String::create(buf,sizeof(buf),GStringRep::XUCS4_2143);
+	  break;
+	}
+	case 0xFEFF:
+	{
+	  buffer=GUTF8String::create(0,0,GStringRep::XUCS4BE);
+	  startpos+=sizeof(buf);
+	  break;
+	}
+	case 0xFFFE:
+	{
+	  buffer=GUTF8String::create(0,0,GStringRep::XUCS4_2143);
+	  startpos+=sizeof(buf);
+	  break;
+	}
+	default:
+	{
+	  buffer=GUTF8String::create(buf,sizeof(buf),GStringRep::XUTF8);
+	  break;
+	}
       }
     }
     case 0x003C:
@@ -286,15 +286,15 @@ XMLByteStream::init(void)
       const unsigned int j=(buf[2]<<8)+buf[3];
       switch(j)
       {
-        case 0x0000:
-          buffer=GUTF8String::create(buf,sizeof(buf),GStringRep::XUCS4_3412);
-          break;
-        case 0x003F:
-          buffer=GUTF8String::create(buf,sizeof(buf),GStringRep::XUTF16BE);
-          break;
-        default:
-          buffer=GUTF8String::create(buf,sizeof(buf),GStringRep::XUTF8);
-          break;
+	case 0x0000:
+	  buffer=GUTF8String::create(buf,sizeof(buf),GStringRep::XUCS4_3412);
+	  break;
+	case 0x003F:
+	  buffer=GUTF8String::create(buf,sizeof(buf),GStringRep::XUTF16BE);
+	  break;
+	default:
+	  buffer=GUTF8String::create(buf,sizeof(buf),GStringRep::XUTF8);
+	  break;
       }
       break;
     }
@@ -303,15 +303,15 @@ XMLByteStream::init(void)
       const unsigned int j=(buf[2]<<8)+buf[3];
       switch(j)
       {
-        case 0x0000:
-          buffer=GUTF8String::create(buf,sizeof(buf),GStringRep::XUCS4LE);
-          break;
-        case 0x3F00:
-          buffer=GUTF8String::create(buf,sizeof(buf),GStringRep::XUTF16LE);
-          break;
-        default:
-          buffer=GUTF8String::create(buf,sizeof(buf),GStringRep::XUTF8);
-          break;
+	case 0x0000:
+	  buffer=GUTF8String::create(buf,sizeof(buf),GStringRep::XUCS4LE);
+	  break;
+	case 0x3F00:
+	  buffer=GUTF8String::create(buf,sizeof(buf),GStringRep::XUTF16LE);
+	  break;
+	default:
+	  buffer=GUTF8String::create(buf,sizeof(buf),GStringRep::XUTF8);
+	  break;
       }
       break;
     }
@@ -319,7 +319,7 @@ XMLByteStream::init(void)
     {
       const unsigned int j=(buf[2]<<8)+buf[3];
       buffer=GUTF8String::create(buf,sizeof(buf),
-         (j == 0xA794)?(GStringRep::XEBCDIC):(GStringRep::XUTF8));
+	 (j == 0xA794)?(GStringRep::XEBCDIC):(GStringRep::XUTF8));
       break;
     }
     case 0xFFFE:
@@ -338,11 +338,11 @@ XMLByteStream::init(void)
     {
       if(buf[2] == 0xBF)
       {
-        buffer=GUTF8String::create(buf+3,sizeof(buf)-3,GStringRep::XUTF8);
-        startpos+=3;
+	buffer=GUTF8String::create(buf+3,sizeof(buf)-3,GStringRep::XUTF8);
+	startpos+=3;
       }else
       {
-        buffer=GUTF8String::create(buf,sizeof(buf),GStringRep::XUTF8);
+	buffer=GUTF8String::create(buf,sizeof(buf),GStringRep::XUTF8);
       }
       break;
     }

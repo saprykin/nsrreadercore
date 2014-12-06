@@ -14,7 +14,7 @@
 //C- but WITHOUT ANY WARRANTY; without even the implied warranty of
 //C- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //C- GNU General Public License for more details.
-//C- 
+//C-
 //C- DjVuLibre-3.5 is derived from the DjVu(r) Reference Library from
 //C- Lizardtech Software.  Lizardtech Software has authorized us to
 //C- replace the original DjVu(r) Reference Library notice by the following
@@ -35,16 +35,16 @@
 //C- | The computer code originally released by LizardTech under this
 //C- | license and unmodified by other parties is deemed "the LIZARDTECH
 //C- | ORIGINAL CODE."  Subject to any third party intellectual property
-//C- | claims, LizardTech grants recipient a worldwide, royalty-free, 
-//C- | non-exclusive license to make, use, sell, or otherwise dispose of 
-//C- | the LIZARDTECH ORIGINAL CODE or of programs derived from the 
-//C- | LIZARDTECH ORIGINAL CODE in compliance with the terms of the GNU 
-//C- | General Public License.   This grant only confers the right to 
-//C- | infringe patent claims underlying the LIZARDTECH ORIGINAL CODE to 
-//C- | the extent such infringement is reasonably necessary to enable 
-//C- | recipient to make, have made, practice, sell, or otherwise dispose 
-//C- | of the LIZARDTECH ORIGINAL CODE (or portions thereof) and not to 
-//C- | any greater extent that may be necessary to utilize further 
+//C- | claims, LizardTech grants recipient a worldwide, royalty-free,
+//C- | non-exclusive license to make, use, sell, or otherwise dispose of
+//C- | the LIZARDTECH ORIGINAL CODE or of programs derived from the
+//C- | LIZARDTECH ORIGINAL CODE in compliance with the terms of the GNU
+//C- | General Public License.   This grant only confers the right to
+//C- | infringe patent claims underlying the LIZARDTECH ORIGINAL CODE to
+//C- | the extent such infringement is reasonably necessary to enable
+//C- | recipient to make, have made, practice, sell, or otherwise dispose
+//C- | of the LIZARDTECH ORIGINAL CODE (or portions thereof) and not to
+//C- | any greater extent that may be necessary to utilize further
 //C- | modifications or combinations.
 //C- |
 //C- | The LIZARDTECH ORIGINAL CODE is provided "AS IS" WITHOUT WARRANTY
@@ -170,10 +170,10 @@ GMapArea::move(int dx, int dy)
    {
      if (bounds_initialized)
      {
-        xmin+=dx;
-        ymin+=dy;
-        xmax+=dx;
-        ymax+=dy;
+	xmin+=dx;
+	ymin+=dy;
+	xmax+=dx;
+	ymax+=dy;
      }
      gma_move(dx, dy);
    }
@@ -201,8 +201,7 @@ GMapArea::transform(const GRect & grect)
    }
 }
 
-char const * const
-GMapArea::check_object(void)
+const char *GMapArea::check_object(void)
 {
    char const *retval;
    if (get_xmax()==get_xmin())
@@ -247,33 +246,33 @@ static GUTF8String make_c_string(GUTF8String string)
   const char *data = (const char*)string;
   int length = string.length();
   buffer = GUTF8String("\"");
-  while (*data && length>0) 
+  while (*data && length>0)
     {
       int span = 0;
-      while (span<length && (unsigned char)(data[span])>=0x20 && 
-             data[span]!=0x7f && data[span]!='"' && data[span]!='\\' )
-        span++;
-      if (span > 0) 
-        {  
-          buffer = buffer + GUTF8String(data, span);
-          data += span;
-          length -= span;
-        }  
-      else 
-        {
-          char buf[8];
-          static const char *tr1 = "\"\\tnrbf";
-          static const char *tr2 = "\"\\\t\n\r\b\f";
-          sprintf(buf,"\\%03o", (int)(((unsigned char*)data)[span]));
-          for (int i=0; tr2[i]; i++)
-            if (data[span] == tr2[i])
-              buf[1] = tr1[i];
-          if (buf[1]<'0' || buf[1]>'3')
-            buf[2] = 0;
-          buffer = buffer + GUTF8String(buf);
-          data += 1;
-          length -= 1;
-        }
+      while (span<length && (unsigned char)(data[span])>=0x20 &&
+	     data[span]!=0x7f && data[span]!='"' && data[span]!='\\' )
+	span++;
+      if (span > 0)
+	{
+	  buffer = buffer + GUTF8String(data, span);
+	  data += span;
+	  length -= span;
+	}
+      else
+	{
+	  char buf[8];
+	  static const char *tr1 = "\"\\tnrbf";
+	  static const char *tr2 = "\"\\\t\n\r\b\f";
+	  sprintf(buf,"\\%03o", (int)(((unsigned char*)data)[span]));
+	  for (int i=0; tr2[i]; i++)
+	    if (data[span] == tr2[i])
+	      buf[1] = tr1[i];
+	  if (buf[1]<'0' || buf[1]>'3')
+	    buf[2] = 0;
+	  buffer = buffer + GUTF8String(buf);
+	  data += 1;
+	  length -= 1;
+	}
     }
   buffer = buffer + GUTF8String("\"");
   return buffer;
@@ -289,11 +288,11 @@ GMapArea::print(void)
    {
      G_THROW(errors);
    }
-   
+
    GUTF8String url1 = make_c_string((GUTF8String)url);
    GUTF8String target1 = make_c_string(target);
    GUTF8String comment1 = make_c_string(comment);
-   
+
    GUTF8String border_color_str;
    border_color_str.format("#%02X%02X%02X",
 	   (border_color & 0xff0000) >> 16,
@@ -307,29 +306,29 @@ GMapArea::print(void)
    switch(border_type)
    {
       case NO_BORDER:
-        border_type_str=left+NO_BORDER_TAG+right;
-        break;
+	border_type_str=left+NO_BORDER_TAG+right;
+	break;
       case XOR_BORDER:
-        border_type_str=left+XOR_BORDER_TAG+right;
-        break;
+	border_type_str=left+XOR_BORDER_TAG+right;
+	break;
       case SOLID_BORDER:
-        border_type_str=left+SOLID_BORDER_TAG+space+border_color_str+right;
-        break;
+	border_type_str=left+SOLID_BORDER_TAG+space+border_color_str+right;
+	break;
       case SHADOW_IN_BORDER:
-        border_type_str=left+SHADOW_IN_BORDER_TAG+space+GUTF8String(border_width)+right;
-        break;
+	border_type_str=left+SHADOW_IN_BORDER_TAG+space+GUTF8String(border_width)+right;
+	break;
       case SHADOW_OUT_BORDER:
-        border_type_str=left+SHADOW_OUT_BORDER_TAG+space+GUTF8String(border_width)+right;
-        break;
+	border_type_str=left+SHADOW_OUT_BORDER_TAG+space+GUTF8String(border_width)+right;
+	break;
       case SHADOW_EIN_BORDER:
-        border_type_str=left+SHADOW_EIN_BORDER_TAG+space+GUTF8String(border_width)+right;
-        break;
+	border_type_str=left+SHADOW_EIN_BORDER_TAG+space+GUTF8String(border_width)+right;
+	break;
       case SHADOW_EOUT_BORDER:
-        border_type_str=left+SHADOW_EOUT_BORDER_TAG+space+GUTF8String(border_width)+right;
-        break;
+	border_type_str=left+SHADOW_EOUT_BORDER_TAG+space+GUTF8String(border_width)+right;
+	break;
       default:
-        border_type_str=left+XOR_BORDER_TAG+right;
-        break;
+	border_type_str=left+XOR_BORDER_TAG+right;
+	break;
    }
 
    GUTF8String hilite_str;
@@ -340,7 +339,7 @@ GMapArea::print(void)
 	      (hilite_color & 0xff00) >> 8,
 	      (hilite_color & 0xff));
    }
-   
+
    GUTF8String URL;
    if (target1==TARGET_SELF)
    {
@@ -360,7 +359,7 @@ GMapArea::print(void)
 }
 
 /*
-void 
+void
 GMapArea::map(GRectMapper &mapper)
 {
     get_bound_rect();
@@ -372,7 +371,7 @@ GMapArea::map(GRectMapper &mapper)
     ymax = rect.ymax;
     clear_bounds();
 }
-void 
+void
 GMapArea::unmap(GRectMapper &mapper)
 {
     get_bound_rect();
@@ -424,7 +423,7 @@ GMapRect::gma_print(void)
 	   RECT_TAG, xmin, ymin, xmax-xmin, ymax-ymin);
 }
 
-void 
+void
 GMapRect::map(GRectMapper &mapper)
 {
     get_bound_rect();
@@ -440,7 +439,7 @@ GMapRect::map(GRectMapper &mapper)
     ymax = rect.ymax;
     clear_bounds();
 }
-void 
+void
 GMapRect::unmap(GRectMapper &mapper)
 {
     get_bound_rect();
@@ -524,8 +523,7 @@ GMapPoly::are_segments_parallel(int x11, int y11, int x12, int y12,
    return (x12-x11)*(y22-y21)-(y12-y11)*(x22-x21)==0;
 }
 
-char const * const
-GMapPoly::check_data(void)
+const char *GMapPoly::check_data(void)
 {
   if ((open && points<2) || (!open && points<3))
     return error_too_few_points;
@@ -691,13 +689,12 @@ GMapPoly::gma_transform(const GRect & grect)
    }
 }
 
-char const * const
-GMapPoly::gma_check_object(void) const
+const char *GMapPoly::gma_check_object(void) const
 {
    const char * str;
    str=(border_type!=NO_BORDER &&
-        border_type!=SOLID_BORDER &&
-        border_type!=XOR_BORDER) ? error_poly_border:
+	border_type!=SOLID_BORDER &&
+	border_type!=XOR_BORDER) ? error_poly_border:
        ((hilite_color!=0xffffffff) ? error_poly_hilite:"");
    return str;
 }
@@ -706,7 +703,7 @@ GMapPoly::GMapPoly(const int * _xx, const int * _yy, int _points, bool _open) :
    open(_open), points(_points)
 {
    sides=points-(open!=0);
-   
+
    xx.resize(points-1); yy.resize(points-1);
    for(int i=0;i<points;i++)
    {
@@ -718,7 +715,7 @@ GMapPoly::GMapPoly(const int * _xx, const int * _yy, int _points, bool _open) :
      G_THROW(res);
 }
 
-int      
+int
 GMapPoly::add_vertex(int x, int y)
 {
     points++;
@@ -763,24 +760,24 @@ void GMapPoly::get_coords( GList<int> & CoordList ) const
   }
 }
 
-void 
+void
 GMapPoly::map(GRectMapper &mapper)
 {
     get_bound_rect();
     for(int i=0; i<points; i++)
     {
-        mapper.map(xx[i], yy[i]);
+	mapper.map(xx[i], yy[i]);
     }
     clear_bounds();
 }
 
-void 
+void
 GMapPoly::unmap(GRectMapper &mapper)
 {
     get_bound_rect();
     for(int i=0; i<points; i++)
     {
-        mapper.unmap(xx[i], yy[i]);
+	mapper.unmap(xx[i], yy[i]);
     }
     clear_bounds();
 }
@@ -815,7 +812,7 @@ GMapOval::gma_is_point_inside(const int x, const int y) const
       sqrt((double)((x-xf2)*(x-xf2)+(y-yf2)*(y-yf2))) <= 2*rmax;
 }
 
-char const * const
+char const *
 GMapOval::gma_check_object(void) const
 {
    return (border_type!=NO_BORDER &&
@@ -830,7 +827,7 @@ GMapOval::initialize(void)
    int xc=(xmax+xmin)/2;
    int yc=(ymax+ymin)/2;
    int f;
-   
+
    a=(xmax-xmin)/2;
    b=(ymax-ymin)/2;
    if (a>b)
@@ -860,7 +857,7 @@ GMapOval::gma_print(void)
 	   OVAL_TAG, xmin, ymin, xmax-xmin, ymax-ymin);
 }
 
-void 
+void
 GMapOval::map(GRectMapper &mapper)
 {
     get_bound_rect();
@@ -878,7 +875,7 @@ GMapOval::map(GRectMapper &mapper)
     initialize();
 }
 
-void 
+void
 GMapOval::unmap(GRectMapper &mapper)
 {
     get_bound_rect();
@@ -1034,7 +1031,7 @@ GMapRect::get_xmltag(const int height) const
 
 GUTF8String
 GMapOval::get_xmltag(const int height) const
-{ 
+{
   return GMapArea2xmltag( *this, GUTF8String(get_xmin())
     +","+GUTF8String(height-1-get_ymax())
     +","+GUTF8String(get_xmax())
@@ -1059,7 +1056,7 @@ GMapPoly::get_xmltag(const int height) const
     {
       coords+=","+GUTF8String(height-1-CoordList[pos]);
       if(! ++pos)
-        break;
+	break;
       coords+=","+GUTF8String(CoordList[pos]);
     }
     retval=GMapArea2xmltag( *this, coords);
