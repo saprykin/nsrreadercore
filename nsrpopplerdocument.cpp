@@ -204,7 +204,7 @@ NSRPopplerDocument::getCurrentPage ()
 		addr += stride;
 	}
 
-	_dev->startPage (0, NULL);
+	_dev->startPage (0, NULL, _doc->getXRef ());
 
 	return imgData;
 #else
