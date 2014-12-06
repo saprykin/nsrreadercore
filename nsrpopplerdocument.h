@@ -30,9 +30,10 @@ public:
 	/**
 	 * @brief Constructor with parameters
 	 * @param file Path to file.
+	 * @param passwd File password if any.
 	 * @param parent Parent object.
 	 */
-	NSRPopplerDocument (const QString& file, QObject *parent = 0);
+	NSRPopplerDocument (const QString& file, const QString& passwd = QString (), QObject *parent = 0);
 
 	/**
 	 * @brief Destructor

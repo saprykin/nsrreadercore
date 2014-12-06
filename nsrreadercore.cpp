@@ -584,17 +584,16 @@ NSRReaderCore::onPreloadThreadFinished ()
 }
 
 void
-NSRReaderCore::openFile (const QString &path,  const QString& password)
+NSRReaderCore::openFile (const QString &path, const QString& password)
 {
 	closeFile ();
 
-	_doc = fileHandlerByPath (path);
+	_doc = fileHandlerByPath (path, password);
 
 	if (_doc == NULL)
 		return;
 
 	_doc->setParent (_thread);
-	_doc->setPassword (password);
 
 	if (!_doc->isValid ()) {
 		emit errorWhileOpening (_doc->getLastError ());
@@ -797,15 +796,10 @@ NSRReaderCore::copyFileHandler (const NSRAbstractDocument* doc)
 {
 	NSRAbstractDocument *res;
 
-	if (!isFileOpened ())
-		return NULL;
-
-	res = fileHandlerByPath (doc->getDocumentPath ());
+	res = fileHandlerByPath (doc->getDocumentPath (), doc->getPassword ());
 
 	if (res == NULL)
 		return NULL;
-
-	res->setPassword (doc->getPassword ());
 
 	if (!res->isValid ()) {
 		delete res;
@@ -816,7 +810,7 @@ NSRReaderCore::copyFileHandler (const NSRAbstractDocument* doc)
 }
 
 NSRAbstractDocument*
-NSRReaderCore::fileHandlerByPath (const QString& path) const
+NSRReaderCore::fileHandlerByPath (const QString& path, const QString& passwd) const
 {
 	NSRAbstractDocument	*res = NULL;
 	QString			suffix = QFileInfo(path).suffix().toLower ();
@@ -825,7 +819,7 @@ NSRReaderCore::fileHandlerByPath (const QString& path) const
 		return NULL;
 
 	if (suffix == "pdf")
-		res = new NSRPopplerDocument (path);
+		res = new NSRPopplerDocument (path, passwd);
 	else if (suffix == "djvu" || suffix == "djv")
 		res = new NSRDjVuDocument (path);
 	else if (suffix == "tiff" || suffix == "tif")

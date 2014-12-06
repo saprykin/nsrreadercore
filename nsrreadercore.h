@@ -359,9 +359,10 @@ private:
 	/**
 	 * @brief Creates file handler by path
 	 * @param path Path to file.
+	 * @param passwd File password if any.
 	 * @return New file handler in case of success, NULL otherwise.
 	 */
-	NSRAbstractDocument * fileHandlerByPath (const QString& path) const;
+	NSRAbstractDocument * fileHandlerByPath (const QString& path, const QString& passwd = QString ()) const;
 
 	/**
 	 * @brief Checks whether rendered page is still relevant

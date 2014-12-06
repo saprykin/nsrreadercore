@@ -12,7 +12,7 @@
 int NSRPopplerDocument::_refcount = 0;
 QMutex NSRPopplerDocument::_mutex;
 
-NSRPopplerDocument::NSRPopplerDocument (const QString& file, QObject *parent) :
+NSRPopplerDocument::NSRPopplerDocument (const QString& file, const QString& passwd, QObject *parent) :
 	NSRAbstractDocument (file, parent),
 	_doc (NULL),
 	_catalog (NULL),
@@ -30,7 +30,7 @@ NSRPopplerDocument::NSRPopplerDocument (const QString& file, QObject *parent) :
 	if (!QFile::exists (file))
 		return;
 
-	createInternalDoc ();
+	setPassword (passwd);
 }
 
 NSRPopplerDocument::~NSRPopplerDocument ()
