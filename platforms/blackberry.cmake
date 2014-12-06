@@ -73,7 +73,7 @@ set (CMAKE_CXX_COMPILER "${QNX_HOST}/usr/bin/qcc${HOST_EXECUTABLE_SUFFIX}")
 set (CMAKE_ASM_COMPILER "${QNX_HOST}/usr/bin/nto${CMAKE_SYSTEM_PROCESSOR}-as${HOST_EXECUTABLE_SUFFIX}")
 
 set (NSR_ARM_FLAGS "-mcpu=cortex-a9 -mthumb")
-set (NSR_BASE_FLAGS "-D_REENTRANT -Wno-psabi -fstack-protector -fstack-protector-all")
+set (NSR_BASE_FLAGS "-D_REENTRANT -Wno-psabi -fstack-protector -fstack-protector-all -Wall -Wextra -Wno-unused-parameter")
 
 if (CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7")
 	set (NSR_CPU_FLAGS ${NSR_ARM_FLAGS})
