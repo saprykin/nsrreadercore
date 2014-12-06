@@ -167,7 +167,7 @@ static const char *base14SubstFonts[14] = {
 //------------------------------------------------------------------------
 
 static int parseCharName(char *charName, Unicode *uBuf, int uLen,
-			 GBool names, GBool ligatures, 
+			 GBool names, GBool ligatures,
 			 GBool numeric, GBool hex, GBool variants);
 
 //------------------------------------------------------------------------
@@ -493,8 +493,8 @@ void GfxFont::readFontDescriptor(XRef *xref, Dict *fontDict) {
       // get name with typo
       obj1.dictLookup("Fontname", &obj2);
       if (obj2.isName()) {
-        embFontName = new GooString(obj2.getName());
-        error(errSyntaxWarning, -1, "The file uses Fontname instead of FontName please notify the creator that the file is broken");
+	embFontName = new GooString(obj2.getName());
+	error(errSyntaxWarning, -1, "The file uses Fontname instead of FontName please notify the creator that the file is broken");
       }
       obj2.free();
     }
@@ -519,7 +519,7 @@ void GfxFont::readFontDescriptor(XRef *xref, Dict *fontDict) {
       else error(errSyntaxWarning, -1, "Invalid Font Stretch");
     }
     obj2.free();
-    
+
     // get weight
     obj1.dictLookup("FontWeight", &obj2);
     if (obj2.isNum()) {
@@ -876,7 +876,7 @@ GfxFontLoc *GfxFont::getExternalFont(GooString *path, GBool cid) {
   }
   if (fontType == fontUnknownType ||
       (cid ? (fontType < fontCIDType0)
-           : (fontType >= fontCIDType0))) {
+	   : (fontType >= fontCIDType0))) {
     delete path;
     return NULL;
   }
@@ -1379,7 +1379,7 @@ Gfx8BitFont::Gfx8BitFont(XRef *xref, const char *tagA, Ref idA, GooString *nameA
     if (unicodeIsAlphabeticPresentationForm(toUnicode[code])) {
       Unicode *normalized = unicodeNormalizeNFKC(&toUnicode[code], 1, &len, NULL);
       if (len > 1)
-        ctu->setMapping((CharCode)code, normalized, len);
+	ctu->setMapping((CharCode)code, normalized, len);
       gfree(normalized);
     }
   }
@@ -1390,7 +1390,7 @@ Gfx8BitFont::Gfx8BitFont(XRef *xref, const char *tagA, Ref idA, GooString *nameA
     for (code = 0; code < 256; ++code) {
       if (!toUnicode[code]) {
 	if ((charName = enc[code]) && strcmp(charName, ".notdef")
-	    && (n = parseCharName(charName, uBuf, sizeof(uBuf)/sizeof(*uBuf), 
+	    && (n = parseCharName(charName, uBuf, sizeof(uBuf)/sizeof(*uBuf),
 				  gFalse, // don't check simple names (pass 1)
 				  gTrue, // do check ligatures
 				  numeric,
@@ -1488,7 +1488,7 @@ Gfx8BitFont::Gfx8BitFont(XRef *xref, const char *tagA, Ref idA, GooString *nameA
       }
     }
 
-  // couldn't find widths -- use defaults 
+  // couldn't find widths -- use defaults
   } else {
     // this is technically an error -- the Widths entry is required
     // for all but the Base-14 fonts -- but certain PDF generators
@@ -1619,7 +1619,7 @@ static int parseCharName(char *charName, Unicode *uBuf, int uLen,
       int i;
       unsigned int m;
       for (i = 0, m = 3; i < uLen && m < n; m += 4) {
-	if (isxdigit(charName[m]) && isxdigit(charName[m + 1]) && 
+	if (isxdigit(charName[m]) && isxdigit(charName[m + 1]) &&
 	    isxdigit(charName[m + 2]) && isxdigit(charName[m + 3])) {
 	  unsigned int u;
 	  sscanf(charName + m, "%4x", &u);
@@ -2287,7 +2287,7 @@ int GfxCIDFont::mapCodeToGID(FoFiTrueType *ff, int cmapi,
 int *GfxCIDFont::getCodeToGIDMap(FoFiTrueType *ff, int *mapsizep) {
 #define N_UCS_CANDIDATES 2
   /* space characters */
-  static const unsigned long spaces[] = { 
+  static const unsigned long spaces[] = {
     0x2000,0x2001,0x2002,0x2003,0x2004,0x2005,0x2006,0x2007,
     0x2008,0x2009,0x200A,0x00A0,0x200B,0x2060,0x3000,0xFEFF,
     0
@@ -2364,7 +2364,7 @@ int *GfxCIDFont::getCodeToGIDMap(FoFiTrueType *ff, int *mapsizep) {
       "Adobe-Korea1-UCS2",
       adobe_korea1_cmaps,
     },
-    {0, 0, 0, 0}
+    {0, 0, 0, 0, 0}
   };
   Unicode *humap = 0;
   Unicode *vumap = 0;
@@ -2385,7 +2385,7 @@ int *GfxCIDFont::getCodeToGIDMap(FoFiTrueType *ff, int *mapsizep) {
   if (!ctu) return NULL;
   if (getCollection()->cmp("Adobe-Identity") == 0) return NULL;
   if (getEmbeddedFontID(&embID)) {
-   /* if this font is embedded font, 
+   /* if this font is embedded font,
     * CIDToGIDMap should be embedded in PDF file
     * and already set. So return it.
     */
@@ -2549,9 +2549,9 @@ double GfxCIDFont::getWidth (char* s, int len) {
     while (b - a > 1) {
       m = (a + b) / 2;
       if (widths.exceps[m].first <= cid) {
-        a = m;
+	a = m;
       } else {
-        b = m;
+	b = m;
       }
     }
     if (cid <= widths.exceps[a].last) {
