@@ -17,7 +17,7 @@
 #ifdef ENABLE_LIBJPEG
 
 extern "C" {
-#include <jpeglib.h>
+#include "3dparty/libjpeg-turbo/jpeglib.h"
 }
 
 #include "poppler/Error.h"

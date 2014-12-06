@@ -14,7 +14,7 @@
 //C- but WITHOUT ANY WARRANTY; without even the implied warranty of
 //C- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //C- GNU General Public License for more details.
-//C- 
+//C-
 //C- DjVuLibre-3.5 is derived from the DjVu(r) Reference Library from
 //C- Lizardtech Software.  Lizardtech Software has authorized us to
 //C- replace the original DjVu(r) Reference Library notice by the following
@@ -35,16 +35,16 @@
 //C- | The computer code originally released by LizardTech under this
 //C- | license and unmodified by other parties is deemed "the LIZARDTECH
 //C- | ORIGINAL CODE."  Subject to any third party intellectual property
-//C- | claims, LizardTech grants recipient a worldwide, royalty-free, 
-//C- | non-exclusive license to make, use, sell, or otherwise dispose of 
-//C- | the LIZARDTECH ORIGINAL CODE or of programs derived from the 
-//C- | LIZARDTECH ORIGINAL CODE in compliance with the terms of the GNU 
-//C- | General Public License.   This grant only confers the right to 
-//C- | infringe patent claims underlying the LIZARDTECH ORIGINAL CODE to 
-//C- | the extent such infringement is reasonably necessary to enable 
-//C- | recipient to make, have made, practice, sell, or otherwise dispose 
-//C- | of the LIZARDTECH ORIGINAL CODE (or portions thereof) and not to 
-//C- | any greater extent that may be necessary to utilize further 
+//C- | claims, LizardTech grants recipient a worldwide, royalty-free,
+//C- | non-exclusive license to make, use, sell, or otherwise dispose of
+//C- | the LIZARDTECH ORIGINAL CODE or of programs derived from the
+//C- | LIZARDTECH ORIGINAL CODE in compliance with the terms of the GNU
+//C- | General Public License.   This grant only confers the right to
+//C- | infringe patent claims underlying the LIZARDTECH ORIGINAL CODE to
+//C- | the extent such infringement is reasonably necessary to enable
+//C- | recipient to make, have made, practice, sell, or otherwise dispose
+//C- | of the LIZARDTECH ORIGINAL CODE (or portions thereof) and not to
+//C- | any greater extent that may be necessary to utilize further
 //C- | modifications or combinations.
 //C- |
 //C- | The LIZARDTECH ORIGINAL CODE is provided "AS IS" WITHOUT WARRANTY
@@ -70,9 +70,9 @@ extern "C" {
 #undef HAVE_STDLIB_H
 #undef HAVE_STDDEF_H
 #include <stdio.h>
-#include <jconfig.h>
-#include <jpeglib.h>
-#include <jerror.h>
+#include "3dparty/libjpeg-turbo/jconfig.h"
+#include "3dparty/libjpeg-turbo/jpeglib.h"
+#include "3dparty/libjpeg-turbo/jerror.h"
 #ifdef __cplusplus
 }
 #endif
@@ -173,7 +173,7 @@ JPEGDecoder::decode(ByteStream & bs,GPixmap &pix)
   (void) jpeg_read_header(&cinfo, TRUE);
 
   jpeg_start_decompress(&cinfo);
-  
+
   /* We may need to do some setup of our own at this point before reading
    * the data.  After jpeg_start_decompress() we have the correct scaled
    * output image dimensions available, as well as the output colormap
@@ -190,10 +190,10 @@ JPEGDecoder::decode(ByteStream & bs,GPixmap &pix)
 
   GP<ByteStream> goutputBlock=ByteStream::create();
   ByteStream &outputBlock=*goutputBlock;
-  outputBlock.format("P6\n%d %d\n%d\n",cinfo.output_width, 
-                                 cinfo.output_height,255);
+  outputBlock.format("P6\n%d %d\n%d\n",cinfo.output_width,
+				 cinfo.output_height,255);
 
-  isGrey = ( cinfo.out_color_space == JCS_GRAYSCALE) ? 1 : 0; 
+  isGrey = ( cinfo.out_color_space == JCS_GRAYSCALE) ? 1 : 0;
 
   while (cinfo.output_scanline < cinfo.output_height)
   {
@@ -203,25 +203,25 @@ JPEGDecoder::decode(ByteStream & bs,GPixmap &pix)
     {
       for (i=0; i<row_stride; i++)
       {
-        outputBlock.write8((char)buffer[0][i]); 
-        outputBlock.write8((char)buffer[0][i]); 
-        outputBlock.write8((char)buffer[0][i]); 
+	outputBlock.write8((char)buffer[0][i]);
+	outputBlock.write8((char)buffer[0][i]);
+	outputBlock.write8((char)buffer[0][i]);
       }
     }else
     {
-      for (i=0; i<row_stride; i++) 
-        outputBlock.write8((char)buffer[0][i]); 
+      for (i=0; i<row_stride; i++)
+	outputBlock.write8((char)buffer[0][i]);
     }
   }
 
-  (void) jpeg_finish_decompress(&cinfo);   
+  (void) jpeg_finish_decompress(&cinfo);
 
   jpeg_destroy_decompress(&cinfo);
-  
+
   outputBlock.seek(0,SEEK_SET);
 
   pix.init(outputBlock);
-}         
+}
 
 /*** From here onwards code is to make ByteStream as the data
      source for the JPEG library */
@@ -235,11 +235,11 @@ typedef struct
 
   ByteStream * byteStream;    /* source stream */
   JOCTET * buffer;    /* start of buffer */
-  boolean start_of_stream;  
+  boolean start_of_stream;
 } byte_stream_src_mgr;
-                
 
-typedef byte_stream_src_mgr * byte_stream_src_ptr; 
+
+typedef byte_stream_src_mgr * byte_stream_src_ptr;
 
 #define INPUT_BUF_SIZE   4096
 
@@ -272,7 +272,7 @@ fill_input_buffer (j_decompress_ptr cinfo)
 
   src->pub.next_input_byte = src->buffer;
   src->pub.bytes_in_buffer = nbytes;
-  src->start_of_stream = FALSE; 
+  src->start_of_stream = FALSE;
 
   return TRUE;
 }
@@ -293,7 +293,7 @@ skip_input_data (j_decompress_ptr cinfo, long num_bytes)
     src->pub.next_input_byte += num_bytes;
   }
 }
-                 
+
 METHODDEF(void)
 term_source (j_decompress_ptr cinfo)
 {
@@ -309,13 +309,13 @@ JPEGDecoder::Impl::jpeg_byte_stream_src(j_decompress_ptr cinfo,ByteStream &bs)
 
   if (cinfo->src == NULL)
   { /* first time for this JPEG object? */
-    cinfo->src = (struct jpeg_source_mgr *)      
+    cinfo->src = (struct jpeg_source_mgr *)
       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
-          sizeof(byte_stream_src_mgr));
+	  sizeof(byte_stream_src_mgr));
     src = (byte_stream_src_ptr) cinfo->src;
     src->buffer = (JOCTET *)
       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
-          INPUT_BUF_SIZE * sizeof(JOCTET));
+	  INPUT_BUF_SIZE * sizeof(JOCTET));
   }
 
   src = (byte_stream_src_ptr) cinfo->src;

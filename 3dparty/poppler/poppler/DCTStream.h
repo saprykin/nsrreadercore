@@ -43,8 +43,8 @@
 #include "Stream.h"
 
 extern "C" {
-#include <jpeglib.h>
-#include <jerror.h>
+#include "3dparty/libjpeg-turbo/jpeglib.h"
+#include "3dparty/libjpeg-turbo/jerror.h"
 }
 
 struct str_src_mgr {
@@ -88,4 +88,4 @@ private:
   JSAMPARRAY row_buffer;
 };
 
-#endif 
+#endif

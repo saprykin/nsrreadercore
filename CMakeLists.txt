@@ -31,11 +31,19 @@ else()
 	add_definitions (${NSR_PLATFORM_DEFINES_RELEASE})
 endif()
 
-add_subdirectory (3dparty/djvu)
+include_directories (BEFORE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_BINARY_DIR})
+
 add_subdirectory (3dparty/libjpeg-turbo)
-add_subdirectory (3dparty/poppler)
 add_subdirectory (3dparty/tiff)
+add_subdirectory (3dparty/djvu)
+add_subdirectory (3dparty/poppler)
 add_subdirectory (3dparty/universalchardet)
+
+add_dependencies (djvulibre jpegturbo)
+add_dependencies (djvulibre tiff)
+add_dependencies (poppler jpegturbo)
+add_dependencies (poppler tiff)
+add_dependencies (tiff jpegturbo)
 
 set (SOURCES
 	nsrabstractdocument.cpp
@@ -85,10 +93,9 @@ include_directories (
 	${POPPLER_INCLUDES}
 	${TIFF_INCLUDES}
 	${UNIVERSALCHARDET_INCLUDES}
-	${CMAKE_BINARY_DIR}
-	${PROJECT_SOURCE_DIR}
-	${NSR_INCLUDE_DIRECTORIES}
 )
+
+include_directories (AFTER ${NSR_INCLUDE_DIRECTORIES})
 
 add_library (${PROJECT_NAME} SHARED
 	${SOURCES}
@@ -96,9 +103,9 @@ add_library (${PROJECT_NAME} SHARED
 	${HEADERS}
 	${THIRDPARTY_HEADERS}
 	$<TARGET_OBJECTS:jpegturbo>
+	$<TARGET_OBJECTS:tiff>
 	$<TARGET_OBJECTS:djvulibre>
 	$<TARGET_OBJECTS:poppler>
-	$<TARGET_OBJECTS:tiff>
 	$<TARGET_OBJECTS:universalchardet>
 )
 

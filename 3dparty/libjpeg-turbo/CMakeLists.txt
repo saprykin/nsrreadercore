@@ -183,10 +183,10 @@ set (RIGHT_SHIFT_IS_UNSIGNED ${NSR_PLATFORM_RIGHT_SHIFT_IS_UNSIGNED})
 
 if (SYSTEM_NAME MATCHES "windows")
 	configure_file (win/config.h.in ${CMAKE_BINARY_DIR}/config-jpeg.h)
-	configure_file (win/jconfig.h.in ${CMAKE_BINARY_DIR}/jconfig.h)
+	configure_file (win/jconfig.h.in ${CMAKE_CURRENT_BINARY_DIR}/jconfig.h)
 else()
 	configure_file (config.h.in ${CMAKE_BINARY_DIR}/config-jpeg.h)
-	configure_file (jconfig.h.in ${CMAKE_BINARY_DIR}/jconfig.h)
+	configure_file (jconfig.h.in ${CMAKE_CURRENT_BINARY_DIR}/jconfig.h)
 endif()
 
 set (SOURCES
