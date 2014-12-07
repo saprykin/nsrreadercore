@@ -208,6 +208,11 @@ NSRPopplerDocument::getCurrentPage ()
 
 	return imgData;
 #else
+	Q_UNUSED (dataPtr);
+	Q_UNUSED (top);
+	Q_UNUSED (bottom);
+	Q_UNUSED (left);
+	Q_UNUSED (right);
 	return NSR_CORE_IMAGE_DATATYPE ();
 #endif
 }

@@ -14,7 +14,7 @@
 //C- but WITHOUT ANY WARRANTY; without even the implied warranty of
 //C- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //C- GNU General Public License for more details.
-//C- 
+//C-
 //C- DjVuLibre-3.5 is derived from the DjVu(r) Reference Library from
 //C- Lizardtech Software.  Lizardtech Software has authorized us to
 //C- replace the original DjVu(r) Reference Library notice by the following
@@ -35,16 +35,16 @@
 //C- | The computer code originally released by LizardTech under this
 //C- | license and unmodified by other parties is deemed "the LIZARDTECH
 //C- | ORIGINAL CODE."  Subject to any third party intellectual property
-//C- | claims, LizardTech grants recipient a worldwide, royalty-free, 
-//C- | non-exclusive license to make, use, sell, or otherwise dispose of 
-//C- | the LIZARDTECH ORIGINAL CODE or of programs derived from the 
-//C- | LIZARDTECH ORIGINAL CODE in compliance with the terms of the GNU 
-//C- | General Public License.   This grant only confers the right to 
-//C- | infringe patent claims underlying the LIZARDTECH ORIGINAL CODE to 
-//C- | the extent such infringement is reasonably necessary to enable 
-//C- | recipient to make, have made, practice, sell, or otherwise dispose 
-//C- | of the LIZARDTECH ORIGINAL CODE (or portions thereof) and not to 
-//C- | any greater extent that may be necessary to utilize further 
+//C- | claims, LizardTech grants recipient a worldwide, royalty-free,
+//C- | non-exclusive license to make, use, sell, or otherwise dispose of
+//C- | the LIZARDTECH ORIGINAL CODE or of programs derived from the
+//C- | LIZARDTECH ORIGINAL CODE in compliance with the terms of the GNU
+//C- | General Public License.   This grant only confers the right to
+//C- | infringe patent claims underlying the LIZARDTECH ORIGINAL CODE to
+//C- | the extent such infringement is reasonably necessary to enable
+//C- | recipient to make, have made, practice, sell, or otherwise dispose
+//C- | of the LIZARDTECH ORIGINAL CODE (or portions thereof) and not to
+//C- | any greater extent that may be necessary to utilize further
 //C- | modifications or combinations.
 //C- |
 //C- | The LIZARDTECH ORIGINAL CODE is provided "AS IS" WITHOUT WARRANTY
@@ -100,16 +100,16 @@ static const size_t ps_string_size=15000;
 
 DjVuToPS::Options::
 Options(void)
-: format(PS), 
-  level(2), 
-  orientation(AUTO), 
-  mode(COLOR), 
+: format(PS),
+  level(2),
+  orientation(AUTO),
+  mode(COLOR),
   zoom(0),
-  color(true), 
-  calibrate(true), 
+  color(true),
+  calibrate(true),
   text(false),
-  gamma((double)2.2), 
-  copies(1), 
+  gamma((double)2.2),
+  copies(1),
   frame(false),
   cropmarks(false),
   bookletmode(OFF),
@@ -134,7 +134,7 @@ set_level(int xlevel)
 {
   if (xlevel<1 || xlevel>3)
     G_THROW(ERR_MSG("DjVuToPS.bad_level")
-           + GUTF8String("\t") + GUTF8String(xlevel));
+	   + GUTF8String("\t") + GUTF8String(xlevel));
   level=xlevel;
 }
 
@@ -142,7 +142,7 @@ void
 DjVuToPS::Options::
 set_orientation(Orientation xorientation)
 {
-  if (xorientation!=PORTRAIT && 
+  if (xorientation!=PORTRAIT &&
       xorientation!=LANDSCAPE &&
       xorientation!=AUTO )
     G_THROW(ERR_MSG("DjVuToPS.bad_orient"));
@@ -174,7 +174,7 @@ set_color(bool xcolor)
   color=xcolor;
 }
 
-void 
+void
 DjVuToPS::Options::
 set_sRGB(bool xcalibrate)
 {
@@ -220,14 +220,14 @@ set_text(bool xtext)
   text=xtext;
 }
 
-void 
+void
 DjVuToPS::Options::
 set_bookletmode(BookletMode m)
 {
   bookletmode = m;
 }
 
-void 
+void
 DjVuToPS::Options::
 set_bookletmax(int m)
 {
@@ -237,14 +237,14 @@ set_bookletmax(int m)
   bookletmax *= 4;
 }
 
-void 
+void
 DjVuToPS::Options::
 set_bookletalign(int m)
 {
   bookletalign = m;
 }
 
-void 
+void
 DjVuToPS::Options::
 set_bookletfold(int fold, int xfold)
 {
@@ -312,23 +312,23 @@ store_doc_prolog(ByteStream &str, int pages, int dpi, GRect *grect)
      block of document-level comments in PS DSC 3.0 format.
      @param str Stream where PostScript data should be written
      @param pages Total number of pages
-     @param dpi (EPS mode only) 
+     @param dpi (EPS mode only)
      @param grect (EPS mode only) */
   DEBUG_MSG("storing the document prolog\n");
   DEBUG_MAKE_INDENT(3);
   if (options.get_format()==Options::EPS)
     write(str,
-          "%%!PS-Adobe-3.0 EPSF 3.0\n"
-          "%%%%BoundingBox: 0 0 %d %d\n",
-          (grect->width()*100+dpi-1)/dpi, 
-          (grect->height()*100+dpi-1)/dpi );
+	  "%%!PS-Adobe-3.0 EPSF 3.0\n"
+	  "%%%%BoundingBox: 0 0 %d %d\n",
+	  (grect->width()*100+dpi-1)/dpi,
+	  (grect->height()*100+dpi-1)/dpi );
   else
     write(str, "%%!PS-Adobe-3.0\n");
   write(str,
-        "%%%%Title: DjVu PostScript document\n"
-        "%%%%Copyright: Copyright (c) 1998-1999 AT&T\n"
-        "%%%%Creator: DjVu (code by Andrei Erofeev)\n"
-        "%%%%DocumentData: Clean7Bit\n");
+	"%%%%Title: DjVu PostScript document\n"
+	"%%%%Copyright: Copyright (c) 1998-1999 AT&T\n"
+	"%%%%Creator: DjVu (code by Andrei Erofeev)\n"
+	"%%%%DocumentData: Clean7Bit\n");
   // Date
   time_t tm=time(0);
   write(str, "%%%%CreationDate: %s", ctime(&tm));
@@ -338,15 +338,15 @@ store_doc_prolog(ByteStream &str, int pages, int dpi, GRect *grect)
   if (pswd)
     {
       char *s = strchr(pswd->pw_gecos, ',');
-      if (s) 
-        *s = 0;
+      if (s)
+	*s = 0;
       s = 0;
       if (pswd->pw_gecos && strlen(pswd->pw_gecos))
-        s = pswd->pw_gecos;
+	s = pswd->pw_gecos;
       else if (pswd->pw_name && strlen(pswd->pw_name))
-        s = pswd->pw_name;
+	s = pswd->pw_name;
       if (s)
-        write(str, "%%%%For: %s\n", s);
+	write(str, "%%%%For: %s\n", s);
     }
 #endif
   // Language
@@ -358,31 +358,31 @@ store_doc_prolog(ByteStream &str, int pages, int dpi, GRect *grect)
   write(str, "%%%%PageOrder: Ascend\n");
   // Orientation
   if (options.get_orientation() != Options::AUTO)
-    write(str, "%%%%Orientation: %s\n", 
-          options.get_orientation()==Options::PORTRAIT ?
-          "Portrait" : "Landscape" );
+    write(str, "%%%%Orientation: %s\n",
+	  options.get_orientation()==Options::PORTRAIT ?
+	  "Portrait" : "Landscape" );
   // Requirements
   if (options.get_format() == Options::PS)
     {
       write(str, "%%%%Requirements:");
       if (options.get_color())
-        write(str, " color");
+	write(str, " color");
       if (options.get_copies()>1)
-        write(str, " numcopies(%d)", options.get_copies());
+	write(str, " numcopies(%d)", options.get_copies());
       if (options.get_level()>=2)
-        {
-          if (options.get_copies()>1)
-            write(str, " collate");
-          if (options.get_bookletmode() == Options::RECTOVERSO)
-            write(str, " duplex(tumble)");
-        }
+	{
+	  if (options.get_copies()>1)
+	    write(str, " collate");
+	  if (options.get_bookletmode() == Options::RECTOVERSO)
+	    write(str, " duplex(tumble)");
+	}
       write(str, "\n");
     }
   // End
   write(str,
-        "%%%%EndComments\n"
-        "%%%%EndProlog\n"
-        "\n");
+	"%%%%EndComments\n"
+	"%%%%EndProlog\n"
+	"\n");
 }
 
 void
@@ -392,150 +392,150 @@ store_doc_setup(ByteStream &str)
   /* Will store the {\em document setup}, which is a set of
      PostScript commands and functions used to inspect and prepare
      the PostScript interpreter environment before displaying images. */
-  write(str, 
-        "%%%%BeginSetup\n"
-        "/doc-origstate save def\n");
+  write(str,
+	"%%%%BeginSetup\n"
+	"/doc-origstate save def\n");
   if (options.get_level()>=2)
     {
       if (options.get_format() == Options::PS)
-        {
-          if (options.get_copies()>1)
-            write(str, 
-                  "[{\n"
-                  "%%%%BeginFeature: NumCopies %d\n"
-                  "<< /NumCopies %d >> setpagedevice\n"
-                  "%%%%EndFeature\n"
-                  "} stopped cleartomark\n"
-                  "[{\n"
-                  "%%%%BeginFeature: Collate\n"
-                  "<< /Collate true >> setpagedevice\n"
-                  "%%%%EndFeature\n"
-                  "} stopped cleartomark\n",
-                  options.get_copies(),
-                  options.get_copies() );
-          if (options.get_bookletmode()==Options::RECTOVERSO)
-            write(str, 
-                  "[{\n"
-                  "%%%%BeginFeature: Duplex DuplexTumble\n"
-                  "<< /Duplex true /Tumble true >> setpagedevice\n"
-                  "%%%%EndFeature\n"
-                  "} stopped cleartomark\n");
-        }
+	{
+	  if (options.get_copies()>1)
+	    write(str,
+		  "[{\n"
+		  "%%%%BeginFeature: NumCopies %d\n"
+		  "<< /NumCopies %d >> setpagedevice\n"
+		  "%%%%EndFeature\n"
+		  "} stopped cleartomark\n"
+		  "[{\n"
+		  "%%%%BeginFeature: Collate\n"
+		  "<< /Collate true >> setpagedevice\n"
+		  "%%%%EndFeature\n"
+		  "} stopped cleartomark\n",
+		  options.get_copies(),
+		  options.get_copies() );
+	  if (options.get_bookletmode()==Options::RECTOVERSO)
+	    write(str,
+		  "[{\n"
+		  "%%%%BeginFeature: Duplex DuplexTumble\n"
+		  "<< /Duplex true /Tumble true >> setpagedevice\n"
+		  "%%%%EndFeature\n"
+		  "} stopped cleartomark\n");
+	}
       if (options.get_color())
-        write(str, 
-              "%% -- procs for reading color image\n"
-              "/readR () def\n"
-              "/readG () def\n"
-              "/readB () def\n"
-              "/ReadData {\n"
-              "   currentfile /ASCII85Decode filter dup\n"
-              "   /RunLengthDecode filter\n"
-              "   bufferR readstring pop /readR exch def\n"
-              "   dup status { flushfile } { pop } ifelse\n"
-              "   currentfile /ASCII85Decode filter dup\n"
-              "   /RunLengthDecode filter\n"
-              "   bufferG readstring pop /readG exch def\n"
-              "   dup status { flushfile } { pop } ifelse\n"
-              "   currentfile /ASCII85Decode filter dup\n"
-              "   /RunLengthDecode filter\n"
-              "   bufferB readstring pop /readB exch def\n"
-              "   dup status { flushfile } { pop } ifelse\n"
-              "} bind def\n"
-              "/ReadR {\n"
-              "   readR length 0 eq { ReadData } if\n"
-              "   readR /readR () def\n"
-              "} bind def\n"
-              "/ReadG {\n"
-              "   readG length 0 eq { ReadData } if\n"
-              "   readG /readG () def\n"
-              "} bind def\n"
-              "/ReadB {\n"
-              "   readB length 0 eq { ReadData } if\n"
-              "   readB /readB () def\n"
-              "} bind def\n");
+	write(str,
+	      "%% -- procs for reading color image\n"
+	      "/readR () def\n"
+	      "/readG () def\n"
+	      "/readB () def\n"
+	      "/ReadData {\n"
+	      "   currentfile /ASCII85Decode filter dup\n"
+	      "   /RunLengthDecode filter\n"
+	      "   bufferR readstring pop /readR exch def\n"
+	      "   dup status { flushfile } { pop } ifelse\n"
+	      "   currentfile /ASCII85Decode filter dup\n"
+	      "   /RunLengthDecode filter\n"
+	      "   bufferG readstring pop /readG exch def\n"
+	      "   dup status { flushfile } { pop } ifelse\n"
+	      "   currentfile /ASCII85Decode filter dup\n"
+	      "   /RunLengthDecode filter\n"
+	      "   bufferB readstring pop /readB exch def\n"
+	      "   dup status { flushfile } { pop } ifelse\n"
+	      "} bind def\n"
+	      "/ReadR {\n"
+	      "   readR length 0 eq { ReadData } if\n"
+	      "   readR /readR () def\n"
+	      "} bind def\n"
+	      "/ReadG {\n"
+	      "   readG length 0 eq { ReadData } if\n"
+	      "   readG /readG () def\n"
+	      "} bind def\n"
+	      "/ReadB {\n"
+	      "   readB length 0 eq { ReadData } if\n"
+	      "   readB /readB () def\n"
+	      "} bind def\n");
       write(str,
-            "%% -- procs for foreground layer\n"
-            "/g {gsave 0 0 0 0 5 index 5 index setcachedevice\n"
-            "    true [1 0 0 1 0 0] 5 4 roll imagemask grestore\n"
-            "} bind def\n"
-            "/gn {gsave 0 0 0 0 6 index 6 index setcachedevice\n"
-            "  true [1 0 0 1 0 0] 3 2 roll 5 1 roll \n"
-            "  { 1 sub 0 index 2 add 1 index  1 add roll\n"
-            "  } imagemask grestore pop \n"
-            "} bind def\n"
-            "/c {setcolor rmoveto glyphshow} bind def\n"
-            "/s {rmoveto glyphshow} bind def\n"
-            "/S {rmoveto gsave show grestore} bind def\n" 
-            "/F {(Helvetica) findfont exch scalefont setfont} bind def\n"
-            "%% -- emulations\n"
-            "systemdict /rectstroke known not {\n"
-            "  /rectstroke  %% stack : x y width height \n"
-            "  { newpath 4 2 roll moveto 1 index 0 rlineto\n"
-            "    0 exch rlineto neg 0 rlineto closepath stroke\n"
-            "  } bind def } if\n"
-            "systemdict /rectclip known not {\n"
-            "  /rectclip  %% stack : x y width height \n"
-            "  { newpath 4 2 roll moveto 1 index 0 rlineto\n"
-            "    0 exch rlineto neg 0 rlineto closepath clip\n"
-            "  } bind def } if\n"
-            "%% -- color space\n" );
+	    "%% -- procs for foreground layer\n"
+	    "/g {gsave 0 0 0 0 5 index 5 index setcachedevice\n"
+	    "    true [1 0 0 1 0 0] 5 4 roll imagemask grestore\n"
+	    "} bind def\n"
+	    "/gn {gsave 0 0 0 0 6 index 6 index setcachedevice\n"
+	    "  true [1 0 0 1 0 0] 3 2 roll 5 1 roll \n"
+	    "  { 1 sub 0 index 2 add 1 index  1 add roll\n"
+	    "  } imagemask grestore pop \n"
+	    "} bind def\n"
+	    "/c {setcolor rmoveto glyphshow} bind def\n"
+	    "/s {rmoveto glyphshow} bind def\n"
+	    "/S {rmoveto gsave show grestore} bind def\n"
+	    "/F {(Helvetica) findfont exch scalefont setfont} bind def\n"
+	    "%% -- emulations\n"
+	    "systemdict /rectstroke known not {\n"
+	    "  /rectstroke  %% stack : x y width height \n"
+	    "  { newpath 4 2 roll moveto 1 index 0 rlineto\n"
+	    "    0 exch rlineto neg 0 rlineto closepath stroke\n"
+	    "  } bind def } if\n"
+	    "systemdict /rectclip known not {\n"
+	    "  /rectclip  %% stack : x y width height \n"
+	    "  { newpath 4 2 roll moveto 1 index 0 rlineto\n"
+	    "    0 exch rlineto neg 0 rlineto closepath clip\n"
+	    "  } bind def } if\n"
+	    "%% -- color space\n" );
       if (options.get_sRGB())
-        write(str,
-              "/DjVuColorSpace [ %s\n"
-              "<< /DecodeLMN [ { dup 0.03928 le {\n"
-              "       12.92321 div\n"
-              "     } {\n"
-              "       0.055 add 1.055 div 2.4 exp\n"
-              "     } ifelse } bind dup dup ]\n"
-              "   /MatrixLMN [\n"
-              "      0.412457 0.212673 0.019334\n"
-              "      0.357576 0.715152 0.119192\n"
-              "      0.180437 0.072175 0.950301 ]\n"
-              "   /WhitePoint [ 0.9505 1 1.0890 ] %% D65 \n"
-              "   /BlackPoint[0 0 0] >> ] def\n",
-              (options.get_color()) ? "/CIEBasedABC" : "/CIEBasedA" );
+	write(str,
+	      "/DjVuColorSpace [ %s\n"
+	      "<< /DecodeLMN [ { dup 0.03928 le {\n"
+	      "       12.92321 div\n"
+	      "     } {\n"
+	      "       0.055 add 1.055 div 2.4 exp\n"
+	      "     } ifelse } bind dup dup ]\n"
+	      "   /MatrixLMN [\n"
+	      "      0.412457 0.212673 0.019334\n"
+	      "      0.357576 0.715152 0.119192\n"
+	      "      0.180437 0.072175 0.950301 ]\n"
+	      "   /WhitePoint [ 0.9505 1 1.0890 ] %% D65 \n"
+	      "   /BlackPoint[0 0 0] >> ] def\n",
+	      (options.get_color()) ? "/CIEBasedABC" : "/CIEBasedA" );
       else if (options.get_color())
-        write(str,"/DjVuColorSpace /DeviceRGB def\n");
+	write(str,"/DjVuColorSpace /DeviceRGB def\n");
       else
-        write(str,"/DjVuColorSpace /DeviceGray def\n");
-    } 
-  else 
+	write(str,"/DjVuColorSpace /DeviceGray def\n");
+    }
+  else
     {
       // level<2
       if (options.get_format() == Options::PS)
-        if (options.get_copies() > 1)
-          write(str,"/#copies %d def\n", options.get_copies());
+	if (options.get_copies() > 1)
+	  write(str,"/#copies %d def\n", options.get_copies());
       if (options.get_color())
-        write(str, 
-              "%% -- buffers for reading image\n"
-              "/buffer8 () def\n"
-              "/buffer24 () def\n"
-              "%% -- colorimage emulation\n"
-              "systemdict /colorimage known {\n"
-              "   /ColorProc {\n"
-              "      currentfile buffer24 readhexstring pop\n"
-              "   } bind def\n"
-              "   /ColorImage {\n"
-              "      colorimage\n"
-              "   } bind def\n"
-              "} {\n"
-              "   /ColorProc {\n"
-              "      currentfile buffer24 readhexstring pop\n"
-              "      /data exch def /datalen data length def\n"
-              "      /cnt 0 def\n"
-              "      0 1 datalen 3 idiv 1 sub {\n"
-              "         buffer8 exch\n"
-              "                data cnt get 20 mul /cnt cnt 1 add def\n"
-              "                data cnt get 32 mul /cnt cnt 1 add def\n"
-              "                data cnt get 12 mul /cnt cnt 1 add def\n"
-              "                add add 64 idiv put\n"
-              "      } for\n"
-              "      buffer8 0 datalen 3 idiv getinterval\n"
-              "   } bind def\n"
-              "   /ColorImage {\n"
-              "      pop pop image\n"
-              "   } bind def\n"
-              "} ifelse\n");
+	write(str,
+	      "%% -- buffers for reading image\n"
+	      "/buffer8 () def\n"
+	      "/buffer24 () def\n"
+	      "%% -- colorimage emulation\n"
+	      "systemdict /colorimage known {\n"
+	      "   /ColorProc {\n"
+	      "      currentfile buffer24 readhexstring pop\n"
+	      "   } bind def\n"
+	      "   /ColorImage {\n"
+	      "      colorimage\n"
+	      "   } bind def\n"
+	      "} {\n"
+	      "   /ColorProc {\n"
+	      "      currentfile buffer24 readhexstring pop\n"
+	      "      /data exch def /datalen data length def\n"
+	      "      /cnt 0 def\n"
+	      "      0 1 datalen 3 idiv 1 sub {\n"
+	      "         buffer8 exch\n"
+	      "                data cnt get 20 mul /cnt cnt 1 add def\n"
+	      "                data cnt get 32 mul /cnt cnt 1 add def\n"
+	      "                data cnt get 12 mul /cnt cnt 1 add def\n"
+	      "                add add 64 idiv put\n"
+	      "      } for\n"
+	      "      buffer8 0 datalen 3 idiv getinterval\n"
+	      "   } bind def\n"
+	      "   /ColorImage {\n"
+	      "      pop pop image\n"
+	      "   } bind def\n"
+	      "} ifelse\n");
     } // level<2
   write(str, "%%%%EndSetup\n\n");
 }
@@ -547,10 +547,10 @@ store_doc_trailer(ByteStream &str)
   /* Will store the {\em document trailer}, which is a clean-up code
      used to return the PostScript interpeter back to the state, in which
      it was before displaying this document. */
-  write(str, 
-        "%%%%Trailer\n"
-        "doc-origstate restore\n"
-        "%%%%EOF\n");
+  write(str,
+	"%%%%Trailer\n"
+	"doc-origstate restore\n"
+	"%%%%EOF\n");
 }
 
 // ***********************************************************************
@@ -558,9 +558,9 @@ store_doc_trailer(ByteStream &str)
 // ***********************************************************************
 
 static unsigned char *
-ASCII85_encode(unsigned char * dst, 
-               const unsigned char * src_start,
-               const unsigned char * src_end)
+ASCII85_encode(unsigned char * dst,
+	       const unsigned char * src_start,
+	       const unsigned char * src_end)
 {
   /* Will read data between #src_start# and #src_end# pointers (excluding byte
      pointed by #src_end#), encode it using {\bf ASCII85} algorithm, and
@@ -573,20 +573,20 @@ ASCII85_encode(unsigned char * dst,
     {
       unsigned int num=0;
       if (ptr+3<src_end)
-        {
-          num |= ptr[0] << 24; 
-          num |= ptr[1] << 16; 
-          num |= ptr[2] << 8; 
-          num |= ptr[3];
-        }
+	{
+	  num |= ptr[0] << 24;
+	  num |= ptr[1] << 16;
+	  num |= ptr[2] << 8;
+	  num |= ptr[3];
+	}
       else
-        {
-          num |= ptr[0] << 24; 
-          if (ptr+1<src_end) 
-            num |= ptr[1] << 16; 
-          if (ptr+2<src_end) 
-            num |= ptr[2] << 8; 
-        }
+	{
+	  num |= ptr[0] << 24;
+	  if (ptr+1<src_end)
+	    num |= ptr[1] << 16;
+	  if (ptr+2<src_end)
+	    num |= ptr[2] << 8;
+	}
       int a1, a2, a3, a4, a5;
       a5=num % 85; num/=85;
       a4=num % 85; num/=85;
@@ -596,25 +596,25 @@ ASCII85_encode(unsigned char * dst,
       *dst++ = a1+33;
       *dst++ = a2+33;
       if (ptr+1<src_end)
-        *dst++ = a3+33;
+	*dst++ = a3+33;
       if (ptr+2<src_end)
-        *dst++ = a4+33;
+	*dst++ = a4+33;
       if (ptr+3<src_end)
-        *dst++ = a5+33;
+	*dst++ = a5+33;
       symbols += 5;
       if (symbols > 70 && ptr+4<src_end)
-        { 
-          *dst++='\n'; 
-          symbols=0; 
-        }
+	{
+	  *dst++='\n';
+	  symbols=0;
+	}
     }
   return dst;
 }
 
 static unsigned char *
 RLE_encode(unsigned char * dst,
-           const unsigned char * src_start,
-           const unsigned char * src_end)
+	   const unsigned char * src_start,
+	   const unsigned char * src_end)
 {
   /* Will read data between #src_start# and #src_end# pointers (excluding byte
      pointed by #src_end#), RLE encode it, and output the result into the
@@ -625,32 +625,32 @@ RLE_encode(unsigned char * dst,
   for(ptr=src_start;ptr<src_end;ptr++)
     {
       if (ptr==src_end-1)
-        {
-          *dst++=0; *dst++=*ptr;
-        } 
+	{
+	  *dst++=0; *dst++=*ptr;
+	}
       else if (ptr[0]!=ptr[1])
-        {
-          // Guess how many non repeating bytes we have
-          const unsigned char * ptr1;
-          for(ptr1=ptr+1;ptr1<src_end-1;ptr1++)
-            if (ptr1[0]==ptr1[1] || ptr1-ptr>=128) break;
-          int pixels=ptr1-ptr;
-          *dst++=pixels-1;
-          for(int cnt=0;cnt<pixels;cnt++)
-            *dst++=*ptr++;
-          ptr--;
-        } 
+	{
+	  // Guess how many non repeating bytes we have
+	  const unsigned char * ptr1;
+	  for(ptr1=ptr+1;ptr1<src_end-1;ptr1++)
+	    if (ptr1[0]==ptr1[1] || ptr1-ptr>=128) break;
+	  int pixels=ptr1-ptr;
+	  *dst++=pixels-1;
+	  for(int cnt=0;cnt<pixels;cnt++)
+	    *dst++=*ptr++;
+	  ptr--;
+	}
       else
-        {
-          // Get the number of repeating bytes
-          const unsigned char * ptr1;
-          for(ptr1=ptr+1;ptr1<src_end-1;ptr1++)
-            if (ptr1[0]!=ptr1[1] || ptr1-ptr+1>=128) break;
-          int pixels=ptr1-ptr+1;
-          *dst++=257-pixels;
-          *dst++=*ptr;
-          ptr=ptr1;
-        }
+	{
+	  // Get the number of repeating bytes
+	  const unsigned char * ptr1;
+	  for(ptr1=ptr+1;ptr1<src_end-1;ptr1++)
+	    if (ptr1[0]!=ptr1[1] || ptr1-ptr+1>=128) break;
+	  int pixels=ptr1-ptr+1;
+	  *dst++=257-pixels;
+	  *dst++=*ptr;
+	  ptr=ptr1;
+	}
     }
   return dst;
 }
@@ -659,34 +659,34 @@ RLE_encode(unsigned char * dst,
 
 void
 DjVuToPS::
-store_page_setup(ByteStream &str, 
-                 int dpi, 
-                 const GRect &grect, 
-                 int align )
+store_page_setup(ByteStream &str,
+		 int dpi,
+		 const GRect &grect,
+		 int align )
 {
   /* Will store PostScript code necessary to prepare page for
      the coming \Ref{DjVuImage}. This is basically a scaling
      code plus initialization of some buffers. */
   if (options.get_format() == Options::EPS)
-    write(str, 
-          "/page-origstate save def\n"
-          "%% -- coordinate system\n"
-          "/image-dpi %d def\n"
-          "/image-x 0 def\n"
-          "/image-y 0 def\n"
-          "/image-width  %d def\n"
-          "/image-height %d def\n"
-          "/coeff 100 image-dpi div def\n"
-          "/a11 coeff def\n"
-          "/a12 0 def\n"
-          "/a13 0 def\n"
-          "/a21 0 def\n"
-          "/a22 coeff def\n"
-          "/a23 0 def\n"
-          "[a11 a21 a12 a22 a13 a23] concat\n"
-          "gsave 0 0 image-width image-height rectclip\n"
-          "%% -- begin printing\n",
-          dpi, grect.width(), grect.height() );
+    write(str,
+	  "/page-origstate save def\n"
+	  "%% -- coordinate system\n"
+	  "/image-dpi %d def\n"
+	  "/image-x 0 def\n"
+	  "/image-y 0 def\n"
+	  "/image-width  %d def\n"
+	  "/image-height %d def\n"
+	  "/coeff 100 image-dpi div def\n"
+	  "/a11 coeff def\n"
+	  "/a12 0 def\n"
+	  "/a13 0 def\n"
+	  "/a21 0 def\n"
+	  "/a22 coeff def\n"
+	  "/a23 0 def\n"
+	  "[a11 a21 a12 a22 a13 a23] concat\n"
+	  "gsave 0 0 image-width image-height rectclip\n"
+	  "%% -- begin printing\n",
+	  dpi, grect.width(), grect.height() );
   else
     {
       int margin = 0;
@@ -694,102 +694,102 @@ store_page_setup(ByteStream &str,
       const char *xportrait = "false";
       const char *xfit = "false";
       if (options.get_orientation()==Options::AUTO)
-        xauto = "true";
+	xauto = "true";
       if (options.get_orientation()==Options::PORTRAIT)
-        xportrait = "true";
+	xportrait = "true";
       if (options.get_zoom()<=0)
-        xfit = "true";
+	xfit = "true";
       if (options.get_cropmarks())
-        margin = 36;
+	margin = 36;
       else if (options.get_frame())
-        margin = 6;
-      write(str, 
-            "/page-origstate save def\n"
-            "%% -- coordinate system\n"
-            "/auto-orient %s def\n"
-            "/portrait %s def\n"
-            "/fit-page %s def\n"
-            "/zoom %d def\n"
-            "/image-dpi %d def\n"
-            "clippath pathbbox newpath\n"
-            "2 index sub exch 3 index sub\n"
-            "/page-width exch def\n"
-            "/page-height exch def\n"
-            "/page-y exch def\n"
-            "/page-x exch def\n"
-            "/image-x 0 def\n"
-            "/image-y 0 def\n"
-            "/image-width  %d def\n"
-            "/image-height %d def\n"
-            "/margin %d def\n"
-            "/halign %d def\n"
-            "/valign 0 def\n",
-            xauto, xportrait, xfit, options.get_zoom(), 
-            dpi, grect.width(), grect.height(),
-            margin, align );
-      write(str, 
-            "%% -- position page\n"
-            "auto-orient {\n"
-            "  image-height image-width sub\n"
-            "  page-height page-width sub\n"
-            "  mul 0 ge /portrait exch def\n" 
-            "} if\n"
-            "fit-page {\n"
-            "  /page-width page-width margin sub\n"
-            "     halign 0 eq { margin sub } if def\n"
-            "  /page-height page-height margin sub\n"
-            "     valign 0 eq { margin sub } if def\n"
-            "  /page-x page-x halign 0 ge { margin add } if def\n"
-            "  /page-y page-y valign 0 ge { margin add } if def\n"
-            "} if\n"
-            "portrait {\n"
-            "  fit-page {\n"
-            "    image-height page-height div\n"
-            "    image-width page-width div\n"
-            "    gt {\n"
-            "      page-height image-height div /coeff exch def\n"
-            "    } {\n"
-            "      page-width image-width div /coeff exch def\n"
-            "    } ifelse\n"
-            "  } {\n"
-            "    /coeff 72 image-dpi div zoom mul 100 div def\n"
-            "  } ifelse\n"
-            "  /start-x page-x page-width image-width\n"
-            "    coeff mul sub 2 div halign 1 add mul add def\n"
-            "  /start-y page-y page-height image-height\n"
-            "    coeff mul sub 2 div valign 1 add mul add def\n"
-            "  /a11 coeff def\n"
-            "  /a12 0 def\n"
-            "  /a13 start-x def\n"
-            "  /a21 0 def\n"
-            "  /a22 coeff def\n"
-            "  /a23 start-y def\n"
-            "} { %% landscape\n"
-            "  fit-page {\n"
-            "    image-height page-width div\n"
-            "    image-width page-height div\n"
-            "    gt {\n"
-            "      page-width image-height div /coeff exch def\n"
-            "    } {\n"
-            "      page-height image-width div /coeff exch def\n"
-            "    } ifelse\n"
-            "  } {\n"
-            "    /coeff 72 image-dpi div zoom mul 100 div def\n"
-            "  } ifelse\n"
-            "  /start-x page-x page-width add page-width image-height\n"
-            "    coeff mul sub 2 div valign 1 add mul sub def\n"
-            "  /start-y page-y page-height image-width\n"
-            "    coeff mul sub 2 div halign 1 add mul add def\n"
-            "  /a11 0 def\n"
-            "  /a12 coeff neg def\n"
-            "  /a13 start-x image-y coeff neg mul sub def\n"
-            "  /a21 coeff def\n"
-            "  /a22 0 def\n"
-            "  /a23 start-y image-x coeff mul add def \n"
-            "} ifelse\n"
-            "[a11 a21 a12 a22 a13 a23] concat\n"
-            "gsave 0 0 image-width image-height rectclip\n"
-            "%% -- begin print\n");
+	margin = 6;
+      write(str,
+	    "/page-origstate save def\n"
+	    "%% -- coordinate system\n"
+	    "/auto-orient %s def\n"
+	    "/portrait %s def\n"
+	    "/fit-page %s def\n"
+	    "/zoom %d def\n"
+	    "/image-dpi %d def\n"
+	    "clippath pathbbox newpath\n"
+	    "2 index sub exch 3 index sub\n"
+	    "/page-width exch def\n"
+	    "/page-height exch def\n"
+	    "/page-y exch def\n"
+	    "/page-x exch def\n"
+	    "/image-x 0 def\n"
+	    "/image-y 0 def\n"
+	    "/image-width  %d def\n"
+	    "/image-height %d def\n"
+	    "/margin %d def\n"
+	    "/halign %d def\n"
+	    "/valign 0 def\n",
+	    xauto, xportrait, xfit, options.get_zoom(),
+	    dpi, grect.width(), grect.height(),
+	    margin, align );
+      write(str,
+	    "%% -- position page\n"
+	    "auto-orient {\n"
+	    "  image-height image-width sub\n"
+	    "  page-height page-width sub\n"
+	    "  mul 0 ge /portrait exch def\n"
+	    "} if\n"
+	    "fit-page {\n"
+	    "  /page-width page-width margin sub\n"
+	    "     halign 0 eq { margin sub } if def\n"
+	    "  /page-height page-height margin sub\n"
+	    "     valign 0 eq { margin sub } if def\n"
+	    "  /page-x page-x halign 0 ge { margin add } if def\n"
+	    "  /page-y page-y valign 0 ge { margin add } if def\n"
+	    "} if\n"
+	    "portrait {\n"
+	    "  fit-page {\n"
+	    "    image-height page-height div\n"
+	    "    image-width page-width div\n"
+	    "    gt {\n"
+	    "      page-height image-height div /coeff exch def\n"
+	    "    } {\n"
+	    "      page-width image-width div /coeff exch def\n"
+	    "    } ifelse\n"
+	    "  } {\n"
+	    "    /coeff 72 image-dpi div zoom mul 100 div def\n"
+	    "  } ifelse\n"
+	    "  /start-x page-x page-width image-width\n"
+	    "    coeff mul sub 2 div halign 1 add mul add def\n"
+	    "  /start-y page-y page-height image-height\n"
+	    "    coeff mul sub 2 div valign 1 add mul add def\n"
+	    "  /a11 coeff def\n"
+	    "  /a12 0 def\n"
+	    "  /a13 start-x def\n"
+	    "  /a21 0 def\n"
+	    "  /a22 coeff def\n"
+	    "  /a23 start-y def\n"
+	    "} { %% landscape\n"
+	    "  fit-page {\n"
+	    "    image-height page-width div\n"
+	    "    image-width page-height div\n"
+	    "    gt {\n"
+	    "      page-width image-height div /coeff exch def\n"
+	    "    } {\n"
+	    "      page-height image-width div /coeff exch def\n"
+	    "    } ifelse\n"
+	    "  } {\n"
+	    "    /coeff 72 image-dpi div zoom mul 100 div def\n"
+	    "  } ifelse\n"
+	    "  /start-x page-x page-width add page-width image-height\n"
+	    "    coeff mul sub 2 div valign 1 add mul sub def\n"
+	    "  /start-y page-y page-height image-width\n"
+	    "    coeff mul sub 2 div halign 1 add mul add def\n"
+	    "  /a11 0 def\n"
+	    "  /a12 coeff neg def\n"
+	    "  /a13 start-x image-y coeff neg mul sub def\n"
+	    "  /a21 coeff def\n"
+	    "  /a22 0 def\n"
+	    "  /a23 start-y image-x coeff mul add def \n"
+	    "} ifelse\n"
+	    "[a11 a21 a12 a22 a13 a23] concat\n"
+	    "gsave 0 0 image-width image-height rectclip\n"
+	    "%% -- begin print\n");
     }
 }
 
@@ -797,26 +797,26 @@ void
 DjVuToPS::
 store_page_trailer(ByteStream &str)
 {
-  write(str, 
-        "%% -- end print\n" 
-        "grestore\n");
+  write(str,
+	"%% -- end print\n"
+	"grestore\n");
   if (options.get_frame())
-    write(str, 
-          "%% Drawing frame\n"
-          "gsave 0.7 setgray 0.5 coeff div setlinewidth 0 0\n"
-          "image-width image-height rectstroke\n"
-          "grestore\n");
+    write(str,
+	  "%% Drawing frame\n"
+	  "gsave 0.7 setgray 0.5 coeff div setlinewidth 0 0\n"
+	  "image-width image-height rectstroke\n"
+	  "grestore\n");
   if (options.get_cropmarks() &&
       options.get_format() != Options::EPS )
     write(str,
-          "%% Drawing crop marks\n"
-          "/cm { gsave translate rotate 1 coeff div dup scale\n"
-          "      0 setgray 0.5 setlinewidth -36 0 moveto 0 0 lineto\n"
-          "      0 -36 lineto stroke grestore } bind def\n"
-          "0 0 0 cm 180 image-width image-height cm\n"
-          "90 image-width 0 cm 270 0 image-height cm\n");
+	  "%% Drawing crop marks\n"
+	  "/cm { gsave translate rotate 1 coeff div dup scale\n"
+	  "      0 setgray 0.5 setlinewidth -36 0 moveto 0 0 lineto\n"
+	  "      0 -36 lineto stroke grestore } bind def\n"
+	  "0 0 0 cm 180 image-width image-height cm\n"
+	  "90 image-width 0 cm 270 0 image-height cm\n");
   write(str,
-        "page-origstate restore\n");
+	"page-origstate restore\n");
 }
 
 static int
@@ -829,7 +829,7 @@ compute_red(int w, int h, int rw, int rh)
 }
 
 static int
-get_bg_red(GP<DjVuImage> dimg) 
+get_bg_red(GP<DjVuImage> dimg)
 {
   GP<GPixmap> pm = 0;
   // Access image size
@@ -844,7 +844,7 @@ get_bg_red(GP<DjVuImage> dimg)
       int h = bg44->get_height();
       // Avoid silly cases
       if (w==0 || h==0 || width==0 || height==0)
-        return 0;
+	return 0;
       return compute_red(width,height,w,h);
     }
   // CASE 2: Raw background pixmap
@@ -855,7 +855,7 @@ get_bg_red(GP<DjVuImage> dimg)
       int h = bgpm->rows();
       // Avoid silly cases
       if (w==0 || h==0 || width==0 || height==0)
-        return 0;
+	return 0;
       return compute_red(width,height,w,h);
     }
   return 0;
@@ -878,7 +878,7 @@ get_bg_pixmap(GP<DjVuImage> dimg, const GRect &rect)
       int h = bg44->get_height();
       // Avoid silly cases
       if (w==0 || h==0 || width==0 || height==0)
-        return 0;
+	return 0;
       pm = bg44->get_pixmap(1,rect);
       return pm;
     }
@@ -890,7 +890,7 @@ get_bg_pixmap(GP<DjVuImage> dimg, const GRect &rect)
       int h = bgpm->rows();
       // Avoid silly cases
       if (w==0 || h==0 || width==0 || height==0)
-        return 0;
+	return 0;
       pm->init(*bgpm, rect);
       return pm;
     }
@@ -898,7 +898,7 @@ get_bg_pixmap(GP<DjVuImage> dimg, const GRect &rect)
   return 0;
 }
 
-void 
+void
 DjVuToPS::
 make_gamma_ramp(GP<DjVuImage> dimg)
 {
@@ -906,7 +906,7 @@ make_gamma_ramp(GP<DjVuImage> dimg)
   double whitepoint = (options.get_sRGB() ? 255 : 280);
   for (int i=0; i<256; i++)
     ramp[i] = i;
-  if (! dimg->get_info()) 
+  if (! dimg->get_info())
     return;
   if (targetgamma < 0.1)
     return;
@@ -918,8 +918,8 @@ make_gamma_ramp(GP<DjVuImage> dimg)
     for (int i=0; i<256; i++)
     {
       double x = (double)(i)/255.0;
-      if (correction != 1.0) 
-        x = pow(x, correction);        
+      if (correction != 1.0)
+	x = pow(x, correction);
       int j = (int) floor(whitepoint * x + 0.5);
       ramp[i] = (j>255) ? 255 : (j<0) ? 0 : j;
     }
@@ -928,10 +928,10 @@ make_gamma_ramp(GP<DjVuImage> dimg)
 
 void
 DjVuToPS::
-print_fg_2layer(ByteStream &str, 
-                GP<DjVuImage> dimg,
-                const GRect &prn_rect, 
-                unsigned char *blit_list)
+print_fg_2layer(ByteStream &str,
+		GP<DjVuImage> dimg,
+		const GRect &prn_rect,
+		unsigned char *blit_list)
 {
   // Pure-jb2 or color-jb2 case.
   GPixel p;
@@ -945,44 +945,44 @@ print_fg_2layer(ByteStream &str,
   for(current_blit=0; current_blit<num_blits; current_blit++)
     {
       if (blit_list[current_blit])
-        {
-          JB2Blit *blit = jb2->get_blit(current_blit);
-          if ((pal) && !(options.get_mode()==Options::BW))
-            {
-              pal->index_to_color(pal->colordata[current_blit], p);
-              if (options.get_color())
-                {
-                  write(str,"/%d %d %d %f %f %f c\n",
-                        blit->shapeno, 
-                        blit->left-currentx, blit->bottom-currenty,
-                        ramp[p.r]/255.0, ramp[p.g]/255.0, ramp[p.b]/255.0);
-                } 
-              else
-                {
-                  write(str,"/%d %d %d %f c\n",
-                        blit->shapeno, 
-                        blit->left-currentx, blit->bottom-currenty,
-                        ramp[GRAY(p.r, p.g, p.b)]/255.0);
-                }
-            }
-          else
-            {
-              write(str,"/%d %d %d s\n", 
-                    blit->shapeno, 
-                    blit->left-currentx, blit->bottom-currenty);
-            }
-          currentx = blit->left;
-          currenty = blit->bottom;
-        }
+	{
+	  JB2Blit *blit = jb2->get_blit(current_blit);
+	  if ((pal) && !(options.get_mode()==Options::BW))
+	    {
+	      pal->index_to_color(pal->colordata[current_blit], p);
+	      if (options.get_color())
+		{
+		  write(str,"/%d %d %d %f %f %f c\n",
+			blit->shapeno,
+			blit->left-currentx, blit->bottom-currenty,
+			ramp[p.r]/255.0, ramp[p.g]/255.0, ramp[p.b]/255.0);
+		}
+	      else
+		{
+		  write(str,"/%d %d %d %f c\n",
+			blit->shapeno,
+			blit->left-currentx, blit->bottom-currenty,
+			ramp[GRAY(p.r, p.g, p.b)]/255.0);
+		}
+	    }
+	  else
+	    {
+	      write(str,"/%d %d %d s\n",
+		    blit->shapeno,
+		    blit->left-currentx, blit->bottom-currenty);
+	    }
+	  currentx = blit->left;
+	  currenty = blit->bottom;
+	}
     }
 }
 
 void
 DjVuToPS::
-print_fg_3layer(ByteStream &str, 
-                GP<DjVuImage> dimg,
-                const GRect &cprn_rect, 
-                unsigned char *blit_list )
+print_fg_3layer(ByteStream &str,
+		GP<DjVuImage> dimg,
+		const GRect &cprn_rect,
+		unsigned char *blit_list )
 {
   GRect prn_rect;
   GP<GPixmap> brush = dimg->get_fgpm();
@@ -1001,30 +1001,30 @@ print_fg_3layer(ByteStream &str,
   int ph = 2;
 
   write(str,
-        "/P {\n" 
-        "  11 dict dup begin 4 1 roll\n"
-        "    /PatternType 1 def\n"
-        "    /PaintType 1 def\n"
-        "    /TilingType 1 def\n"
-        "    /H exch def\n"
-        "    /W exch def\n"
-        "    /Red %d def\n"
-        "    /PatternString exch def\n"
-        "    /XStep W Red mul def\n"
-        "    /YStep H Red mul def\n"
-        "    /BBox [0 0 XStep YStep] def\n"
-        "    /PaintProc { begin\n"
-        "       Red dup scale\n"
-        "       << /ImageType 1 /Width W /Height H\n"
-        "          /BitsPerComponent 8 /Interpolate false\n"
-        "          /Decode [%s] /ImageMatrix [1 0 0 1 0 0]\n"
-        "          /DataSource PatternString >> image\n"
-        "       end } bind def\n"
-        "     0 0 XStep YStep rectclip\n"
-        "     end matrix makepattern\n"
-        "  /Pattern setcolorspace setpattern\n"
-        "  0 0 moveto\n"
-        "} def\n", red, (color_nb == 1) ? "0 1" : "0 1 0 1 0 1" );
+	"/P {\n"
+	"  11 dict dup begin 4 1 roll\n"
+	"    /PatternType 1 def\n"
+	"    /PaintType 1 def\n"
+	"    /TilingType 1 def\n"
+	"    /H exch def\n"
+	"    /W exch def\n"
+	"    /Red %d def\n"
+	"    /PatternString exch def\n"
+	"    /XStep W Red mul def\n"
+	"    /YStep H Red mul def\n"
+	"    /BBox [0 0 XStep YStep] def\n"
+	"    /PaintProc { begin\n"
+	"       Red dup scale\n"
+	"       << /ImageType 1 /Width W /Height H\n"
+	"          /BitsPerComponent 8 /Interpolate false\n"
+	"          /Decode [%s] /ImageMatrix [1 0 0 1 0 0]\n"
+	"          /DataSource PatternString >> image\n"
+	"       end } bind def\n"
+	"     0 0 XStep YStep rectclip\n"
+	"     end matrix makepattern\n"
+	"  /Pattern setcolorspace setpattern\n"
+	"  0 0 moveto\n"
+	"} def\n", red, (color_nb == 1) ? "0 1" : "0 1 0 1 0 1" );
 
   unsigned char *s;
   GPBuffer<unsigned char> gs(s,pw*ph*color_nb);
@@ -1032,83 +1032,83 @@ print_fg_3layer(ByteStream &str,
   GPBuffer<unsigned char> gs_ascii_encoded(s_ascii_encoded,pw*ph*2*color_nb);
     {
       for (int y=prn_rect.ymin; y<prn_rect.ymax; y+=ph)
-        for (int x=prn_rect.xmin; x<prn_rect.xmax; x+=pw)
-          {
-            int w = ((x+pw > prn_rect.xmax) ? prn_rect.xmax-x : pw);
-            int h = ((y+ph > prn_rect.ymax) ? prn_rect.ymax-y : ph);
-            int currentx = x * red;
-            int currenty = y * red;
-            // Find first intersecting blit
-            int current_blit;
-            int num_blits = jb2->get_blit_count();
-            GRect rect1(currentx,currenty, w*red, h*red);
-            for(current_blit=0; current_blit<num_blits; current_blit++)
-              if (blit_list[current_blit])
-                {
-                  JB2Blit *blit = jb2->get_blit(current_blit);
-                  GRect rect2(blit->left, blit->bottom,
-                              jb2->get_shape(blit->shapeno).bits->columns(),
-                              jb2->get_shape(blit->shapeno).bits->rows());
-                  if (rect2.intersect(rect1,rect2)) 
-                    break;
-                }
-            if (current_blit >= num_blits)
-              continue;
-            // Setup pattern
-            write(str,"gsave %d %d translate\n", currentx, currenty);
-            write(str,"<~");
-            unsigned char *q = s;
-            for(int current_row = y; current_row<y+h; current_row++)
-              { 
-                GPixel *row_pix = (*brush)[current_row];
-                for(int current_col = x; current_col<x+w; current_col++)
-                  { 
-                    GPixel &p = row_pix[current_col];
-                    if (color_nb>1)
-                      {
-                        *q++ = ramp[p.r];
-                        *q++ = ramp[p.g];
-                        *q++ = ramp[p.b];
-                      }
-                    else
-                      {
-                        *q++ = ramp[GRAY(p.r,p.g,p.b)];
-                      }
-                  }
-              }
-            unsigned char *stop_ascii = 
-              ASCII85_encode(s_ascii_encoded,s,s+w*h*color_nb);
-            *stop_ascii++='\0';
-            write(str,"%s",s_ascii_encoded);
-            write(str,"~> %d %d P\n", w, h);
-            // Keep performing blits
-            for(; current_blit<num_blits; current_blit++)
-              if (blit_list[current_blit])
-                {
-                  JB2Blit *blit = jb2->get_blit(current_blit);
-                  GRect rect2(blit->left, blit->bottom,
-                              jb2->get_shape(blit->shapeno).bits->columns(),
-                              jb2->get_shape(blit->shapeno).bits->rows()); 
-                  if (rect2.intersect(rect1,rect2)) 
-                    {   
-                      write(str,"/%d %d %d s\n",
-                            blit->shapeno, 
-                            blit->left-currentx, blit->bottom-currenty);
-                      currentx = blit->left;
-                      currenty = blit->bottom;
-                    }
-                }
-            write(str,"grestore\n");
-          }
+	for (int x=prn_rect.xmin; x<prn_rect.xmax; x+=pw)
+	  {
+	    int w = ((x+pw > prn_rect.xmax) ? prn_rect.xmax-x : pw);
+	    int h = ((y+ph > prn_rect.ymax) ? prn_rect.ymax-y : ph);
+	    int currentx = x * red;
+	    int currenty = y * red;
+	    // Find first intersecting blit
+	    int current_blit;
+	    int num_blits = jb2->get_blit_count();
+	    GRect rect1(currentx,currenty, w*red, h*red);
+	    for(current_blit=0; current_blit<num_blits; current_blit++)
+	      if (blit_list[current_blit])
+		{
+		  JB2Blit *blit = jb2->get_blit(current_blit);
+		  GRect rect2(blit->left, blit->bottom,
+			      jb2->get_shape(blit->shapeno).bits->columns(),
+			      jb2->get_shape(blit->shapeno).bits->rows());
+		  if (rect2.intersect(rect1,rect2))
+		    break;
+		}
+	    if (current_blit >= num_blits)
+	      continue;
+	    // Setup pattern
+	    write(str,"gsave %d %d translate\n", currentx, currenty);
+	    write(str,"<~");
+	    unsigned char *q = s;
+	    for(int current_row = y; current_row<y+h; current_row++)
+	      {
+		GPixel *row_pix = (*brush)[current_row];
+		for(int current_col = x; current_col<x+w; current_col++)
+		  {
+		    GPixel &p = row_pix[current_col];
+		    if (color_nb>1)
+		      {
+			*q++ = ramp[p.r];
+			*q++ = ramp[p.g];
+			*q++ = ramp[p.b];
+		      }
+		    else
+		      {
+			*q++ = ramp[GRAY(p.r,p.g,p.b)];
+		      }
+		  }
+	      }
+	    unsigned char *stop_ascii =
+	      ASCII85_encode(s_ascii_encoded,s,s+w*h*color_nb);
+	    *stop_ascii++='\0';
+	    write(str,"%s",s_ascii_encoded);
+	    write(str,"~> %d %d P\n", w, h);
+	    // Keep performing blits
+	    for(; current_blit<num_blits; current_blit++)
+	      if (blit_list[current_blit])
+		{
+		  JB2Blit *blit = jb2->get_blit(current_blit);
+		  GRect rect2(blit->left, blit->bottom,
+			      jb2->get_shape(blit->shapeno).bits->columns(),
+			      jb2->get_shape(blit->shapeno).bits->rows());
+		  if (rect2.intersect(rect1,rect2))
+		    {
+		      write(str,"/%d %d %d s\n",
+			    blit->shapeno,
+			    blit->left-currentx, blit->bottom-currenty);
+		      currentx = blit->left;
+		      currenty = blit->bottom;
+		    }
+		}
+	    write(str,"grestore\n");
+	  }
       // Cleanup
     }
 }
 
 void
 DjVuToPS::
-print_fg(ByteStream &str, 
-         GP<DjVuImage> dimg,
-         const GRect &prn_rect )
+print_fg(ByteStream &str,
+	 GP<DjVuImage> dimg,
+	 const GRect &prn_rect )
 {
   GP<JB2Image> jb2=dimg->get_fgjb();
   if (! jb2) return;
@@ -1127,9 +1127,9 @@ print_fg(ByteStream &str,
     JB2Blit *blit = jb2->get_blit(current_blit);
     JB2Shape *shape = & jb2->get_shape(blit->shapeno);
     blit_list[current_blit] = 0;
-    if (! shape->bits) 
+    if (! shape->bits)
       continue;
-    GRect rect2(blit->left, blit->bottom, 
+    GRect rect2(blit->left, blit->bottom,
       shape->bits->columns(), shape->bits->rows());
     if (rect2.intersect(rect2, prn_rect))
     {
@@ -1166,8 +1166,8 @@ print_fg(ByteStream &str,
       int nstrings=0;
       if (nbytes>(int)ps_string_size)   //max string length
       {
-        nrows=ps_string_size/((columns+7)/8);
-        nbytes=(columns+7)/8*nrows+1;
+	nrows=ps_string_size/((columns+7)/8);
+	nbytes=(columns+7)/8*nrows+1;
       }
       unsigned char *s_start;
       GPBuffer<unsigned char> gs_start(s_start,nbytes);
@@ -1177,52 +1177,52 @@ print_fg(ByteStream &str,
 
       unsigned char *s = s_start;
       for(int current_row=0; current_row<rows; current_row++)
-      {  
-        unsigned char * row_bits = (*bitmap)[current_row];
-        unsigned char acc = 0;
-        unsigned char mask = 0;
-        for(int current_col=0; current_col<columns; current_col++)
-        {
-          if (mask == 0)
-            mask = 0x80;
-          if (row_bits[current_col])
-            acc |= mask;
-          mask >>= 1;
-          if (mask == 0)
-          {
-            *s=acc;
-            s++;
-            acc = mask = 0;
-          }
-        }
-        if (mask != 0)
-        {
-          *s=acc;
-          s++;
-        }
-        if (!((current_row+1)%nrows))
-        {
-          unsigned char *stop_ascii = ASCII85_encode(s_ascii,s_start,s); 
-          *stop_ascii++='\0';
-          write(str,"<~%s~> ",s_ascii);
-          s=s_start;
-          nstrings++;
-        }
+      {
+	unsigned char * row_bits = (*bitmap)[current_row];
+	unsigned char acc = 0;
+	unsigned char mask = 0;
+	for(int current_col=0; current_col<columns; current_col++)
+	{
+	  if (mask == 0)
+	    mask = 0x80;
+	  if (row_bits[current_col])
+	    acc |= mask;
+	  mask >>= 1;
+	  if (mask == 0)
+	  {
+	    *s=acc;
+	    s++;
+	    acc = mask = 0;
+	  }
+	}
+	if (mask != 0)
+	{
+	  *s=acc;
+	  s++;
+	}
+	if (!((current_row+1)%nrows))
+	{
+	  unsigned char *stop_ascii = ASCII85_encode(s_ascii,s_start,s);
+	  *stop_ascii++='\0';
+	  write(str,"<~%s~> ",s_ascii);
+	  s=s_start;
+	  nstrings++;
+	}
       }
       if (s!=s_start)
       {
-        unsigned char *stop_ascii = ASCII85_encode(s_ascii,s_start,s);
-        *stop_ascii++='\0';
-        write(str,"<~%s~> ",s_ascii);
-          nstrings++;
+	unsigned char *stop_ascii = ASCII85_encode(s_ascii,s_start,s);
+	*stop_ascii++='\0';
+	write(str,"<~%s~> ",s_ascii);
+	  nstrings++;
       }
       if (nstrings==1)
-        write(str," %d %d g} def\n", columns, rows);                  
+	write(str," %d %d g} def\n", columns, rows);
       else
-        write(str," %d %d %d gn} def\n", columns, rows,nstrings);
+	write(str," %d %d %d gn} def\n", columns, rows,nstrings);
     }
   }
-  write(str, 
+  write(str,
     "end\n"
     "/BuildGlyph {\n"
     "  exch /CharStrings get exch\n"
@@ -1238,19 +1238,19 @@ print_fg(ByteStream &str,
     "0 0 moveto\n",
     prn_rect.xmin, prn_rect.ymin);
   // Print the foreground layer
-  if (dimg->get_fgpm() && !(options.get_mode()==Options::BW)) 
+  if (dimg->get_fgpm() && !(options.get_mode()==Options::BW))
     print_fg_3layer(str, dimg, prn_rect, blit_list);
   else
-    print_fg_2layer(str, dimg, prn_rect, blit_list);        
+    print_fg_2layer(str, dimg, prn_rect, blit_list);
   write(str, "/LocalDjVuFont undefinefont grestore\n");
 }
 
 
-void 
+void
 DjVuToPS::
-print_bg(ByteStream &str, 
-         GP<DjVuImage> dimg,
-         const GRect &cprn_rect)
+print_bg(ByteStream &str,
+	 GP<DjVuImage> dimg,
+	 const GRect &cprn_rect)
 {
   GP<GPixmap> pm;
   GRect prn_rect;
@@ -1259,12 +1259,12 @@ print_bg(ByteStream &str,
   write(str, "%% --- now doing the background\n");
   if (! (red = get_bg_red(dimg)))
     return;
-  write(str, 
-        "gsave -%d -%d translate\n"
-        "/bgred %d def bgred bgred scale\n",
-        cprn_rect.xmin % red, 
-        cprn_rect.ymin % red, 
-        red);
+  write(str,
+	"gsave -%d -%d translate\n"
+	"/bgred %d def bgred bgred scale\n",
+	cprn_rect.xmin % red,
+	cprn_rect.ymin % red,
+	red);
   prn_rect.ymin = (cprn_rect.ymin)/red;
   prn_rect.ymax = (cprn_rect.ymax+red-1)/red;
   prn_rect.xmin = (cprn_rect.xmin)/red;
@@ -1280,41 +1280,41 @@ print_bg(ByteStream &str,
        !dimg->is_legal_compound())
       || options.get_mode()==Options::BW)
     do_color = false;
-  if (do_color) 
+  if (do_color)
     buffer_size *= 3;
   if (do_color)
-    write(str, 
-          "/bufferR %d string def\n"
-          "/bufferG %d string def\n"
-          "/bufferB %d string def\n"
-          "DjVuColorSpace setcolorspace\n"
-          "<< /ImageType 1\n"
-          "   /Width %d\n"
-          "   /Height %d\n"
-          "   /BitsPerComponent 8\n"
-          "   /Decode [0 1 0 1 0 1]\n"
-          "   /ImageMatrix [1 0 0 1 0 0]\n"
-          "   /MultipleDataSources true\n"
-          "   /DataSource [ { ReadR } { ReadG } { ReadB } ]\n"
-          "   /Interpolate false >> image\n",
-          ps_chunk_height*prn_rect.width(),
-          ps_chunk_height*prn_rect.width(),
-          ps_chunk_height*prn_rect.width(),
-          prn_rect.width(), prn_rect.height());
+    write(str,
+	  "/bufferR %d string def\n"
+	  "/bufferG %d string def\n"
+	  "/bufferB %d string def\n"
+	  "DjVuColorSpace setcolorspace\n"
+	  "<< /ImageType 1\n"
+	  "   /Width %d\n"
+	  "   /Height %d\n"
+	  "   /BitsPerComponent 8\n"
+	  "   /Decode [0 1 0 1 0 1]\n"
+	  "   /ImageMatrix [1 0 0 1 0 0]\n"
+	  "   /MultipleDataSources true\n"
+	  "   /DataSource [ { ReadR } { ReadG } { ReadB } ]\n"
+	  "   /Interpolate false >> image\n",
+	  ps_chunk_height*prn_rect.width(),
+	  ps_chunk_height*prn_rect.width(),
+	  ps_chunk_height*prn_rect.width(),
+	  prn_rect.width(), prn_rect.height());
   else
-    write(str, 
-          "DjVuColorSpace setcolorspace\n"
-          "<< /ImageType 1\n"
-          "   /Width %d\n"
-          "   /Height %d\n"
-          "   /BitsPerComponent 8\n"
-          "   /Decode [0 1]\n"
-          "   /ImageMatrix [1 0 0 1 0 0]\n"
-          "   /DataSource currentfile /ASCII85Decode\n"
-          "      filter /RunLengthDecode filter\n"
-          "   /Interpolate false >> image\n",
-          prn_rect.width(), prn_rect.height());
-  
+    write(str,
+	  "DjVuColorSpace setcolorspace\n"
+	  "<< /ImageType 1\n"
+	  "   /Width %d\n"
+	  "   /Height %d\n"
+	  "   /BitsPerComponent 8\n"
+	  "   /Decode [0 1]\n"
+	  "   /ImageMatrix [1 0 0 1 0 0]\n"
+	  "   /DataSource currentfile /ASCII85Decode\n"
+	  "      filter /RunLengthDecode filter\n"
+	  "   /Interpolate false >> image\n",
+	  prn_rect.width(), prn_rect.height());
+
   unsigned char *buffer;
   GPBuffer<unsigned char> gbuffer(buffer,buffer_size);
   unsigned char *rle_in;
@@ -1328,132 +1328,132 @@ print_bg(ByteStream &str,
     grectBand.ymax = grectBand.ymin;
     while(grectBand.ymax < prn_rect.ymax)
       {
-        GP<GPixmap> pm = 0;
-        // Compute next band
-        grectBand.ymin=grectBand.ymax;
-        grectBand.ymax=grectBand.ymin+band_bytes/grectBand.width();
-        if (grectBand.ymax>prn_rect.ymax)
-          grectBand.ymax=prn_rect.ymax;
-        pm = get_bg_pixmap(dimg, grectBand);
-        unsigned char *buf_ptr = buffer;
-        if (pm)
-          {
-            if (do_color)
-              {
-                int y=0;
-                while(y<grectBand.height())
-                  {
-                    int row, y1;
-                    unsigned char *ptr, *ptr1;
-                    // Doing R component of current chunk
-                    for (row=0,ptr=rle_in,y1=y; 
-                         row<ps_chunk_height && y1<grectBand.height(); 
-                         row++,y1++)
-                      {
-                        GPixel *pix = (*pm)[y1];
-                        for (int x=grectBand.width(); x>0; x--,pix++)
-                          *ptr++ = ramp[pix->r];
-                      }
-                    ptr1 = RLE_encode(rle_out, rle_in, ptr); 
-                    *ptr1++ = 0x80;
-                    buf_ptr = ASCII85_encode(buf_ptr, rle_out, ptr1);
-                    *buf_ptr++ = '~'; *buf_ptr++ = '>'; *buf_ptr++ = '\n';
-                    // Doing G component of current chunk
-                    for (row=0,ptr=rle_in,y1=y; 
-                         row<ps_chunk_height && y1<grectBand.height(); 
-                         row++,y1++)
-                      {
-                        GPixel *pix = (*pm)[y1];
-                        for (int x=grectBand.width(); x>0; x--,pix++)
-                          *ptr++ = ramp[pix->g];
-                      }
-                    ptr1 = RLE_encode(rle_out, rle_in, ptr); 
-                    *ptr1++ = 0x80;
-                    buf_ptr = ASCII85_encode(buf_ptr, rle_out, ptr1);
-                    *buf_ptr++ = '~'; 
-                    *buf_ptr++ = '>'; 
-                    *buf_ptr++ = '\n';
-                    // Doing B component of current chunk
-                    for (row=0, ptr=rle_in, y1=y;
-                         row<ps_chunk_height && y1<grectBand.height(); 
-                         row++,y1++)
-                      {
-                        GPixel *pix = (*pm)[y1];
-                        for (int x=grectBand.width(); x>0; x--,pix++)
-                          *ptr++ = ramp[pix->b];
-                      }
-                    ptr1 = RLE_encode(rle_out, rle_in, ptr);
-                    *ptr1++ = 0x80;
-                    buf_ptr = ASCII85_encode(buf_ptr, rle_out, ptr1);
-                    *buf_ptr++ = '~'; 
-                    *buf_ptr++ = '>'; 
-                    *buf_ptr++ = '\n';
-                    y=y1;
-                    if (refresh_cb) 
-                      refresh_cb(refresh_cl_data);
-                  } //while (y>=0)
-              } 
-            else
-              {
-                // Don't use color
-                int y=0;
-                while(y<grectBand.height())
-                  {
-                    unsigned char *ptr = rle_in;
-                    for(int row=0; 
-                        row<ps_chunk_height && y<grectBand.height(); 
-                        row++,y++)
-                      {
-                        GPixel *pix = (*pm)[y];
-                        for (int x=grectBand.width(); x>0; x--,pix++)
-                          *ptr++ = ramp[GRAY(pix->r,pix->g,pix->b)];
-                      }
-                    rle_out_end = RLE_encode(rle_out_end, rle_in, ptr);
-                    unsigned char *encode_to 
-                      = rle_out+(rle_out_end-rle_out)/4*4;
-                    int bytes_left = rle_out_end-encode_to;
-                    buf_ptr = ASCII85_encode(buf_ptr, rle_out, encode_to);
-                    *buf_ptr++ = '\n';
-                    memcpy(rle_out, encode_to, bytes_left);
-                    rle_out_end = rle_out+bytes_left;
-                    if (refresh_cb) 
-                      refresh_cb(refresh_cl_data);
-                  }
-              }
-          } // if (pm)
-        str.writall(buffer, buf_ptr-buffer);
-        if (prn_progress_cb)
-          {
-            double done=(double)(grectBand.ymax 
-                                 - prn_rect.ymin)/prn_rect.height();
-            if ((int) (20*print_done)!=(int) (20*done))
-              {
-                print_done=done;
-                prn_progress_cb(done, prn_progress_cl_data);
-              }
-          }
+	GP<GPixmap> pm = 0;
+	// Compute next band
+	grectBand.ymin=grectBand.ymax;
+	grectBand.ymax=grectBand.ymin+band_bytes/grectBand.width();
+	if (grectBand.ymax>prn_rect.ymax)
+	  grectBand.ymax=prn_rect.ymax;
+	pm = get_bg_pixmap(dimg, grectBand);
+	unsigned char *buf_ptr = buffer;
+	if (pm)
+	  {
+	    if (do_color)
+	      {
+		int y=0;
+		while(y<grectBand.height())
+		  {
+		    int row, y1;
+		    unsigned char *ptr, *ptr1;
+		    // Doing R component of current chunk
+		    for (row=0,ptr=rle_in,y1=y;
+			 row<ps_chunk_height && y1<grectBand.height();
+			 row++,y1++)
+		      {
+			GPixel *pix = (*pm)[y1];
+			for (int x=grectBand.width(); x>0; x--,pix++)
+			  *ptr++ = ramp[pix->r];
+		      }
+		    ptr1 = RLE_encode(rle_out, rle_in, ptr);
+		    *ptr1++ = 0x80;
+		    buf_ptr = ASCII85_encode(buf_ptr, rle_out, ptr1);
+		    *buf_ptr++ = '~'; *buf_ptr++ = '>'; *buf_ptr++ = '\n';
+		    // Doing G component of current chunk
+		    for (row=0,ptr=rle_in,y1=y;
+			 row<ps_chunk_height && y1<grectBand.height();
+			 row++,y1++)
+		      {
+			GPixel *pix = (*pm)[y1];
+			for (int x=grectBand.width(); x>0; x--,pix++)
+			  *ptr++ = ramp[pix->g];
+		      }
+		    ptr1 = RLE_encode(rle_out, rle_in, ptr);
+		    *ptr1++ = 0x80;
+		    buf_ptr = ASCII85_encode(buf_ptr, rle_out, ptr1);
+		    *buf_ptr++ = '~';
+		    *buf_ptr++ = '>';
+		    *buf_ptr++ = '\n';
+		    // Doing B component of current chunk
+		    for (row=0, ptr=rle_in, y1=y;
+			 row<ps_chunk_height && y1<grectBand.height();
+			 row++,y1++)
+		      {
+			GPixel *pix = (*pm)[y1];
+			for (int x=grectBand.width(); x>0; x--,pix++)
+			  *ptr++ = ramp[pix->b];
+		      }
+		    ptr1 = RLE_encode(rle_out, rle_in, ptr);
+		    *ptr1++ = 0x80;
+		    buf_ptr = ASCII85_encode(buf_ptr, rle_out, ptr1);
+		    *buf_ptr++ = '~';
+		    *buf_ptr++ = '>';
+		    *buf_ptr++ = '\n';
+		    y=y1;
+		    if (refresh_cb)
+		      refresh_cb(refresh_cl_data);
+		  } //while (y>=0)
+	      }
+	    else
+	      {
+		// Don't use color
+		int y=0;
+		while(y<grectBand.height())
+		  {
+		    unsigned char *ptr = rle_in;
+		    for(int row=0;
+			row<ps_chunk_height && y<grectBand.height();
+			row++,y++)
+		      {
+			GPixel *pix = (*pm)[y];
+			for (int x=grectBand.width(); x>0; x--,pix++)
+			  *ptr++ = ramp[GRAY(pix->r,pix->g,pix->b)];
+		      }
+		    rle_out_end = RLE_encode(rle_out_end, rle_in, ptr);
+		    unsigned char *encode_to
+		      = rle_out+(rle_out_end-rle_out)/4*4;
+		    int bytes_left = rle_out_end-encode_to;
+		    buf_ptr = ASCII85_encode(buf_ptr, rle_out, encode_to);
+		    *buf_ptr++ = '\n';
+		    memcpy(rle_out, encode_to, bytes_left);
+		    rle_out_end = rle_out+bytes_left;
+		    if (refresh_cb)
+		      refresh_cb(refresh_cl_data);
+		  }
+	      }
+	  } // if (pm)
+	str.writall(buffer, buf_ptr-buffer);
+	if (prn_progress_cb)
+	  {
+	    double done=(double)(grectBand.ymax
+				 - prn_rect.ymin)/prn_rect.height();
+	    if ((int) (20*print_done)!=(int) (20*done))
+	      {
+		print_done=done;
+		prn_progress_cb(done, prn_progress_cl_data);
+	      }
+	  }
       } // while(grectBand.yax<grect.ymax)
     if (! do_color)
       {
-        unsigned char * buf_ptr = buffer;
-        *rle_out_end++ = 0x80;
-        buf_ptr = ASCII85_encode(buf_ptr, rle_out, rle_out_end);
-        *buf_ptr++='~'; 
-        *buf_ptr++='>'; 
-        *buf_ptr++='\n';
-        str.writall(buffer, buf_ptr-buffer);
+	unsigned char * buf_ptr = buffer;
+	*rle_out_end++ = 0x80;
+	buf_ptr = ASCII85_encode(buf_ptr, rle_out, rle_out_end);
+	*buf_ptr++='~';
+	*buf_ptr++='>';
+	*buf_ptr++='\n';
+	str.writall(buffer, buf_ptr-buffer);
       }
-  } 
+  }
   //restore the scaling
   write(str, "grestore\n");
 }
 
 void
 DjVuToPS::
-print_image_lev1(ByteStream &str, 
-                 GP<DjVuImage> dimg,
-                 const GRect &prn_rect)
-{         
+print_image_lev1(ByteStream &str,
+		 GP<DjVuImage> dimg,
+		 const GRect &prn_rect)
+{
   double print_done=0;
   GRect all(0,0, dimg->get_width(),dimg->get_height());
   GP<GPixmap> pm;
@@ -1470,8 +1470,8 @@ print_image_lev1(ByteStream &str,
   if (! pm && ! bm)
     return;
   write(str,
-        "%% --- now doing a level 1 image\n"
-        "gsave\n");
+	"%% --- now doing a level 1 image\n"
+	"gsave\n");
   // Display image
   int band_bytes=125000;
   int band_height = band_bytes/prn_rect.width();
@@ -1483,7 +1483,7 @@ print_image_lev1(ByteStream &str,
     do_color_or_gray = true;
   if (do_color_or_gray && options.get_color())
     do_color = true;
-  if (do_color) 
+  if (do_color)
     buffer_size *= 3;
   if (do_color)
     write(str, "/buffer24 %d string def\n", 3*prn_rect.width());
@@ -1494,23 +1494,23 @@ print_image_lev1(ByteStream &str,
   if (do_color)
     {
       write(str,
-            "%d %d 8 [ 1 0 0 1 0 0 ]\n"
-            "{ ColorProc } false 3 ColorImage\n",
-            prn_rect.width(), prn_rect.height());
-    } 
+	    "%d %d 8 [ 1 0 0 1 0 0 ]\n"
+	    "{ ColorProc } false 3 ColorImage\n",
+	    prn_rect.width(), prn_rect.height());
+    }
   else if (do_color_or_gray)
     {
       write(str,
-            "%d %d 8 [ 1 0 0 1 0 0 ]\n"
-            "{ currentfile buffer8 readhexstring pop } image\n",
-            prn_rect.width(), prn_rect.height());
-    } 
+	    "%d %d 8 [ 1 0 0 1 0 0 ]\n"
+	    "{ currentfile buffer8 readhexstring pop } image\n",
+	    prn_rect.width(), prn_rect.height());
+    }
   else
     {
       write(str,
-            "%d %d 1 [ 1 0 0 1 0 0 ]\n"
-            "{ currentfile buffer8 readhexstring pop } image\n",
-            prn_rect.width(), prn_rect.height());
+	    "%d %d 1 [ 1 0 0 1 0 0 ]\n"
+	    "{ currentfile buffer8 readhexstring pop } image\n",
+	    prn_rect.width(), prn_rect.height());
     }
   unsigned char * buffer;
   GPBuffer<unsigned char> gbuffer(buffer,buffer_size);
@@ -1519,128 +1519,128 @@ print_image_lev1(ByteStream &str,
       GRect grectBand = prn_rect;
       grectBand.ymax = grectBand.ymin;
       while(grectBand.ymax < prn_rect.ymax)
-        {
-          // Compute next band
-          grectBand.ymin = grectBand.ymax;
-          grectBand.ymax = grectBand.ymin+band_bytes/grectBand.width();
-          if (grectBand.ymax > prn_rect.ymax)
-            grectBand.ymax = prn_rect.ymax;
-          GRect all(0,0, dimg->get_width(),dimg->get_height());
-          pm = 0;
-          bm = 0;
-          if (do_color_or_gray)
-            {
-              if (options.get_mode() == Options::FORE)
-                pm = dimg->get_fg_pixmap(grectBand, all);
-              else if (options.get_mode() == Options::BACK)
-                pm = dimg->get_bg_pixmap(grectBand, all);
-              else
-                pm = dimg->get_pixmap(grectBand, all);
-            }
-          else 
-            {
-              bm = dimg->get_bitmap(grectBand, all);
-            }
-          // Store next band
-          unsigned char *buf_ptr = buffer;
-          int symbols=0;
-          for (int y=0; y<grectBand.height(); y++)
-            {
-              if (pm && do_color_or_gray)
-                {
-                  GPixel *pix = (*pm)[y];
-                  for (int x=grectBand.width(); x>0; x--, pix++)
-                    {
-                      if (do_color)
-                        {
-                          char *data;
-                          data = bin2hex[ramp[pix->r]];
-                          *buf_ptr++ = data[0];
-                          *buf_ptr++ = data[1];
-                          data = bin2hex[ramp[pix->g]];
-                          *buf_ptr++ = data[0];
-                          *buf_ptr++ = data[1];
-                          data = bin2hex[ramp[pix->b]];
-                          *buf_ptr++ = data[0];
-                          *buf_ptr++ = data[1];
-                          symbols += 6;
-                        }
-                      else
-                        {
-                          char *data;
-                          data = bin2hex[ramp[GRAY(pix->r,pix->g,pix->b)]];
-                          *buf_ptr++ = data[0];
-                          *buf_ptr++ = data[1];
-                          symbols += 2;
-                        }
-                      if (symbols>70) 
-                        { 
-                          *buf_ptr++ = '\n'; 
-                          symbols=0; 
-                        }
-                    }
-                }
-              else if (bm)
-                {
-                  unsigned char *pix = (*bm)[y];
-                  unsigned char acc = 0;
-                  unsigned char mask = 0;
-                  char *data;
-                  for (int x=grectBand.width(); x>0; x--, pix++)
-                    {
-                      if (mask == 0)
-                        mask = 0x80;
-                      if (! *pix)
-                        acc |= mask;
-                      mask >>= 1;
-                      if (mask == 0)
-                        {
-                          data = bin2hex[acc];
-                          acc = 0;
-                          *buf_ptr++ = data[0];
-                          *buf_ptr++ = data[1];
-                          symbols += 2;
-                          if (symbols>70) 
-                            { 
-                              *buf_ptr++ = '\n'; 
-                              symbols = 0; 
-                            }
-                        }
-                    }
-                  if (mask != 0) 
-                    {
-                      data = bin2hex[acc];
-                      *buf_ptr++ = data[0];
-                      *buf_ptr++ = data[1];
-                      symbols += 2;
-                    }
-                }
-              if (refresh_cb) 
-                refresh_cb(refresh_cl_data);
-            }
-          str.writall(buffer, buf_ptr-buffer);
-          if (prn_progress_cb)
-            {
-              double done=(double) (grectBand.ymax 
-                                    - prn_rect.ymin)/prn_rect.height();
-              if ((int) (20*print_done)!=(int) (20*done))
-                {
-                  print_done=done;
-                  prn_progress_cb(done, prn_progress_cl_data);
-                }
-            }
-        }
+	{
+	  // Compute next band
+	  grectBand.ymin = grectBand.ymax;
+	  grectBand.ymax = grectBand.ymin+band_bytes/grectBand.width();
+	  if (grectBand.ymax > prn_rect.ymax)
+	    grectBand.ymax = prn_rect.ymax;
+	  GRect all(0,0, dimg->get_width(),dimg->get_height());
+	  pm = 0;
+	  bm = 0;
+	  if (do_color_or_gray)
+	    {
+	      if (options.get_mode() == Options::FORE)
+		pm = dimg->get_fg_pixmap(grectBand, all);
+	      else if (options.get_mode() == Options::BACK)
+		pm = dimg->get_bg_pixmap(grectBand, all);
+	      else
+		pm = dimg->get_pixmap(grectBand, all);
+	    }
+	  else
+	    {
+	      bm = dimg->get_bitmap(grectBand, all);
+	    }
+	  // Store next band
+	  unsigned char *buf_ptr = buffer;
+	  int symbols=0;
+	  for (int y=0; y<grectBand.height(); y++)
+	    {
+	      if (pm && do_color_or_gray)
+		{
+		  GPixel *pix = (*pm)[y];
+		  for (int x=grectBand.width(); x>0; x--, pix++)
+		    {
+		      if (do_color)
+			{
+			  char *data;
+			  data = bin2hex[ramp[pix->r]];
+			  *buf_ptr++ = data[0];
+			  *buf_ptr++ = data[1];
+			  data = bin2hex[ramp[pix->g]];
+			  *buf_ptr++ = data[0];
+			  *buf_ptr++ = data[1];
+			  data = bin2hex[ramp[pix->b]];
+			  *buf_ptr++ = data[0];
+			  *buf_ptr++ = data[1];
+			  symbols += 6;
+			}
+		      else
+			{
+			  char *data;
+			  data = bin2hex[ramp[GRAY(pix->r,pix->g,pix->b)]];
+			  *buf_ptr++ = data[0];
+			  *buf_ptr++ = data[1];
+			  symbols += 2;
+			}
+		      if (symbols>70)
+			{
+			  *buf_ptr++ = '\n';
+			  symbols=0;
+			}
+		    }
+		}
+	      else if (bm)
+		{
+		  unsigned char *pix = (*bm)[y];
+		  unsigned char acc = 0;
+		  unsigned char mask = 0;
+		  char *data;
+		  for (int x=grectBand.width(); x>0; x--, pix++)
+		    {
+		      if (mask == 0)
+			mask = 0x80;
+		      if (! *pix)
+			acc |= mask;
+		      mask >>= 1;
+		      if (mask == 0)
+			{
+			  data = bin2hex[acc];
+			  acc = 0;
+			  *buf_ptr++ = data[0];
+			  *buf_ptr++ = data[1];
+			  symbols += 2;
+			  if (symbols>70)
+			    {
+			      *buf_ptr++ = '\n';
+			      symbols = 0;
+			    }
+			}
+		    }
+		  if (mask != 0)
+		    {
+		      data = bin2hex[acc];
+		      *buf_ptr++ = data[0];
+		      *buf_ptr++ = data[1];
+		      symbols += 2;
+		    }
+		}
+	      if (refresh_cb)
+		refresh_cb(refresh_cl_data);
+	    }
+	  str.writall(buffer, buf_ptr-buffer);
+	  if (prn_progress_cb)
+	    {
+	      double done=(double) (grectBand.ymax
+				    - prn_rect.ymin)/prn_rect.height();
+	      if ((int) (20*print_done)!=(int) (20*done))
+		{
+		  print_done=done;
+		  prn_progress_cb(done, prn_progress_cl_data);
+		}
+	    }
+	}
       write(str, "\n");
-    } 
+    }
   write(str, "grestore\n");
 }
 
 void
 DjVuToPS::
-print_image_lev2(ByteStream &str, 
-                 GP<DjVuImage> dimg,
-                 const GRect &prn_rect)
-{         
+print_image_lev2(ByteStream &str,
+		 GP<DjVuImage> dimg,
+		 const GRect &prn_rect)
+{
   double print_done=0;
   GRect all(0,0, dimg->get_width(),dimg->get_height());
   GP<GPixmap> pm;
@@ -1654,8 +1654,8 @@ print_image_lev2(ByteStream &str,
   if (! pm)
     return;
   write(str,
-        "%% --- now doing a level 2 image\n"
-        "gsave\n");
+	"%% --- now doing a level 2 image\n"
+	"gsave\n");
   // Display image
   int band_bytes=125000;
   int band_height = band_bytes/prn_rect.width();
@@ -1666,40 +1666,40 @@ print_image_lev2(ByteStream &str,
   if (do_color)
     {
       buffer_size *= 3;
-      write(str, 
-            "/bufferR %d string def\n"
-            "/bufferG %d string def\n"
-            "/bufferB %d string def\n"
-            "DjVuColorSpace setcolorspace\n"
-            "<< /ImageType 1\n"
-            "   /Width %d\n"
-            "   /Height %d\n"
-            "   /BitsPerComponent 8\n"
-            "   /Decode [0 1 0 1 0 1]\n"
-            "   /ImageMatrix [1 0 0 1 0 0]\n"
-            "   /MultipleDataSources true\n"
-            "   /DataSource [ { ReadR } { ReadG } { ReadB } ]\n"
-            "   /Interpolate false >> image\n",
-            ps_chunk_height*prn_rect.width(),
-            ps_chunk_height*prn_rect.width(),
-            ps_chunk_height*prn_rect.width(),
-            prn_rect.width(), prn_rect.height());
-    } 
+      write(str,
+	    "/bufferR %d string def\n"
+	    "/bufferG %d string def\n"
+	    "/bufferB %d string def\n"
+	    "DjVuColorSpace setcolorspace\n"
+	    "<< /ImageType 1\n"
+	    "   /Width %d\n"
+	    "   /Height %d\n"
+	    "   /BitsPerComponent 8\n"
+	    "   /Decode [0 1 0 1 0 1]\n"
+	    "   /ImageMatrix [1 0 0 1 0 0]\n"
+	    "   /MultipleDataSources true\n"
+	    "   /DataSource [ { ReadR } { ReadG } { ReadB } ]\n"
+	    "   /Interpolate false >> image\n",
+	    ps_chunk_height*prn_rect.width(),
+	    ps_chunk_height*prn_rect.width(),
+	    ps_chunk_height*prn_rect.width(),
+	    prn_rect.width(), prn_rect.height());
+    }
   else
     {
-      write(str, 
-            "DjVuColorSpace setcolorspace\n"
-            "<< /ImageType 1\n"
-            "   /Width %d\n"
-            "   /Height %d\n"
-            "   /BitsPerComponent 8\n"
-            "   /Decode [0 1]\n"
-            "   /ImageMatrix [1 0 0 1 0 0]\n"
-            "   /DataSource currentfile /ASCII85Decode\n"
-            "       filter /RunLengthDecode filter\n"
-            "   /Interpolate false >> image\n",
-            prn_rect.width(), prn_rect.height());
-    } 
+      write(str,
+	    "DjVuColorSpace setcolorspace\n"
+	    "<< /ImageType 1\n"
+	    "   /Width %d\n"
+	    "   /Height %d\n"
+	    "   /BitsPerComponent 8\n"
+	    "   /Decode [0 1]\n"
+	    "   /ImageMatrix [1 0 0 1 0 0]\n"
+	    "   /DataSource currentfile /ASCII85Decode\n"
+	    "       filter /RunLengthDecode filter\n"
+	    "   /Interpolate false >> image\n",
+	    prn_rect.width(), prn_rect.height());
+    }
   unsigned char *buffer;
   GPBuffer<unsigned char> gbuffer(buffer,buffer_size);
   unsigned char *rle_in;
@@ -1712,144 +1712,144 @@ print_image_lev2(ByteStream &str,
       GRect grectBand = prn_rect;
       grectBand.ymax = grectBand.ymin;
       while(grectBand.ymax < prn_rect.ymax)
-        {
-          // Compute next band
-          grectBand.ymin = grectBand.ymax;
-          grectBand.ymax = grectBand.ymin+band_bytes/grectBand.width();
-          if (grectBand.ymax > prn_rect.ymax)
-            grectBand.ymax = prn_rect.ymax;
-          GRect all(0,0, dimg->get_width(),dimg->get_height());
-          pm = 0;
-          if (options.get_mode() == Options::FORE)
-            pm = dimg->get_fg_pixmap(grectBand, all);
-          else if (options.get_mode() == Options::BACK)
-            pm = dimg->get_bg_pixmap(grectBand, all);
-          else
-            pm = dimg->get_pixmap(grectBand, all);
-          // Store next band
-          unsigned char *buf_ptr = buffer;
-          if (do_color && pm)
-            {
-              int y=0;
-              while(y<grectBand.height())
-                {
-                  int row, y1;
-                  unsigned char *ptr, *ptr1;
-                  // Doing R component of current chunk
-                  for (row=0,ptr=rle_in,y1=y; 
-                       row<ps_chunk_height && y1<grectBand.height(); 
-                       row++,y1++)
-                    {
-                      GPixel *pix = (*pm)[y1];
-                      for (int x=grectBand.width(); x>0; x--,pix++)
-                        *ptr++ = ramp[pix->r];
-                    }
-                  ptr1 = RLE_encode(rle_out, rle_in, ptr); 
-                  *ptr1++ = 0x80;
-                  buf_ptr = ASCII85_encode(buf_ptr, rle_out, ptr1);
-                  *buf_ptr++ = '~'; *buf_ptr++ = '>'; *buf_ptr++ = '\n';
-                  // Doing G component of current chunk
-                  for (row=0,ptr=rle_in,y1=y; 
-                       row<ps_chunk_height && y1<grectBand.height(); 
-                       row++,y1++)
-                    {
-                      GPixel *pix = (*pm)[y1];
-                      for (int x=grectBand.width(); x>0; x--,pix++)
-                        *ptr++ = ramp[pix->g];
-                    }
-                  ptr1 = RLE_encode(rle_out, rle_in, ptr); 
-                  *ptr1++ = 0x80;
-                  buf_ptr = ASCII85_encode(buf_ptr, rle_out, ptr1);
-                  *buf_ptr++ = '~'; 
-                  *buf_ptr++ = '>'; 
-                  *buf_ptr++ = '\n';
-                  // Doing B component of current chunk
-                  for (row=0, ptr=rle_in, y1=y;
-                       row<ps_chunk_height && y1<grectBand.height(); 
-                       row++,y1++)
-                    {
-                      GPixel *pix = (*pm)[y1];
-                      for (int x=grectBand.width(); x>0; x--,pix++)
-                        *ptr++ = ramp[pix->b];
-                    }
-                  ptr1 = RLE_encode(rle_out, rle_in, ptr);
-                  *ptr1++ = 0x80;
-                  buf_ptr = ASCII85_encode(buf_ptr, rle_out, ptr1);
-                  *buf_ptr++ = '~'; 
-                  *buf_ptr++ = '>'; 
-                  *buf_ptr++ = '\n';
-                  y=y1;
-                  if (refresh_cb) 
-                    refresh_cb(refresh_cl_data);
-                } //while (y>=0)
-            } 
-          else if (pm)
-            {
-              // Don't use color
-              int y=0;
-              while(y<grectBand.height())
-                {
-                  unsigned char *ptr = rle_in;
-                  for(int row=0;
-                      row<ps_chunk_height && y<grectBand.height(); 
-                      row++,y++)
-                    {
-                      GPixel *pix = (*pm)[y];
-                      for (int x=grectBand.width(); x>0; x--,pix++)
-                        *ptr++ = ramp[GRAY(pix->r,pix->g,pix->b)];
-                    }
-                  rle_out_end = RLE_encode(rle_out_end, rle_in, ptr);
-                  unsigned char *encode_to = rle_out 
-                    + (rle_out_end-rle_out)/4*4;
-                  int bytes_left = rle_out_end-encode_to;
-                  buf_ptr = ASCII85_encode(buf_ptr, rle_out, encode_to);
-                  *buf_ptr++ = '\n';
-                  memcpy(rle_out, encode_to, bytes_left);
-                  rle_out_end = rle_out+bytes_left;
-                  if (refresh_cb) 
-                    refresh_cb(refresh_cl_data);
-                }
-              if (grectBand.ymax >= prn_rect.ymax)
-                {
-                  *rle_out_end++ = 0x80; // Add EOF marker
-                  buf_ptr = ASCII85_encode(buf_ptr, rle_out, rle_out_end);
-                  *buf_ptr++ = '~'; 
-                  *buf_ptr++ = '>'; 
-                  *buf_ptr++ = '\n';
-                }
-            }
-          str.writall(buffer, buf_ptr-buffer);
-          if (prn_progress_cb)
-            {
-              double done=(double) (grectBand.ymax
-                                    - prn_rect.ymin)/prn_rect.height();
-              if ((int) (20*print_done)!=(int) (20*done))
-                {
-                  print_done=done;
-                  prn_progress_cb(done, prn_progress_cl_data);
-                }
-            }
-        }
+	{
+	  // Compute next band
+	  grectBand.ymin = grectBand.ymax;
+	  grectBand.ymax = grectBand.ymin+band_bytes/grectBand.width();
+	  if (grectBand.ymax > prn_rect.ymax)
+	    grectBand.ymax = prn_rect.ymax;
+	  GRect all(0,0, dimg->get_width(),dimg->get_height());
+	  pm = 0;
+	  if (options.get_mode() == Options::FORE)
+	    pm = dimg->get_fg_pixmap(grectBand, all);
+	  else if (options.get_mode() == Options::BACK)
+	    pm = dimg->get_bg_pixmap(grectBand, all);
+	  else
+	    pm = dimg->get_pixmap(grectBand, all);
+	  // Store next band
+	  unsigned char *buf_ptr = buffer;
+	  if (do_color && pm)
+	    {
+	      int y=0;
+	      while(y<grectBand.height())
+		{
+		  int row, y1;
+		  unsigned char *ptr, *ptr1;
+		  // Doing R component of current chunk
+		  for (row=0,ptr=rle_in,y1=y;
+		       row<ps_chunk_height && y1<grectBand.height();
+		       row++,y1++)
+		    {
+		      GPixel *pix = (*pm)[y1];
+		      for (int x=grectBand.width(); x>0; x--,pix++)
+			*ptr++ = ramp[pix->r];
+		    }
+		  ptr1 = RLE_encode(rle_out, rle_in, ptr);
+		  *ptr1++ = 0x80;
+		  buf_ptr = ASCII85_encode(buf_ptr, rle_out, ptr1);
+		  *buf_ptr++ = '~'; *buf_ptr++ = '>'; *buf_ptr++ = '\n';
+		  // Doing G component of current chunk
+		  for (row=0,ptr=rle_in,y1=y;
+		       row<ps_chunk_height && y1<grectBand.height();
+		       row++,y1++)
+		    {
+		      GPixel *pix = (*pm)[y1];
+		      for (int x=grectBand.width(); x>0; x--,pix++)
+			*ptr++ = ramp[pix->g];
+		    }
+		  ptr1 = RLE_encode(rle_out, rle_in, ptr);
+		  *ptr1++ = 0x80;
+		  buf_ptr = ASCII85_encode(buf_ptr, rle_out, ptr1);
+		  *buf_ptr++ = '~';
+		  *buf_ptr++ = '>';
+		  *buf_ptr++ = '\n';
+		  // Doing B component of current chunk
+		  for (row=0, ptr=rle_in, y1=y;
+		       row<ps_chunk_height && y1<grectBand.height();
+		       row++,y1++)
+		    {
+		      GPixel *pix = (*pm)[y1];
+		      for (int x=grectBand.width(); x>0; x--,pix++)
+			*ptr++ = ramp[pix->b];
+		    }
+		  ptr1 = RLE_encode(rle_out, rle_in, ptr);
+		  *ptr1++ = 0x80;
+		  buf_ptr = ASCII85_encode(buf_ptr, rle_out, ptr1);
+		  *buf_ptr++ = '~';
+		  *buf_ptr++ = '>';
+		  *buf_ptr++ = '\n';
+		  y=y1;
+		  if (refresh_cb)
+		    refresh_cb(refresh_cl_data);
+		} //while (y>=0)
+	    }
+	  else if (pm)
+	    {
+	      // Don't use color
+	      int y=0;
+	      while(y<grectBand.height())
+		{
+		  unsigned char *ptr = rle_in;
+		  for(int row=0;
+		      row<ps_chunk_height && y<grectBand.height();
+		      row++,y++)
+		    {
+		      GPixel *pix = (*pm)[y];
+		      for (int x=grectBand.width(); x>0; x--,pix++)
+			*ptr++ = ramp[GRAY(pix->r,pix->g,pix->b)];
+		    }
+		  rle_out_end = RLE_encode(rle_out_end, rle_in, ptr);
+		  unsigned char *encode_to = rle_out
+		    + (rle_out_end-rle_out)/4*4;
+		  int bytes_left = rle_out_end-encode_to;
+		  buf_ptr = ASCII85_encode(buf_ptr, rle_out, encode_to);
+		  *buf_ptr++ = '\n';
+		  memcpy(rle_out, encode_to, bytes_left);
+		  rle_out_end = rle_out+bytes_left;
+		  if (refresh_cb)
+		    refresh_cb(refresh_cl_data);
+		}
+	      if (grectBand.ymax >= prn_rect.ymax)
+		{
+		  *rle_out_end++ = 0x80; // Add EOF marker
+		  buf_ptr = ASCII85_encode(buf_ptr, rle_out, rle_out_end);
+		  *buf_ptr++ = '~';
+		  *buf_ptr++ = '>';
+		  *buf_ptr++ = '\n';
+		}
+	    }
+	  str.writall(buffer, buf_ptr-buffer);
+	  if (prn_progress_cb)
+	    {
+	      double done=(double) (grectBand.ymax
+				    - prn_rect.ymin)/prn_rect.height();
+	      if ((int) (20*print_done)!=(int) (20*done))
+		{
+		  print_done=done;
+		  prn_progress_cb(done, prn_progress_cl_data);
+		}
+	    }
+	}
       write(str, "\n");
-    } 
+    }
   write(str, "grestore\n");
 }
 
-static void 
+static void
 get_anno_sub(IFFByteStream &iff, IFFByteStream &out)
 {
   GUTF8String chkid;
   while (iff.get_chunk(chkid))
     {
       if (iff.composite())
-        get_anno_sub(iff, out);
+	get_anno_sub(iff, out);
       else if (chkid == "ANTa" || chkid == "ANTz" ||
-               chkid == "TXTa" || chkid == "TXTz"   )
-        {
-          out.put_chunk(chkid);
-          out.copy(*iff.get_bytestream());
-          out.close_chunk();
-        }
+	       chkid == "TXTa" || chkid == "TXTz"   )
+	{
+	  out.put_chunk(chkid);
+	  out.copy(*iff.get_bytestream());
+	  out.close_chunk();
+	}
       iff.close_chunk();
     }
 }
@@ -1857,7 +1857,7 @@ get_anno_sub(IFFByteStream &iff, IFFByteStream &out)
 static GP<ByteStream>
 get_anno(GP<DjVuFile> f)
 {
-  if (! f->anno) 
+  if (! f->anno)
     {
       GP<ByteStream> bs = f->get_init_data_pool()->get_stream();
       GP<ByteStream> anno = ByteStream::create();
@@ -1872,24 +1872,24 @@ get_anno(GP<DjVuFile> f)
 
 static GP<DjVuTXT>
 get_text(GP<DjVuFile> file)
-{ 
+{
   GUTF8String chkid;
   GP<IFFByteStream> iff = IFFByteStream::create(get_anno(file));
   while (iff->get_chunk(chkid))
     {
-      if (chkid == "TXTa") 
-        {
-          GP<DjVuTXT> txt = DjVuTXT::create();
-          txt->decode(iff->get_bytestream());
-          return txt;
-        }
-      else if (chkid == "TXTz") 
-        {
-          GP<DjVuTXT> txt = DjVuTXT::create();
-          GP<ByteStream> bsiff = BSByteStream::create(iff->get_bytestream());
-          txt->decode(bsiff);
-          return txt;
-        }
+      if (chkid == "TXTa")
+	{
+	  GP<DjVuTXT> txt = DjVuTXT::create();
+	  txt->decode(iff->get_bytestream());
+	  return txt;
+	}
+      else if (chkid == "TXTz")
+	{
+	  GP<DjVuTXT> txt = DjVuTXT::create();
+	  GP<ByteStream> bsiff = BSByteStream::create(iff->get_bytestream());
+	  txt->decode(bsiff);
+	  return txt;
+	}
       iff->close_chunk();
     }
   return 0;
@@ -1898,57 +1898,57 @@ get_text(GP<DjVuFile> file)
 static void
 print_ps_string(const char *data, int length, ByteStream &out)
 {
-  while (*data && length>0) 
+  while (*data && length>0)
     {
       int span = 0;
-      while (span<length && data[span]>=0x20 && data[span]<0x7f 
-             && data[span]!='(' && data[span]!=')' && data[span]!='\\' )
-        span++;
-      if (span > 0) 
-        {
-          out.write(data, span);
-          data += span;
-          length -= span;
-        }
+      while (span<length && data[span]>=0x20 && data[span]<0x7f
+	     && data[span]!='(' && data[span]!=')' && data[span]!='\\' )
+	span++;
+      if (span > 0)
+	{
+	  out.write(data, span);
+	  data += span;
+	  length -= span;
+	}
       else
-        {
-          char buffer[5];
-          sprintf(buffer,"\\%03o", *(unsigned char*)data);
-          out.write(buffer,4);
-          data += 1;
-          length -= 1;
-        }
+	{
+	  char buffer[5];
+	  sprintf(buffer,"\\%03o", *(unsigned char*)data);
+	  out.write(buffer,4);
+	  data += 1;
+	  length -= 1;
+	}
     }
 }
 
 static void
-print_txt_sub(DjVuTXT &txt, DjVuTXT::Zone &zone, 
-              ByteStream &out,int &lastx,int &lasty)
+print_txt_sub(DjVuTXT &txt, DjVuTXT::Zone &zone,
+	      ByteStream &out,int &lastx,int &lasty)
 {
   // Get separator
   char separator = 0;
   switch(zone.ztype)
     {
-    case DjVuTXT::COLUMN: 
+    case DjVuTXT::COLUMN:
       separator = DjVuTXT::end_of_column; break;
-    case DjVuTXT::REGION: 
+    case DjVuTXT::REGION:
       separator = DjVuTXT::end_of_region; break;
-    case DjVuTXT::PARAGRAPH: 
+    case DjVuTXT::PARAGRAPH:
       separator = DjVuTXT::end_of_paragraph; break;
-    case DjVuTXT::LINE: 
+    case DjVuTXT::LINE:
       separator = DjVuTXT::end_of_line; break;
-    case DjVuTXT::WORD: 
+    case DjVuTXT::WORD:
       separator = ' '; break;
     default:
       separator = 0; break;
     }
   // Zone children
-  if (zone.children.isempty()) 
+  if (zone.children.isempty())
     {
       const char *data = (const char*)txt.textUTF8 + zone.text_start;
       int length = zone.text_length;
       if (data[length-1] == separator)
-        length -= 1;
+	length -= 1;
       out.write("( ",2);
       print_ps_string(data,length,out);
       out.write(")",1);
@@ -1963,41 +1963,41 @@ print_txt_sub(DjVuTXT &txt, DjVuTXT::Zone &zone,
   else
     {
       if (zone.ztype==DjVuTXT::LINE)
-        {
-          GUTF8String message;
-          message.format("%d F\n",zone.rect.ymax-zone.rect.ymin);
-          out.write((const char*)message,message.length());
-        }
+	{
+	  GUTF8String message;
+	  message.format("%d F\n",zone.rect.ymax-zone.rect.ymin);
+	  out.write((const char*)message,message.length());
+	}
       for (GPosition pos=zone.children; pos; ++pos)
-        print_txt_sub(txt, zone.children[pos], out,lastx,lasty);
+	print_txt_sub(txt, zone.children[pos], out,lastx,lasty);
     }
 }
 
 static void
-print_txt(GP<DjVuTXT> txt, 
-          ByteStream &out )
+print_txt(GP<DjVuTXT> txt,
+	  ByteStream &out )
 {
   if (txt)
     {
       int lastx=0;
       int lasty=0;
-      GUTF8String message = 
-        "%% -- now doing hidden text\n"
-        "gsave -1 -1 0 0 clip 0 0 moveto\n";
+      GUTF8String message =
+	"%% -- now doing hidden text\n"
+	"gsave -1 -1 0 0 clip 0 0 moveto\n";
       out.write((const char*)message,message.length());
       print_txt_sub(*txt, txt->page_zone, out,lastx,lasty);
-      message = 
-        "grestore \n";
+      message =
+	"grestore \n";
       out.write((const char*)message,message.length());
     }
 }
 
 void
 DjVuToPS::
-print_image(ByteStream &str, 
-            GP<DjVuImage> dimg,
-            const GRect &prn_rect, 
-            GP<DjVuTXT> txt)
+print_image(ByteStream &str,
+	    GP<DjVuImage> dimg,
+	    const GRect &prn_rect,
+	    GP<DjVuTXT> txt)
 {
   /* Just outputs the specified image. The function assumes, that
      all add-ons (like {\em document setup}, {\em page setup}) are
@@ -2023,35 +2023,35 @@ print_image(ByteStream &str,
   else if (options.get_level() < 3 && dimg->get_fgpm())
     {
       switch(options.get_mode())
-        {
-        case Options::COLOR:
-        case Options::FORE:
-          print_image_lev2(str, dimg, prn_rect);
-          break;
-        case Options::BW:
-          print_fg(str, dimg, prn_rect);
-          break;
-        case Options::BACK:
-          print_bg(str, dimg, prn_rect);
-          break;
-        }
+	{
+	case Options::COLOR:
+	case Options::FORE:
+	  print_image_lev2(str, dimg, prn_rect);
+	  break;
+	case Options::BW:
+	  print_fg(str, dimg, prn_rect);
+	  break;
+	case Options::BACK:
+	  print_bg(str, dimg, prn_rect);
+	  break;
+	}
     }
-  else 
+  else
     {
       switch(options.get_mode())
-        {
-        case Options::COLOR:
-          print_bg(str, dimg, prn_rect);
-          print_fg(str, dimg, prn_rect);
-          break;
-        case Options::FORE:
-        case Options::BW:
-          print_fg(str, dimg, prn_rect);
-          break;
-        case Options::BACK:
-          print_bg(str, dimg, prn_rect);
-          break;
-        }
+	{
+	case Options::COLOR:
+	  print_bg(str, dimg, prn_rect);
+	  print_fg(str, dimg, prn_rect);
+	  break;
+	case Options::FORE:
+	case Options::BW:
+	  print_fg(str, dimg, prn_rect);
+	  break;
+	case Options::BACK:
+	  print_bg(str, dimg, prn_rect);
+	  break;
+	}
     }
   if (prn_progress_cb)
     prn_progress_cb(1, prn_progress_cl_data);
@@ -2069,9 +2069,9 @@ print_image(ByteStream &str,
 
 void
 DjVuToPS::
-print(ByteStream &str, 
+print(ByteStream &str,
       GP<DjVuImage> dimg,
-      const GRect &prn_rect_in, 
+      const GRect &prn_rect_in,
       const GRect &img_rect,
       int override_dpi)
 {
@@ -2080,9 +2080,9 @@ print(ByteStream &str,
   GRect prn_rect;
   prn_rect.intersect(prn_rect_in, img_rect);
   DEBUG_MSG("prn_rect=(" << prn_rect.xmin << ", " << prn_rect.ymin << ", " <<
-            prn_rect.width() << ", " << prn_rect.height() << ")\n");
+	    prn_rect.width() << ", " << prn_rect.height() << ")\n");
   DEBUG_MSG("img_rect=(" << img_rect.xmin << ", " << img_rect.ymin << ", " <<
-            img_rect.width() << ", " << img_rect.height() << ")\n");
+	    img_rect.width() << ", " << img_rect.height() << ")\n");
   if (!dimg)
     G_THROW(ERR_MSG("DjVuToPS.empty_image"));
   if (prn_rect.isempty())
@@ -2095,9 +2095,9 @@ print(ByteStream &str,
   mapper.set_output(full_rect);
   mapper.map(prn_rect);
   int image_dpi =  dimg->get_dpi();
-  if (override_dpi>0) 
+  if (override_dpi>0)
     image_dpi = override_dpi;
-  if (image_dpi <= 0) 
+  if (image_dpi <= 0)
     image_dpi = 300;
   store_doc_prolog(str, 1, (int)(image_dpi), &prn_rect);
   store_doc_setup(str);
@@ -2119,9 +2119,9 @@ print(ByteStream &str,
 
 void
 DjVuToPS::
-parse_range(GP<DjVuDocument> doc, 
-             GUTF8String page_range, 
-             GList<int> &pages_todo)
+parse_range(GP<DjVuDocument> doc,
+	     GUTF8String page_range,
+	     GList<int> &pages_todo)
 {
   int doc_pages = doc->get_pages_num();
   if (!page_range.length())
@@ -2136,66 +2136,66 @@ parse_range(GP<DjVuDocument> doc,
   while (*p)
     {
       while (*p==' ')
-        p += 1;
+	p += 1;
       if (! *p)
-        break;
-      if (*p>='0' && *p<='9') 
-        {
-          end_page = strtol(p, &p, 10);
-          spec = 1;
-        } 
-      else if (*p=='$') 
-        {
-          spec = 1;
-          end_page = doc_pages;
-          p += 1;
-        } 
-      else if (both) 
-        {
-          end_page = 1;
-        } 
-      else 
-        {
-          end_page = doc_pages;
-        }
+	break;
+      if (*p>='0' && *p<='9')
+	{
+	  end_page = strtol(p, &p, 10);
+	  spec = 1;
+	}
+      else if (*p=='$')
+	{
+	  spec = 1;
+	  end_page = doc_pages;
+	  p += 1;
+	}
+      else if (both)
+	{
+	  end_page = 1;
+	}
+      else
+	{
+	  end_page = doc_pages;
+	}
       while (*p==' ')
-        p += 1;
+	p += 1;
       if (both)
-        {
-          start_page = end_page;
-          if (*p == '-') 
-            {
-              p += 1;
-              both = 0;
-              continue;
-            }
-        }
+	{
+	  start_page = end_page;
+	  if (*p == '-')
+	    {
+	      p += 1;
+	      both = 0;
+	      continue;
+	    }
+	}
       both = 1;
       while (*p==' ')
-        p += 1;
+	p += 1;
       if (*p && *p != ',')
-        G_THROW(ERR_MSG("DjVuToPS.bad_range") 
-                + GUTF8String("\t") + GUTF8String(p) );
+	G_THROW(ERR_MSG("DjVuToPS.bad_range")
+		+ GUTF8String("\t") + GUTF8String(p) );
       if (*p == ',')
-        p += 1;
+	p += 1;
       if (! spec)
-        G_THROW(ERR_MSG("DjVuToPS.bad_range") 
-                + GUTF8String("\t") + page_range );
+	G_THROW(ERR_MSG("DjVuToPS.bad_range")
+		+ GUTF8String("\t") + page_range );
       spec = 0;
       if (end_page < 0)
-        end_page = 0;
+	end_page = 0;
       if (start_page < 0)
-        start_page = 0;
+	start_page = 0;
       if (end_page > doc_pages)
-        end_page = doc_pages;
+	end_page = doc_pages;
       if (start_page > doc_pages)
-        start_page = doc_pages;
+	start_page = doc_pages;
       if (start_page <= end_page)
-        for(int page_num=start_page; page_num<=end_page; page_num++)
-          pages_todo.append(page_num-1);
+	for(int page_num=start_page; page_num<=end_page; page_num++)
+	  pages_todo.append(page_num-1);
       else
-        for(int page_num=start_page; page_num>=end_page; page_num--)
-          pages_todo.append(page_num-1);
+	for(int page_num=start_page; page_num>=end_page; page_num--)
+	  pages_todo.append(page_num-1);
     }
 }
 
@@ -2210,60 +2210,60 @@ public:
   double decode_done;
   GURL decode_page_url;
   virtual void notify_file_flags_changed(const DjVuFile*,long,long);
-  virtual void notify_decode_progress(const DjVuPort*,double);
+  virtual void notify_decode_progress(const DjVuPort*,float);
 };
 
 DjVuToPS::DecodePort::
 DecodePort(void)
   : decode_event_received(false),
-    decode_done((double)0) 
+    decode_done((double)0)
 {
 }
 
-GP<DjVuToPS::DecodePort> 
+GP<DjVuToPS::DecodePort>
 DjVuToPS::DecodePort::
 create(void)
 {
   return new DecodePort;
 }
 
-void 
+void
 DjVuToPS::DecodePort::
-notify_file_flags_changed(const DjVuFile *source, 
-                          long set_mask, long clr_mask)
+notify_file_flags_changed(const DjVuFile *source,
+			  long set_mask, long clr_mask)
 {
   // WARNING! This function is called from another thread
-  if (set_mask & (DjVuFile::DECODE_OK | 
-                  DjVuFile::DECODE_FAILED | 
-                  DjVuFile::DECODE_STOPPED ))
+  if (set_mask & (DjVuFile::DECODE_OK |
+		  DjVuFile::DECODE_FAILED |
+		  DjVuFile::DECODE_STOPPED ))
     {
       if (source->get_url() == decode_page_url)
-        {
-          decode_event_received=true;
-          decode_event.set();
-        }
+	{
+	  decode_event_received=true;
+	  decode_event.set();
+	}
     }
 }
 
-void 
+void
 DjVuToPS::DecodePort::
-notify_decode_progress(const DjVuPort *source, double done)
+notify_decode_progress(const DjVuPort *source, float done)
 {
   // WARNING! This function is called from another thread
   if (source->inherits("DjVuFile"))
     {
       DjVuFile * file=(DjVuFile *) source;
       if (file->get_url()==decode_page_url)
-        if ((int) (decode_done*20)!=(int) (done*20))
-          {
-            decode_done=done;
-            decode_event_received=true;
-            decode_event.set();
-          }
+	if ((int) (decode_done*20)!=(int) (done*20))
+	  {
+	    decode_done=done;
+	    decode_event_received=true;
+	    decode_event.set();
+	  }
     }
 }
 
-void 
+void
 DjVuToPS::
 set_refresh_cb(void (*_refresh_cb)(void*), void *_refresh_cl_data)
 {
@@ -2271,28 +2271,28 @@ set_refresh_cb(void (*_refresh_cb)(void*), void *_refresh_cl_data)
   refresh_cl_data = _refresh_cl_data;
 }
 
-void 
+void
 DjVuToPS::
 set_prn_progress_cb(void (*_prn_progress_cb)(double, void *),
-                    void *_prn_progress_cl_data)
+		    void *_prn_progress_cl_data)
 {
   prn_progress_cb=_prn_progress_cb;
   prn_progress_cl_data=_prn_progress_cl_data;
 }
 
-void 
+void
 DjVuToPS::
 set_dec_progress_cb(void (*_dec_progress_cb)(double, void *),
-                    void *_dec_progress_cl_data)
+		    void *_dec_progress_cl_data)
 {
   dec_progress_cb=_dec_progress_cb;
   dec_progress_cl_data=_dec_progress_cl_data;
 }
 
-void 
+void
 DjVuToPS::
 set_info_cb(void (*_info_cb)(int, int, int, Stage, void*),
-            void *_info_cl_data)
+	    void *_info_cl_data)
 {
   info_cb=_info_cb;
   info_cl_data=_info_cl_data;
@@ -2300,8 +2300,8 @@ set_info_cb(void (*_info_cb)(int, int, int, Stage, void*),
 
 GP<DjVuImage>
 DjVuToPS::
-decode_page(GP<DjVuDocument> doc, 
-            int page_num, int cnt, int todo)
+decode_page(GP<DjVuDocument> doc,
+	    int page_num, int cnt, int todo)
 {
   DEBUG_MSG("processing page #" << page_num << "\n");
   if (! port)
@@ -2337,21 +2337,21 @@ decode_page(GP<DjVuDocument> doc,
     dec_progress_cb(0, dec_progress_cl_data);
   while(! djvu_file->is_decode_ok())
     {
-      while(!port->decode_event_received && 
-            !djvu_file->is_decode_ok())
-        {
-          port->decode_event.wait(250);
-          if (refresh_cb) 
-            refresh_cb(refresh_cl_data);
-        }
+      while(!port->decode_event_received &&
+	    !djvu_file->is_decode_ok())
+	{
+	  port->decode_event.wait(250);
+	  if (refresh_cb)
+	    refresh_cb(refresh_cl_data);
+	}
       port->decode_event_received = false;
-      if (djvu_file->is_decode_failed() || 
-          djvu_file->is_decode_stopped())
-        G_THROW(ERR_MSG("DjVuToPS.no_image") 
-                + GUTF8String("\t") 
-                + GUTF8String(page_num));
+      if (djvu_file->is_decode_failed() ||
+	  djvu_file->is_decode_stopped())
+	G_THROW(ERR_MSG("DjVuToPS.no_image")
+		+ GUTF8String("\t")
+		+ GUTF8String(page_num));
       if (dec_progress_cb)
-        dec_progress_cb(port->decode_done, dec_progress_cl_data);
+	dec_progress_cb(port->decode_done, dec_progress_cl_data);
     }
   if (dec_progress_cb)
     dec_progress_cb(1, dec_progress_cl_data);
@@ -2360,10 +2360,10 @@ decode_page(GP<DjVuDocument> doc,
 
 void
 DjVuToPS::
-process_single_page(ByteStream &str, 
-                    GP<DjVuDocument> doc,
-                    int page_num, int cnt, int todo,
-                    int magic)
+process_single_page(ByteStream &str,
+		    GP<DjVuDocument> doc,
+		    int page_num, int cnt, int todo,
+		    int magic)
 {
   GP<DjVuTXT> txt;
   GP<DjVuImage> dimg;
@@ -2394,58 +2394,58 @@ struct pdata {
   int offset;
 };
 
-void 
+void
 DjVuToPS::
-process_double_page(ByteStream &str, 
-                    GP<DjVuDocument> doc,
-                    void *v, int cnt, int todo)
+process_double_page(ByteStream &str,
+		    GP<DjVuDocument> doc,
+		    void *v, int cnt, int todo)
 {
   const pdata *inf = (const pdata*)v;
   int off = abs(inf->offset);
   write(str,
-        "%%%%Page: (%d,%d) %d\n"
-        "gsave\n"
-        "/fold-dict 8 dict dup 3 1 roll def begin\n"
-        " clippath pathbbox newpath pop pop translate\n"
-        " clippath pathbbox newpath 4 2 roll pop pop\n"
-        " /ph exch def\n"
-        " /pw exch def\n"
-        " /w ph %d sub 2 div def\n"
-        " /m1 %d def\n"
-        " /m2 %d def\n"
-        "end\n",
-        inf->page1 + 1, inf->page2 + 1, cnt,
-        2 * (off + options.get_bookletfold(inf->smax-1)),
-        inf->offset + options.get_bookletfold(inf->spos),
-        inf->offset - options.get_bookletfold(inf->spos));
+	"%%%%Page: (%d,%d) %d\n"
+	"gsave\n"
+	"/fold-dict 8 dict dup 3 1 roll def begin\n"
+	" clippath pathbbox newpath pop pop translate\n"
+	" clippath pathbbox newpath 4 2 roll pop pop\n"
+	" /ph exch def\n"
+	" /pw exch def\n"
+	" /w ph %d sub 2 div def\n"
+	" /m1 %d def\n"
+	" /m2 %d def\n"
+	"end\n",
+	inf->page1 + 1, inf->page2 + 1, cnt,
+	2 * (off + options.get_bookletfold(inf->smax-1)),
+	inf->offset + options.get_bookletfold(inf->spos),
+	inf->offset - options.get_bookletfold(inf->spos));
   if (options.get_cropmarks())
     write(str,
-          "%% -- folding marks\n"
-          "fold-dict begin\n"
-          " 0 setgray 0.5 setlinewidth\n"
-          " ph m1 m2 add add 2 div dup\n"
-          " 0 exch moveto 36 0 rlineto stroke\n"
-          " pw exch moveto -36 0 rlineto stroke\n"
-          "end\n");
+	  "%% -- folding marks\n"
+	  "fold-dict begin\n"
+	  " 0 setgray 0.5 setlinewidth\n"
+	  " ph m1 m2 add add 2 div dup\n"
+	  " 0 exch moveto 36 0 rlineto stroke\n"
+	  " pw exch moveto -36 0 rlineto stroke\n"
+	  "end\n");
   write(str,
-        "%% -- first page\n"
-        "gsave fold-dict begin\n"
-        " 0 ph 2 div w add m1 add translate 270 rotate\n"
-        " 0 0 w pw rectclip end\n");
+	"%% -- first page\n"
+	"gsave fold-dict begin\n"
+	" 0 ph 2 div w add m1 add translate 270 rotate\n"
+	" 0 0 w pw rectclip end\n");
   if (inf->page1 >= 0)
     process_single_page(str, doc, inf->page1, cnt*2, todo*2, +1);
   write(str,
-        "grestore\n"
-        "%% -- second page\n"
-        "gsave fold-dict begin\n"
-        " 0 ph 2 div m2 add translate 270 rotate\n"
-        " 0 0 w pw rectclip end\n");
+	"grestore\n"
+	"%% -- second page\n"
+	"gsave fold-dict begin\n"
+	" 0 ph 2 div m2 add translate 270 rotate\n"
+	" 0 0 w pw rectclip end\n");
   if (inf->page2 >= 0)
     process_single_page(str, doc, inf->page2, cnt*2+1, todo*2, -1);
   write(str,
-        "grestore\n"
-        "grestore\n"
-        "showpage\n");
+	"grestore\n"
+	"grestore\n"
+	"showpage\n");
 }
 
 static void
@@ -2467,14 +2467,14 @@ booklet_order(GList<int>& pages, int smax)
       int lo = i;
       int hi = i+smax-1;
       if (hi >= n)
-        hi = n-1;
+	hi = n-1;
       while (lo < hi)
-        {
-          pages.append(p[hi--]);
-          pages.append(p[lo++]);
-          pages.append(p[lo++]);
-          pages.append(p[hi--]);
-        }
+	{
+	  pages.append(p[hi--]);
+	  pages.append(p[lo++]);
+	  pages.append(p[lo++]);
+	  pages.append(p[hi--]);
+	}
     }
 }
 
@@ -2487,8 +2487,8 @@ booklet_order(GList<int>& pages, int smax)
 
 void
 DjVuToPS::
-print(ByteStream &str, 
-      GP<DjVuDocument> doc, 
+print(ByteStream &str,
+      GP<DjVuDocument> doc,
       GUTF8String page_range)
 {
   DEBUG_MSG("DjVuToPS::print(): Printing DjVu document\n");
@@ -2501,12 +2501,12 @@ print(ByteStream &str,
     {
       /* Encapsulated Postscript mode */
       if (todo != 1)
-        G_THROW(ERR_MSG("DjVuToPS.only_one_page"));
+	G_THROW(ERR_MSG("DjVuToPS.only_one_page"));
       GPosition pos = pages_todo;
       int page_num = pages_todo[pos];
       GP<DjVuImage> dimg = decode_page(doc,page_num,0,todo);
       if (! dimg)
-        G_THROW(ERR_MSG("DjVuToPS.no_image") + GUTF8String("\t1"));
+	G_THROW(ERR_MSG("DjVuToPS.no_image") + GUTF8String("\t1"));
       GRect bbox(0, 0, dimg->get_width(), dimg->get_height());
       store_doc_prolog(str, 1, dimg->get_dpi(), &bbox);
       store_doc_setup(str);
@@ -2519,7 +2519,7 @@ print(ByteStream &str,
       store_doc_prolog(str, todo, 0, 0);
       store_doc_setup(str);
       for(GPosition pos = pages_todo; pos; ++pos)
-        process_single_page(str,doc,pages_todo[pos],cnt++,todo,0);
+	process_single_page(str,doc,pages_todo[pos],cnt++,todo,0);
       store_doc_trailer(str);
     }
   else
@@ -2528,10 +2528,10 @@ print(ByteStream &str,
       int sheets_left = (todo+3)/4;
       int sides_todo = sheets_left;
       if (options.get_bookletmode() == Options::RECTOVERSO)
-        sides_todo *= 2;
+	sides_todo *= 2;
       int sheets_max = (options.get_bookletmax()+3)/4;
       if (! sheets_max)
-        sheets_max = sheets_left;
+	sheets_max = sheets_left;
       // -- reorder pages
       booklet_order(pages_todo, sheets_max*4);
       // -- print
@@ -2540,24 +2540,24 @@ print(ByteStream &str,
       store_doc_prolog(str, sides_todo, 0, 0);
       store_doc_setup(str);
       for (GPosition p=pages_todo; p; ++p)
-        {
-          struct pdata inf;
-          inf.page1 = pages_todo[p]; 
-          inf.page2 = pages_todo[++p]; 
-          inf.smax = sheets_max;
-          inf.spos = --sheetpos;
-          inf.offset = options.get_bookletalign();
-          if (options.get_bookletmode() != Options::VERSO)
-            process_double_page(str,doc,(void*)&inf,sides++,sides_todo);
-          inf.page1 = pages_todo[++p]; 
-          inf.page2 = pages_todo[++p]; 
-          inf.offset = -inf.offset;
-          if (options.get_bookletmode() != Options::RECTO)
-            process_double_page(str,doc,(void*)&inf,sides++,sides_todo);
-          sheets_left -= 1;
-          if (sheetpos <= 0)
-            sheetpos = ((sheets_max<sheets_left) ? sheets_max : sheets_left);
-        }
+	{
+	  struct pdata inf;
+	  inf.page1 = pages_todo[p];
+	  inf.page2 = pages_todo[++p];
+	  inf.smax = sheets_max;
+	  inf.spos = --sheetpos;
+	  inf.offset = options.get_bookletalign();
+	  if (options.get_bookletmode() != Options::VERSO)
+	    process_double_page(str,doc,(void*)&inf,sides++,sides_todo);
+	  inf.page1 = pages_todo[++p];
+	  inf.page2 = pages_todo[++p];
+	  inf.offset = -inf.offset;
+	  if (options.get_bookletmode() != Options::RECTO)
+	    process_double_page(str,doc,(void*)&inf,sides++,sides_todo);
+	  sheets_left -= 1;
+	  if (sheetpos <= 0)
+	    sheetpos = ((sheets_max<sheets_left) ? sheets_max : sheets_left);
+	}
       store_doc_trailer(str);
     }
 }
