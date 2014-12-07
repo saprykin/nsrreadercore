@@ -19,6 +19,7 @@
 // Copyright (C) 2013 Adrian Johnson <ajohnson@redneon.com>
 // Copyright (C) 2013 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2013 Thomas Freitag <Thomas.Freitag@alfa.de>
+// Copyright (C) 2014 Alexander Saprykin <xelfium@gmail.com>
 //
 // To see a description of the changes please see the Changelog file that
 // came with your tarball or type make ChangeLog if you are building from git
@@ -50,22 +51,22 @@ public:
   // the owner password was correct.  Either or both of the passwords
   // may be NULL, which is treated as an empty string.
   static GBool makeFileKey(int encVersion, int encRevision, int keyLength,
-			   GooString *ownerKey, GooString *userKey,
-			   GooString *ownerEnc, GooString *userEnc,
-			   int permissions, GooString *fileID,
-			   GooString *ownerPassword, GooString *userPassword,
-			   Guchar *fileKey, GBool encryptMetadata,
-			   GBool *ownerPasswordOk);
+                           GooString *ownerKey, GooString *userKey,
+                           GooString *ownerEnc, GooString *userEnc,
+                           int permissions, GooString *fileID,
+                           GooString *ownerPassword, GooString *userPassword,
+                           Guchar *fileKey, GBool encryptMetadata,
+                           GBool *ownerPasswordOk);
 
 private:
 
   static void r6Hash(Guchar *key, int keyLen, const char *pwd, int pwdLen,
          char *userKey);
   static GBool makeFileKey2(int encVersion, int encRevision, int keyLength,
-			    GooString *ownerKey, GooString *userKey,
-			    int permissions, GooString *fileID,
-			    GooString *userPassword, Guchar *fileKey,
-			    GBool encryptMetadata);
+                            GooString *ownerKey, GooString *userKey,
+                            int permissions, GooString *fileID,
+                            GooString *userPassword, Guchar *fileKey,
+                            GBool encryptMetadata);
 };
 
 //------------------------------------------------------------------------
@@ -155,7 +156,7 @@ public:
   virtual void reset();
   virtual int lookChar();
 };
- 
+
 //------------------------------------------------------------------------
 
 extern void md5(Guchar *msg, int msgLen, Guchar *digest);
