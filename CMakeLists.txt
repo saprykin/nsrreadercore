@@ -1,6 +1,8 @@
 cmake_minimum_required (VERSION 2.8.11)
 project (nsrreadercore C CXX)
 
+string (TOLOWER ${CMAKE_C_COMPILER_ID} COMPILER_ID)
+
 if (NOT CMAKE_BUILD_TYPE)
 	set (CMAKE_BUILD_TYPE "Debug")
 endif()
@@ -14,6 +16,20 @@ set (CMAKE_AUTOMOC true)
 
 find_package (Qt4 REQUIRED)
 include (${QT_USE_FILE})
+
+if (CMAKE_COMPILER_IS_GNUCXX)
+	set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-Bsymbolic")
+endif()
+
+if (CMAKE_COMPILER_IS_GNUCXX OR COMPILER_ID STREQUAL "clang")
+	set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wno-unused-parameter -Wno-unused-function")
+	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unused-parameter -Wno-unused-function")
+endif()
+
+if (COMPILER_ID STREQUAL "clang")
+	set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-private-field -Wno-unused-const-variable")
+	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-private-field -Wno-unused-const-variable")
+endif()
 
 set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${NSR_C_FLAGS_DEBUG}")
 set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${NSR_C_FLAGS_RELEASE}")
@@ -125,9 +141,5 @@ target_link_libraries (${PROJECT_NAME}
 	${TIFF_LIBRARIES}
 	${UNIVERSALCHARDET_LIBRARIES}
 )
-
-if (CMAKE_COMPILER_IS_GNUCXX)
-	set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-Bsymbolic")
-endif()
 
 add_definitions (-DNSRREADERCORE_LIBRARY)
