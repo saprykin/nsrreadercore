@@ -61,6 +61,7 @@ add_dependencies (djvulibre tiff)
 add_dependencies (poppler jpegturbo)
 add_dependencies (poppler tiff)
 add_dependencies (tiff jpegturbo)
+add_dependencies (tiff jbigkit)
 
 set (SOURCES
 	nsrabstractdocument.cpp

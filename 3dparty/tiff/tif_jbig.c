@@ -35,7 +35,7 @@
 #include "tiffiop.h"
 
 #ifdef JBIG_SUPPORT
-#include "jbig.h"
+#include "../jbigkit/jbig.h"
 
 static int JBIGSetupDecode(TIFF* tif)
 {
