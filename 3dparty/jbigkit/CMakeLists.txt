@@ -1,0 +1,21 @@
+set (SOURCES
+	jbig.c
+	jbig_ar.c
+	jbig85.c
+)
+
+set (HEADERS
+	jbig.h
+	jbig_ar.h
+	jbig85.h
+)
+
+include_directories (BEFORE
+	${JBIGKIT_INCLUDES}
+	${CMAKE_CURRENT_SOURCE_DIR})
+add_library (jbigkit OBJECT ${SOURCES} ${HEADERS})
+set_target_properties (jbigkit PROPERTIES POSITION_INDEPENDENT_CODE true)
+
+set (JBIGKIT_DEFINITIONS "" PARENT_SCOPE)
+set (JBIGKIT_INCLUDES ${JBIGKIT_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR} PARENT_SCOPE)
+set (JBIGKIT_LIBRARIES "" PARENT_SCOPE)

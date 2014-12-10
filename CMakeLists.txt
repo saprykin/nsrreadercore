@@ -49,6 +49,7 @@ endif()
 
 include_directories (BEFORE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_BINARY_DIR})
 
+add_subdirectory (3dparty/jbigkit)
 add_subdirectory (3dparty/libjpeg-turbo)
 add_subdirectory (3dparty/tiff)
 add_subdirectory (3dparty/djvu)
@@ -109,6 +110,7 @@ include_directories (
 	${POPPLER_INCLUDES}
 	${TIFF_INCLUDES}
 	${UNIVERSALCHARDET_INCLUDES}
+	${JBIGKIT_INCLUDES}
 )
 
 include_directories (AFTER ${NSR_INCLUDE_DIRECTORIES})
@@ -118,6 +120,7 @@ add_library (${PROJECT_NAME} SHARED
 	${THIRDPARTY_SOURCES}
 	${HEADERS}
 	${THIRDPARTY_HEADERS}
+	$<TARGET_OBJECTS:jbigkit>
 	$<TARGET_OBJECTS:jpegturbo>
 	$<TARGET_OBJECTS:tiff>
 	$<TARGET_OBJECTS:djvulibre>
@@ -129,7 +132,8 @@ add_definitions ("${DJVU_DEFINITIONS}
 	${LIBJPEGTURBO_DEFINITIONS}
 	${POPPLER_DEFINITIONS}
 	${TIFF_DEFINITIONS}
-	${UNIVERSALCHARDET_DEFINITIONS}"
+	${UNIVERSALCHARDET_DEFINITIONS}
+	${JBIGKIT_DEFINITIONS}"
 )
 
 target_link_libraries (${PROJECT_NAME}
@@ -140,6 +144,7 @@ target_link_libraries (${PROJECT_NAME}
 	${POPPLER_LIBRARIES}
 	${TIFF_LIBRARIES}
 	${UNIVERSALCHARDET_LIBRARIES}
+	${JBIGKIT_LIBRARIES}
 )
 
 add_definitions (-DNSRREADERCORE_LIBRARY)
