@@ -4,23 +4,23 @@
  * Copyright (c) 1988-1997 Sam Leffler
  * Copyright (c) 1991-1997 Silicon Graphics, Inc.
  *
- * Permission to use, copy, modify, distribute, and sell this software and 
+ * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
  * that (i) the above copyright notices and this permission notice appear in
  * all copies of the software and related documentation, and (ii) the names of
  * Sam Leffler and Silicon Graphics may not be used in any advertising or
  * publicity relating to the software without the specific, prior written
  * permission of Sam Leffler and Silicon Graphics.
- * 
- * THE SOFTWARE IS PROVIDED "AS-IS" AND WITHOUT WARRANTY OF ANY KIND, 
- * EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY 
- * WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  
- * 
+ *
+ * THE SOFTWARE IS PROVIDED "AS-IS" AND WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY
+ * WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+ *
  * IN NO EVENT SHALL SAM LEFFLER OR SILICON GRAPHICS BE LIABLE FOR
  * ANY SPECIAL, INCIDENTAL, INDIRECT OR CONSEQUENTIAL DAMAGES OF ANY KIND,
  * OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
- * WHETHER OR NOT ADVISED OF THE POSSIBILITY OF DAMAGE, AND ON ANY THEORY OF 
- * LIABILITY, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE 
+ * WHETHER OR NOT ADVISED OF THE POSSIBILITY OF DAMAGE, AND ON ANY THEORY OF
+ * LIABILITY, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
  * OF THIS SOFTWARE.
  */
 
@@ -104,6 +104,7 @@ TIFFClientOpen(
 			uint8 a8[2];
 			uint16 a16;
 		} n;
+		(void) n;
 		n.a8[0]=1;
 		n.a8[1]=0;
 		#ifdef WORDS_BIGENDIAN
@@ -375,7 +376,7 @@ TIFFClientOpen(
 		tif->tif_flags |= TIFF_SWAB;
 		#endif
 	}
-	if (tif->tif_flags & TIFF_SWAB) 
+	if (tif->tif_flags & TIFF_SWAB)
 		TIFFSwabShort(&tif->tif_header.common.tiff_version);
 	if ((tif->tif_header.common.tiff_version != TIFF_VERSION_CLASSIC)&&
 	    (tif->tif_header.common.tiff_version != TIFF_VERSION_BIG)) {
@@ -426,8 +427,8 @@ TIFFClientOpen(
 	tif->tif_flags |= TIFF_MYBUFFER;
 	tif->tif_rawcp = tif->tif_rawdata = 0;
 	tif->tif_rawdatasize = 0;
-        tif->tif_rawdataoff = 0;
-        tif->tif_rawdataloaded = 0;
+	tif->tif_rawdataoff = 0;
+	tif->tif_rawdataloaded = 0;
 
 	switch (mode[0]) {
 		case 'r':
@@ -480,10 +481,10 @@ TIFFClientOpen(
 			return (tif);
 	}
 bad:
-	tif->tif_mode = O_RDONLY;	/* XXX avoid flush */
+        tif->tif_mode = O_RDONLY;	/* XXX avoid flush */
         TIFFCleanup(tif);
 bad2:
-	return ((TIFF*)0);
+        return ((TIFF*)0);
 }
 
 /*
@@ -496,7 +497,7 @@ bad2:
 const char *
 TIFFFileName(TIFF* tif)
 {
-	return (tif->tif_name);
+        return (tif->tif_name);
 }
 
 /*
@@ -516,7 +517,7 @@ TIFFSetFileName(TIFF* tif, const char *name)
 int
 TIFFFileno(TIFF* tif)
 {
-	return (tif->tif_fd);
+        return (tif->tif_fd);
 }
 
 /*
@@ -525,7 +526,7 @@ TIFFFileno(TIFF* tif)
 int
 TIFFSetFileno(TIFF* tif, int fd)
 {
-        int old_fd = tif->tif_fd;
+	int old_fd = tif->tif_fd;
 	tif->tif_fd = fd;
 	return old_fd;
 }
@@ -536,7 +537,7 @@ TIFFSetFileno(TIFF* tif, int fd)
 thandle_t
 TIFFClientdata(TIFF* tif)
 {
-	return (tif->tif_clientdata);
+        return (tif->tif_clientdata);
 }
 
 /*
@@ -556,7 +557,7 @@ TIFFSetClientdata(TIFF* tif, thandle_t newvalue)
 int
 TIFFGetMode(TIFF* tif)
 {
-	return (tif->tif_mode);
+        return (tif->tif_mode);
 }
 
 /*
@@ -577,7 +578,7 @@ TIFFSetMode(TIFF* tif, int mode)
 int
 TIFFIsTiled(TIFF* tif)
 {
-	return (isTiled(tif));
+        return (isTiled(tif));
 }
 
 /*
@@ -586,7 +587,7 @@ TIFFIsTiled(TIFF* tif)
 uint32
 TIFFCurrentRow(TIFF* tif)
 {
-	return (tif->tif_row);
+        return (tif->tif_row);
 }
 
 /*
@@ -595,7 +596,7 @@ TIFFCurrentRow(TIFF* tif)
 uint16
 TIFFCurrentDirectory(TIFF* tif)
 {
-	return (tif->tif_curdir);
+        return (tif->tif_curdir);
 }
 
 /*
@@ -604,7 +605,7 @@ TIFFCurrentDirectory(TIFF* tif)
 uint32
 TIFFCurrentStrip(TIFF* tif)
 {
-	return (tif->tif_curstrip);
+        return (tif->tif_curstrip);
 }
 
 /*
@@ -613,7 +614,7 @@ TIFFCurrentStrip(TIFF* tif)
 uint32
 TIFFCurrentTile(TIFF* tif)
 {
-	return (tif->tif_curtile);
+        return (tif->tif_curtile);
 }
 
 /*
@@ -622,7 +623,7 @@ TIFFCurrentTile(TIFF* tif)
 int
 TIFFIsByteSwapped(TIFF* tif)
 {
-	return ((tif->tif_flags & TIFF_SWAB) != 0);
+        return ((tif->tif_flags & TIFF_SWAB) != 0);
 }
 
 /*
@@ -631,7 +632,7 @@ TIFFIsByteSwapped(TIFF* tif)
 int
 TIFFIsUpSampled(TIFF* tif)
 {
-	return (isUpSampled(tif));
+        return (isUpSampled(tif));
 }
 
 /*
@@ -640,7 +641,7 @@ TIFFIsUpSampled(TIFF* tif)
 int
 TIFFIsMSB2LSB(TIFF* tif)
 {
-	return (isFillOrder(tif, FILLORDER_MSB2LSB));
+        return (isFillOrder(tif, FILLORDER_MSB2LSB));
 }
 
 /*
@@ -649,7 +650,7 @@ TIFFIsMSB2LSB(TIFF* tif)
 int
 TIFFIsBigEndian(TIFF* tif)
 {
-	return (tif->tif_header.common.tiff_magic == TIFF_BIGENDIAN);
+        return (tif->tif_header.common.tiff_magic == TIFF_BIGENDIAN);
 }
 
 /*
@@ -658,7 +659,7 @@ TIFFIsBigEndian(TIFF* tif)
 TIFFReadWriteProc
 TIFFGetReadProc(TIFF* tif)
 {
-	return (tif->tif_readproc);
+        return (tif->tif_readproc);
 }
 
 /*
@@ -667,7 +668,7 @@ TIFFGetReadProc(TIFF* tif)
 TIFFReadWriteProc
 TIFFGetWriteProc(TIFF* tif)
 {
-	return (tif->tif_writeproc);
+        return (tif->tif_writeproc);
 }
 
 /*
@@ -676,7 +677,7 @@ TIFFGetWriteProc(TIFF* tif)
 TIFFSeekProc
 TIFFGetSeekProc(TIFF* tif)
 {
-	return (tif->tif_seekproc);
+        return (tif->tif_seekproc);
 }
 
 /*
@@ -685,7 +686,7 @@ TIFFGetSeekProc(TIFF* tif)
 TIFFCloseProc
 TIFFGetCloseProc(TIFF* tif)
 {
-	return (tif->tif_closeproc);
+        return (tif->tif_closeproc);
 }
 
 /*
@@ -694,7 +695,7 @@ TIFFGetCloseProc(TIFF* tif)
 TIFFSizeProc
 TIFFGetSizeProc(TIFF* tif)
 {
-	return (tif->tif_sizeproc);
+        return (tif->tif_sizeproc);
 }
 
 /*
@@ -703,7 +704,7 @@ TIFFGetSizeProc(TIFF* tif)
 TIFFMapFileProc
 TIFFGetMapFileProc(TIFF* tif)
 {
-	return (tif->tif_mapproc);
+        return (tif->tif_mapproc);
 }
 
 /*
@@ -712,7 +713,7 @@ TIFFGetMapFileProc(TIFF* tif)
 TIFFUnmapFileProc
 TIFFGetUnmapFileProc(TIFF* tif)
 {
-	return (tif->tif_unmapproc);
+        return (tif->tif_unmapproc);
 }
 
 /* vim: set ts=8 sts=8 sw=8 noet: */

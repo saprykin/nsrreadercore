@@ -22,7 +22,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- * 
+ *
  *  If you want to use this program under different license conditions,
  *  then contact the author for an arrangement.
  */
@@ -30,7 +30,9 @@
 #ifdef DEBUG
 #include <stdio.h>
 #else
+#ifndef NDEBUG
 #define NDEBUG
+#endif
 #endif
 
 #include <stdlib.h>
@@ -55,7 +57,7 @@
 
 /* object code version id */
 
-const char jbg85_version[] = 
+const char jbg85_version[] =
   "JBIG-KIT " JBG85_VERSION " (T.85 version) -- (c) 1995-2014 Markus Kuhn -- "
   "Licence: " JBG85_LICENCE "\n";
 
@@ -84,7 +86,7 @@ static void enc_byte_out(int byte, void *s)
 {
   unsigned char c = byte;
   ((struct jbg85_enc_state *)s)->data_out(&c, sizeof(unsigned char),
-					  ((struct jbg85_enc_state *)s)->file);
+                                          ((struct jbg85_enc_state *)s)->file);
 }
 
 
@@ -118,12 +120,12 @@ void jbg85_enc_init(struct jbg85_enc_state *s,
   s->y = 0;
   s->i = 0;
   s->ltp_old = 0;
-  
+
   /* initialize arithmetic encoder */
   arith_encode_init(&s->s, 0);
   s->s.byte_out = &enc_byte_out;
   s->s.file = s;
-  
+
   return;
 }
 
@@ -134,7 +136,7 @@ void jbg85_enc_init(struct jbg85_enc_state *s,
  * the number of layer 0 lines per stripes.
  */
 void jbg85_enc_options(struct jbg85_enc_state *s, int options,
-		       unsigned long l0, int mx)
+                       unsigned long l0, int mx)
 {
   if (s->y > 0) return; /* too late to change anything now */
 
@@ -176,7 +178,7 @@ static void output_newlen(struct jbg85_enc_state *s)
  * call-back function
  */
 void jbg85_enc_lineout(struct jbg85_enc_state *s, unsigned char *line,
-		       unsigned char *prevline, unsigned char *prevprevline)
+                       unsigned char *prevline, unsigned char *prevprevline)
 {
   unsigned char buf[20];
   unsigned long bpl;
@@ -197,7 +199,7 @@ void jbg85_enc_lineout(struct jbg85_enc_state *s, unsigned char *line,
     /* we have already output the full image, go away */
     return;
   }
-  
+
   /* line 0 has no previous line */
   if (s->y < 1)
     prevline = NULL;
@@ -264,14 +266,14 @@ void jbg85_enc_lineout(struct jbg85_enc_state *s, unsigned char *line,
       buf[7] = 0;
       s->data_out(buf, 8, s->file);
     }
-    
+
     /* initialize adaptive template movement algorithm */
     if (s->mx == 0) {
       s->new_tx = 0;  /* ATMOVE has been disabled */
     } else {
       s->c_all = 0;
       for (t = 0; t <= s->mx; t++)
-	s->c[t] = 0;
+        s->c[t] = 0;
       s->new_tx = -1; /* we have yet to determine ATMOVE ... */
     }
 
@@ -303,13 +305,13 @@ void jbg85_enc_lineout(struct jbg85_enc_state *s, unsigned char *line,
     else
       while (p1 < line + bpl && (ltp = (*p1++ == 0    )) != 0) ;
     arith_encode(&s->s, (s->options & JBG_LRLTWO) ? TPB2CX : TPB3CX,
-		 ltp == s->ltp_old);
+                 ltp == s->ltp_old);
 #ifdef DEBUG
     tp_lines += ltp;
 #endif
     s->ltp_old = ltp;
   }
-  
+
   if (!ltp) {
 
     /*
@@ -320,48 +322,48 @@ void jbg85_enc_lineout(struct jbg85_enc_state *s, unsigned char *line,
      *          76543210765432107654321076543210     line_h2
      *  76543210765432107654321X76543210             line_h1
      */
-  
+
     /* pointer to first image byte of the three lines of interest */
     hp3 = prevprevline;
     hp2 = prevline;
     hp1 = line;
-  
+
     line_h1 = line_h2 = line_h3 = 0;
     if (hp2) line_h2 = (long)*hp2 << 8;
     if (hp3) line_h3 = (long)*hp3 << 8;
-  
+
     /* encode line */
     for (j = 0; j < s->x0;) {
       line_h1 |= *hp1;
       if (j < bpl * 8 - 8 && hp2) {
-	line_h2 |= *(hp2 + 1);
-	if (hp3)
-	  line_h3 |= *(hp3 + 1);
+        line_h2 |= *(hp2 + 1);
+        if (hp3)
+          line_h3 |= *(hp3 + 1);
       }
       if (s->options & JBG_LRLTWO) {
-	/* two line template */
-	do {
-	  line_h1 <<= 1;  line_h2 <<= 1;  line_h3 <<= 1;
-	  if (s->tx) {
-	    if ((unsigned) s->tx > j)
-	      a = 0;
-	    else {
-	      o = (j - s->tx) - (j & ~7L);
-	      a = (hp1[o >> 3] >> (7 - (o & 7))) & 1;
-	      a <<= 4;
-	    }
-	    assert(s->tx > 23 ||
-		   a == ((line_h1 >> (4 + s->tx)) & 0x010));
-	    arith_encode(&s->s, (((line_h2 >> 10) & 0x3e0) | a |
-				 ((line_h1 >>  9) & 0x00f)),
-			 (line_h1 >> 8) & 1);
-	  }
-	  else
-	    arith_encode(&s->s, (((line_h2 >> 10) & 0x3f0) |
-				 ((line_h1 >>  9) & 0x00f)),
-			 (line_h1 >> 8) & 1);
+        /* two line template */
+        do {
+          line_h1 <<= 1;  line_h2 <<= 1;  line_h3 <<= 1;
+          if (s->tx) {
+            if ((unsigned) s->tx > j)
+              a = 0;
+            else {
+              o = (j - s->tx) - (j & ~7L);
+              a = (hp1[o >> 3] >> (7 - (o & 7))) & 1;
+              a <<= 4;
+            }
+            assert(s->tx > 23 ||
+                   a == ((line_h1 >> (4 + s->tx)) & 0x010));
+            arith_encode(&s->s, (((line_h2 >> 10) & 0x3e0) | a |
+                                 ((line_h1 >>  9) & 0x00f)),
+                         (line_h1 >> 8) & 1);
+          }
+          else
+            arith_encode(&s->s, (((line_h2 >> 10) & 0x3f0) |
+                                 ((line_h1 >>  9) & 0x00f)),
+                         (line_h1 >> 8) & 1);
 #ifdef DEBUG
-	  encoded_pixels++;
+          encoded_pixels++;
 #endif
 	  /* statistics for adaptive template changes */
 	  if (s->new_tx == -1 && j >= s->mx && j < s->x0 - 2) {
@@ -383,30 +385,30 @@ void jbg85_enc_lineout(struct jbg85_enc_state *s, unsigned char *line,
 	  }
 	} while (++j & 7 && j < s->x0);
       } else {
-	/* three line template */
-	do {
-	  line_h1 <<= 1;  line_h2 <<= 1;  line_h3 <<= 1;
-	  if (s->tx) {
-	    if ((unsigned) s->tx > j)
-	      a = 0;
-	    else {
-	      o = (j - s->tx) - (j & ~7L);
-	      a = (hp1[o >> 3] >> (7 - (o & 7))) & 1;
-	      a <<= 2;
-	    }
-	    assert(s->tx > 23 ||
-		   a == ((line_h1 >> (6 + s->tx)) & 0x004));
-	    arith_encode(&s->s, (((line_h3 >>  8) & 0x380) |
-				 ((line_h2 >> 12) & 0x078) | a |
-				 ((line_h1 >>  9) & 0x003)),
-			 (line_h1 >> 8) & 1);
-	  } else
-	    arith_encode(&s->s, (((line_h3 >>  8) & 0x380) |
-				 ((line_h2 >> 12) & 0x07c) |
-				 ((line_h1 >>  9) & 0x003)),
-			 (line_h1 >> 8) & 1);
+        /* three line template */
+        do {
+          line_h1 <<= 1;  line_h2 <<= 1;  line_h3 <<= 1;
+          if (s->tx) {
+            if ((unsigned) s->tx > j)
+              a = 0;
+            else {
+              o = (j - s->tx) - (j & ~7L);
+              a = (hp1[o >> 3] >> (7 - (o & 7))) & 1;
+              a <<= 2;
+            }
+            assert(s->tx > 23 ||
+                   a == ((line_h1 >> (6 + s->tx)) & 0x004));
+            arith_encode(&s->s, (((line_h3 >>  8) & 0x380) |
+                                 ((line_h2 >> 12) & 0x078) | a |
+                                 ((line_h1 >>  9) & 0x003)),
+                         (line_h1 >> 8) & 1);
+          } else
+            arith_encode(&s->s, (((line_h3 >>  8) & 0x380) |
+                                 ((line_h2 >> 12) & 0x07c) |
+                                 ((line_h1 >>  9) & 0x003)),
+                         (line_h1 >> 8) & 1);
 #ifdef DEBUG
-	  encoded_pixels++;
+          encoded_pixels++;
 #endif
 	  /* statistics for adaptive template changes */
 	  if (s->new_tx == -1 && j >= s->mx && j < s->x0 - 2) {
@@ -461,29 +463,29 @@ void jbg85_enc_lineout(struct jbg85_enc_state *s, unsigned char *line,
     clmin = (s->c[0] < cmin) ? s->c[0] : cmin;
     clmax = (s->c[0] > cmax) ? s->c[0] : cmax;
     if (s->c_all - cmax < (s->c_all >> 3) &&
-	cmax - s->c[s->tx] > s->c_all - cmax &&
-	cmax - s->c[s->tx] > (s->c_all >> 4) &&
-	/*                 ^ T.82 said < here, fixed in Cor.1/25 */
-	cmax - (s->c_all - s->c[s->tx]) > s->c_all - cmax &&
-	cmax - (s->c_all - s->c[s->tx]) > (s->c_all >> 4) &&
-	cmax - cmin > (s->c_all >> 2) &&
-	(s->tx || clmax - clmin > (s->c_all >> 3))) {
+        cmax - s->c[s->tx] > s->c_all - cmax &&
+        cmax - s->c[s->tx] > (s->c_all >> 4) &&
+        /*                 ^ T.82 said < here, fixed in Cor.1/25 */
+        cmax - (s->c_all - s->c[s->tx]) > s->c_all - cmax &&
+        cmax - (s->c_all - s->c[s->tx]) > (s->c_all >> 4) &&
+        cmax - cmin > (s->c_all >> 2) &&
+        (s->tx || clmax - clmin > (s->c_all >> 3))) {
       /* we have decided to perform an ATMOVE */
       s->new_tx = tmax;
 #ifdef DEBUG
       fprintf(stderr, "ATMOVE: tx=%d, c_all=%lu\n",
-	      s->new_tx, s->c_all);
+              s->new_tx, s->c_all);
 #endif
     } else {
       s->new_tx = s->tx;  /* we have decided not to perform an ATMOVE */
     }
   }
   assert(s->tx >= 0); /* i.e., tx can safely be cast to unsigned */
-  
+
 #ifdef DEBUG
   if (s->y == s->y0)
     fprintf(stderr, "tp_lines = %ld, encoded_pixels = %ld\n",
-	    tp_lines, encoded_pixels);
+            tp_lines, encoded_pixels);
 #endif
 
   return;
@@ -552,7 +554,7 @@ const char *jbg85_strerror(int errnum)
 
 
 /*
- * The constructor for a decoder 
+ * The constructor for a decoder
  */
 void jbg85_dec_init(struct jbg85_dec_state *s,
 		    unsigned char *buf, size_t buflen,
@@ -595,7 +597,7 @@ void jbg85_dec_init(struct jbg85_dec_state *s,
  * marker segment.
  */
 static size_t decode_pscd(struct jbg85_dec_state *s, unsigned char *data,
-			  size_t len)
+                          size_t len)
 {
   unsigned char *hp1, *hp2, *hp3, *p1;
   register unsigned long line_h1, line_h2, line_h3;
@@ -609,7 +611,7 @@ static size_t decode_pscd(struct jbg85_dec_state *s, unsigned char *data,
   /* forward data to arithmetic decoder */
   s->s.pscd_ptr = data;
   s->s.pscd_end = data + len;
-  
+
   /* restore a few local variables */
   line_h1 = s->line_h1;
   line_h2 = s->line_h2;
@@ -619,7 +621,7 @@ static size_t decode_pscd(struct jbg85_dec_state *s, unsigned char *data,
 #ifdef DEBUG
   if (x == 0 && s->i == 0 && s->pseudo)
     fprintf(stderr, "decode_pscd(%p, %p, %ld)\n",
-	    (void *) s, (void *) data, (long) len);
+            (void *) s, (void *) data, (long) len);
 #endif
 
   s->intr = 0;
@@ -633,42 +635,42 @@ static size_t decode_pscd(struct jbg85_dec_state *s, unsigned char *data,
     /* adaptive template changes */
     if (x == 0 && s->pseudo)
       for (n = 0; n < s->at_moves; n++)
-	if (s->at_line[n] == s->i) {
-	  s->tx = s->at_tx[n];
+        if (s->at_line[n] == s->i) {
+          s->tx = s->at_tx[n];
 #ifdef DEBUG
-	  fprintf(stderr, "ATMOVE: line=%lu, tx=%d.\n", s->i, s->tx);
+          fprintf(stderr, "ATMOVE: line=%lu, tx=%d.\n", s->i, s->tx);
 #endif
-	}
+        }
     assert(s->tx >= 0); /* i.e., tx can safely be cast to unsigned */
-    
+
     /* typical prediction */
     if (s->options & JBG_TPBON && s->pseudo) {
       slntp = arith_decode(&s->s, (s->options & JBG_LRLTWO) ? TPB2CX : TPB3CX);
       if (slntp < 0)
-	goto leave;
+        goto leave;
       s->lntp =
-	!(slntp ^ s->lntp);
+        !(slntp ^ s->lntp);
       if (!s->lntp) {
-	/* this line is 'typical' (i.e. identical to the previous one) */
-	if (s->p[1] < 0) {
-	  /* first line of page or (following SDRST) of stripe */
-	  for (p1 = hp1; p1 < hp1 + s->bpl; *p1++ = 0) ;
-	  s->intr = s->line_out(s, hp1, s->bpl, s->y, s->file);
-	  /* rotate the ring buffer that holds the last three lines */
-	  s->p[2] = s->p[1];
-	  s->p[1] = s->p[0];
-	  if (++(s->p[0]) >= buflines) s->p[0] = 0;
-	} else {
-	  s->intr = s->line_out(s, hp2, s->bpl, s->y, s->file);
-	  /* duplicate the last line in the ring buffer */
-	  s->p[2] = s->p[1];
-	}
-	continue;
+        /* this line is 'typical' (i.e. identical to the previous one) */
+        if (s->p[1] < 0) {
+          /* first line of page or (following SDRST) of stripe */
+          for (p1 = hp1; p1 < hp1 + s->bpl; *p1++ = 0) ;
+          s->intr = s->line_out(s, hp1, s->bpl, s->y, s->file);
+          /* rotate the ring buffer that holds the last three lines */
+          s->p[2] = s->p[1];
+          s->p[1] = s->p[0];
+          if (++(s->p[0]) >= buflines) s->p[0] = 0;
+        } else {
+          s->intr = s->line_out(s, hp2, s->bpl, s->y, s->file);
+          /* duplicate the last line in the ring buffer */
+          s->p[2] = s->p[1];
+        }
+        continue;
       }
       /* this line is 'not typical' and has to be coded completely */
     }
     s->pseudo = 0;
-    
+
     /*
      * Layout of the variables line_h1, line_h2, line_h3, which contain
      * as bits the neighbour pixels of the currently decoded pixel X:
@@ -677,77 +679,77 @@ static size_t decode_pscd(struct jbg85_dec_state *s, unsigned char *data,
      *                     76543210 76543210 76543210 76543210     line_h2
      *   76543210 76543210 76543210 76543210 X                     line_h1
      */
-    
+
     if (x == 0) {
       line_h1 = line_h2 = line_h3 = 0;
       if (s->p[1] >= 0)
-	line_h2 = (long)*hp2 << 8;
+        line_h2 = (long)*hp2 << 8;
       if (s->p[2] >= 0)
-	line_h3 = (long)*hp3 << 8;
+        line_h3 = (long)*hp3 << 8;
     }
-    
+
     /* decode line */
     while (x < s->x0) {
       if ((x & 7) == 0) {
-	if (x < (s->bpl - 1) * 8 && s->p[1] >= 0) {
-	  line_h2 |= *(hp2 + 1);
-	  if (s->p[2] >= 0)
-	    line_h3 |= *(hp3 + 1);
-	}
+        if (x < (s->bpl - 1) * 8 && s->p[1] >= 0) {
+          line_h2 |= *(hp2 + 1);
+          if (s->p[2] >= 0)
+            line_h3 |= *(hp3 + 1);
+        }
       }
       if (s->options & JBG_LRLTWO) {
-	/* two line template */
-	do {
-	  if (s->tx) {
-	    if ((unsigned) s->tx > x)
-	      a = 0;
-	    else if (s->tx < 8)
-	      a = ((line_h1 >> (s->tx - 5)) & 0x010);
-	    else {
-	      o = (x - s->tx) - (x & ~7L);
-	      a = (hp1[o >> 3] >> (7 - (o & 7))) & 1;
-	      a <<= 4;
-	    }
-	    assert(s->tx > 31 ||
-		   a == ((line_h1 >> (s->tx - 5)) & 0x010));
-	    pix = arith_decode(&s->s, (((line_h2 >> 9) & 0x3e0) | a |
-				       (line_h1 & 0x00f)));
-	  } else
-	    pix = arith_decode(&s->s, (((line_h2 >> 9) & 0x3f0) |
-				       (line_h1 & 0x00f)));
-	  if (pix < 0)
-	    goto leave;
-	  line_h1 = (line_h1 << 1) | pix;
-	  line_h2 <<= 1;
-	} while ((++x & 7) && x < s->x0);
+        /* two line template */
+        do {
+          if (s->tx) {
+            if ((unsigned) s->tx > x)
+              a = 0;
+            else if (s->tx < 8)
+              a = ((line_h1 >> (s->tx - 5)) & 0x010);
+            else {
+              o = (x - s->tx) - (x & ~7L);
+              a = (hp1[o >> 3] >> (7 - (o & 7))) & 1;
+              a <<= 4;
+            }
+            assert(s->tx > 31 ||
+                   a == ((line_h1 >> (s->tx - 5)) & 0x010));
+            pix = arith_decode(&s->s, (((line_h2 >> 9) & 0x3e0) | a |
+                                       (line_h1 & 0x00f)));
+          } else
+            pix = arith_decode(&s->s, (((line_h2 >> 9) & 0x3f0) |
+                                       (line_h1 & 0x00f)));
+          if (pix < 0)
+            goto leave;
+          line_h1 = (line_h1 << 1) | pix;
+          line_h2 <<= 1;
+        } while ((++x & 7) && x < s->x0);
       } else {
-	/* three line template */
-	do {
-	  if (s->tx) {
-	    if ((unsigned) s->tx > x)
-	      a = 0;
-	    else if (s->tx < 8)
-	      a = ((line_h1 >> (s->tx - 3)) & 0x004);
-	    else {
-	      o = (x - s->tx) - (x & ~7L);
-	      a = (hp1[o >> 3] >> (7 - (o & 7))) & 1;
-	      a <<= 2;
-	    }
-	    assert(s->tx > 31 ||
-		   a == ((line_h1 >> (s->tx - 3)) & 0x004));
-	    pix = arith_decode(&s->s, (((line_h3 >>  7) & 0x380) |
-				       ((line_h2 >> 11) & 0x078) | a |
-				       (line_h1 & 0x003)));
-	  } else
-	    pix = arith_decode(&s->s, (((line_h3 >>  7) & 0x380) |
-				       ((line_h2 >> 11) & 0x07c) |
-				       (line_h1 & 0x003)));
-	  if (pix < 0)
-	    goto leave;
-	  line_h1 = (line_h1 << 1) | pix;
-	  line_h2 <<= 1;
-	  line_h3 <<= 1;
-	} while ((++x & 7) && x < s->x0);
+        /* three line template */
+        do {
+          if (s->tx) {
+            if ((unsigned) s->tx > x)
+              a = 0;
+            else if (s->tx < 8)
+              a = ((line_h1 >> (s->tx - 3)) & 0x004);
+            else {
+              o = (x - s->tx) - (x & ~7L);
+              a = (hp1[o >> 3] >> (7 - (o & 7))) & 1;
+              a <<= 2;
+            }
+            assert(s->tx > 31 ||
+                   a == ((line_h1 >> (s->tx - 3)) & 0x004));
+            pix = arith_decode(&s->s, (((line_h3 >>  7) & 0x380) |
+                                       ((line_h2 >> 11) & 0x078) | a |
+                                       (line_h1 & 0x003)));
+          } else
+            pix = arith_decode(&s->s, (((line_h3 >>  7) & 0x380) |
+                                       ((line_h2 >> 11) & 0x07c) |
+                                       (line_h1 & 0x003)));
+          if (pix < 0)
+            goto leave;
+          line_h1 = (line_h1 << 1) | pix;
+          line_h2 <<= 1;
+          line_h3 <<= 1;
+        } while ((++x & 7) && x < s->x0);
       } /* if (s->options & JBG_LRLTWO) */
       *hp1++ = line_h1;
       hp2++;
@@ -755,7 +757,7 @@ static size_t decode_pscd(struct jbg85_dec_state *s, unsigned char *data,
     } /* while (x < s->x0) */
     *(hp1 - 1) <<= s->bpl * 8 - s->x0;
     s->intr = s->line_out(s, s->linebuf + s->p[0] * s->bpl,
-			  s->bpl, s->y, s->file);
+                          s->bpl, s->y, s->file);
     x = 0;
     s->pseudo = 1;
     /* rotate the ring buffer that holds the last three lines */
@@ -763,7 +765,7 @@ static size_t decode_pscd(struct jbg85_dec_state *s, unsigned char *data,
     s->p[1] = s->p[0];
     if (++(s->p[0]) >= buflines) s->p[0] = 0;
   } /* for (i = ...) */
-  
+
  leave:
 
   /* save a few local variables */
@@ -785,11 +787,11 @@ static int finish_sde(struct jbg85_dec_state *s)
   s->s.nopadding = 0;
   if (decode_pscd(s, s->buffer, 2) != 2 && s->intr)
     return 1;
-  
+
   /* prepare decoder for next SDE */
   arith_decode_init(&s->s, s->buffer[1] == MARKER_SDNORM);
   s->s.nopadding = s->options & JBG_VLENGTH;
-	
+
   s->x = 0;
   s->i = 0;
   s->pseudo = 1;
@@ -804,7 +806,7 @@ static int finish_sde(struct jbg85_dec_state *s)
 
   return 0;
 }
-	
+
 /*
  * Provide to the decoder a new BIE fragment of len bytes starting at data.
  *
@@ -835,7 +837,7 @@ static int finish_sde(struct jbg85_dec_state *s)
  * has failed.)
  */
 int jbg85_dec_in(struct jbg85_dec_state *s, unsigned char *data, size_t len,
-		 size_t *cnt)
+                 size_t *cnt)
 {
   int required_length;
   unsigned long y;
@@ -848,15 +850,15 @@ int jbg85_dec_in(struct jbg85_dec_state *s, unsigned char *data, size_t len,
   if (s->bie_len < 20) {
     while (s->bie_len < 20 && *cnt < len)
       s->buffer[s->bie_len++] = data[(*cnt)++];
-    if (s->bie_len < 20) 
+    if (s->bie_len < 20)
       return JBG_EAGAIN;
     /* parse header parameters */
     s->x0 = (((long) s->buffer[ 4] << 24) | ((long) s->buffer[ 5] << 16) |
-	     ((long) s->buffer[ 6] <<  8) | (long) s->buffer[ 7]);
+             ((long) s->buffer[ 6] <<  8) | (long) s->buffer[ 7]);
     s->y0 = (((long) s->buffer[ 8] << 24) | ((long) s->buffer[ 9] << 16) |
-	     ((long) s->buffer[10] <<  8) | (long) s->buffer[11]);
+             ((long) s->buffer[10] <<  8) | (long) s->buffer[11]);
     s->l0 = (((long) s->buffer[12] << 24) | ((long) s->buffer[13] << 16) |
-	     ((long) s->buffer[14] <<  8) | (long) s->buffer[15]);
+             ((long) s->buffer[14] <<  8) | (long) s->buffer[15]);
     s->bpl = (s->x0 >> 3) + !!(s->x0 & 7); /* bytes per line */
     s->mx = s->buffer[16];
     s->options = s->buffer[19];
@@ -888,7 +890,7 @@ int jbg85_dec_in(struct jbg85_dec_state *s, unsigned char *data, size_t len,
   /*
    * BID processing loop
    */
-  
+
   while (*cnt < len || s->end_of_bie == 1) {
     if (s->end_of_bie == 1) s->end_of_bie = 2;
 
@@ -897,21 +899,21 @@ int jbg85_dec_in(struct jbg85_dec_state *s, unsigned char *data, size_t len,
     /* skip COMMENT contents */
     if (s->comment_skip) {
       if (s->comment_skip <= len - *cnt) {
-	*cnt += s->comment_skip;
-	s->comment_skip = 0;
+        *cnt += s->comment_skip;
+        s->comment_skip = 0;
       } else {
-	s->comment_skip -= len - *cnt;
-	*cnt = len;
+        s->comment_skip -= len - *cnt;
+        *cnt = len;
       }
       continue;
     }
-    
+
     /* load marker segments into s->buffer for processing */
     if (s->buf_len > 0) {
       assert(s->buffer[0] == MARKER_ESC);
       /* load enough bytes to determine length of marker segment */
       while (s->buf_len < 2 && *cnt < len)
-	s->buffer[s->buf_len++] = data[(*cnt)++];
+        s->buffer[s->buf_len++] = data[(*cnt)++];
       if (s->buf_len < 2) continue;
       switch (s->buffer[1]) {
       case MARKER_COMMENT: required_length = 6; break;
@@ -919,70 +921,70 @@ int jbg85_dec_in(struct jbg85_dec_state *s, unsigned char *data, size_t len,
       case MARKER_NEWLEN:  required_length = 6; break;
       case MARKER_SDNORM:
       case MARKER_SDRST:
-	if ((s->options & JBG_VLENGTH) && !s->end_of_bie) {
-	  /* peek ahead whether a NEWLEN marker segment follows */
-	  required_length = 2 + 1;
-	  if (s->buf_len == 2 + 1 && s->buffer[2] == MARKER_ESC)
-	    required_length = 2 + 2;  /* SDNORM + 2 marker sequence bytes */
-	  else if (s->buf_len >= 2 + 2 && s->buffer[3] == MARKER_NEWLEN)
-	    required_length = 2 + 6;  /* SDNORM + NEWLEN */
-	} else {
-	  /* no further NEWLEN allowed or end of BIE reached */
-	  required_length = 2;
-	}
-	break;
+        if ((s->options & JBG_VLENGTH) && !s->end_of_bie) {
+          /* peek ahead whether a NEWLEN marker segment follows */
+          required_length = 2 + 1;
+          if (s->buf_len == 2 + 1 && s->buffer[2] == MARKER_ESC)
+            required_length = 2 + 2;  /* SDNORM + 2 marker sequence bytes */
+          else if (s->buf_len >= 2 + 2 && s->buffer[3] == MARKER_NEWLEN)
+            required_length = 2 + 6;  /* SDNORM + NEWLEN */
+        } else {
+          /* no further NEWLEN allowed or end of BIE reached */
+          required_length = 2;
+        }
+        break;
       case MARKER_ABORT:
-	s->buf_len = 0;
-	return JBG_EABORT;
+        s->buf_len = 0;
+        return JBG_EABORT;
       case MARKER_STUFF:
-	/* forward stuffed 0xff to arithmetic decoder */
-	if (decode_pscd(s, s->buffer, 2) == 2 || !s->intr)
-	  s->buf_len = 0;
-	if (s->intr)
-	  return JBG_EOK_INTR;  /* line_out() requested interrupt */
-	continue;
+        /* forward stuffed 0xff to arithmetic decoder */
+        if (decode_pscd(s, s->buffer, 2) == 2 || !s->intr)
+          s->buf_len = 0;
+        if (s->intr)
+          return JBG_EOK_INTR;  /* line_out() requested interrupt */
+        continue;
       default:
-	return JBG_EMARKER;
+        return JBG_EMARKER;
       }
       /* load minimal number of additional bytes required for processing */
       while (s->buf_len < required_length && *cnt < len)
-	s->buffer[s->buf_len++] = data[(*cnt)++];
+        s->buffer[s->buf_len++] = data[(*cnt)++];
       if (s->buf_len < required_length) continue;
       /* now the buffer is filled with exactly one marker segment
        * (or in the case of SDNORM/SDRST sometimes also with
        * two additional peek-ahead bytes) */
       switch (s->buffer[1]) {
       case MARKER_COMMENT:
-	s->comment_skip =
-	  (((long) s->buffer[2] << 24) | ((long) s->buffer[3] << 16) |
-	   ((long) s->buffer[4] <<  8) | (long) s->buffer[5]);
-	break;
+        s->comment_skip =
+          (((long) s->buffer[2] << 24) | ((long) s->buffer[3] << 16) |
+           ((long) s->buffer[4] <<  8) | (long) s->buffer[5]);
+        break;
       case MARKER_ATMOVE:
-	if (s->at_moves < JBG85_ATMOVES_MAX) {
-	  s->at_line[s->at_moves] =
-	    (((long) s->buffer[2] << 24) | ((long) s->buffer[3] << 16) |
-	     ((long) s->buffer[4] <<  8) | (long) s->buffer[5]);
-	  s->at_tx[s->at_moves] = (signed char) s->buffer[6];
-	  if (s->at_tx[s->at_moves] > (int) s->mx ||
-	      (s->at_tx[s->at_moves] < ((s->options & JBG_LRLTWO) ? 5 : 3) &&
-	       s->at_tx[s->at_moves] != 0) ||
-	      s->buffer[7] != 0)
-	    return JBG_EINVAL | 11;
-	  s->at_moves++;
-	} else
-	  return JBG_EIMPL | 14; /* more than JBG85_ATMOVES_MAX ATMOVES */
-	break;
+        if (s->at_moves < JBG85_ATMOVES_MAX) {
+          s->at_line[s->at_moves] =
+            (((long) s->buffer[2] << 24) | ((long) s->buffer[3] << 16) |
+             ((long) s->buffer[4] <<  8) | (long) s->buffer[5]);
+          s->at_tx[s->at_moves] = (signed char) s->buffer[6];
+          if (s->at_tx[s->at_moves] > (int) s->mx ||
+              (s->at_tx[s->at_moves] < ((s->options & JBG_LRLTWO) ? 5 : 3) &&
+               s->at_tx[s->at_moves] != 0) ||
+              s->buffer[7] != 0)
+            return JBG_EINVAL | 11;
+          s->at_moves++;
+        } else
+          return JBG_EIMPL | 14; /* more than JBG85_ATMOVES_MAX ATMOVES */
+        break;
       case MARKER_NEWLEN:
-	y = (((long) s->buffer[2] << 24) | ((long) s->buffer[3] << 16) |
-	     ((long) s->buffer[4] <<  8) | (long) s->buffer[5]);
-	if (y > s->y0)                   return JBG_EINVAL | 12;
+        y = (((long) s->buffer[2] << 24) | ((long) s->buffer[3] << 16) |
+             ((long) s->buffer[4] <<  8) | (long) s->buffer[5]);
+        if (y > s->y0)                   return JBG_EINVAL | 12;
 #ifndef JBG85_TOLERATE_MULTIPLE_NEWLEN
 	if (!(s->options & JBG_VLENGTH)) return JBG_EINVAL | 13;
 	s->options &= ~JBG_VLENGTH;
 #endif
 	s->y0 = y;
 	break;
-	
+
       case MARKER_SDNORM:
       case MARKER_SDRST:
 
@@ -1054,16 +1056,16 @@ int jbg85_dec_in(struct jbg85_dec_state *s, unsigned char *data, size_t len,
       /* we have found PSCD bytes */
       *cnt += decode_pscd(s, data + *cnt, len - *cnt);
       if (s->intr)
-	return JBG_EOK_INTR;  /* line_out() requested interrupt */
+        return JBG_EOK_INTR;  /* line_out() requested interrupt */
       if (*cnt < len && data[*cnt] != MARKER_ESC) {
 #ifdef DEBUG
 	fprintf(stderr, "PSCD was longer than expected, unread bytes "
 		"%02x %02x %02x %02x ...\n", data[*cnt], data[*cnt+1],
 		data[*cnt+2], data[*cnt+3]);
 #endif
-	return JBG_EINVAL | 14; /* PSCD was longer than expected */
+        return JBG_EINVAL | 14; /* PSCD was longer than expected */
       }
-      
+
     }
   }  /* of BID processing loop 'while (*cnt < len) ...' */
 
