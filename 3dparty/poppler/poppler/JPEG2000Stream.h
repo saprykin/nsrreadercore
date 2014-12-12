@@ -16,7 +16,7 @@
 #ifndef JPEG2000STREAM_H
 #define JPEG2000STREAM_H
 
-#include <openjpeg.h>
+#include "../openjpeg/openjpeg.h"
 
 #include "goo/gtypes.h"
 #include "Object.h"

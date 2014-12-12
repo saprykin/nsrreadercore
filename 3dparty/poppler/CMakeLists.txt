@@ -85,7 +85,7 @@ set (HAVE_SPLASH true)
 set (ENABLE_LIBJPEG true)
 set (ENABLE_LIBPNG true)
 set (ENABLE_LIBTIFF true)
-set (ENABLE_LIBOPENJPEG false)
+set (ENABLE_LIBOPENJPEG true)
 
 set (HAVE_LIBTIFF true)
 set (HAVE_TIFFIO_H true)

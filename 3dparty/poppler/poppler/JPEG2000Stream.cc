@@ -14,8 +14,6 @@
 
 #include "JPEG2000Stream.h"
 
-#include "config.h"
-
 JPXStream::JPXStream(Stream *strA) : FilterStream(strA)
 {
   inited = gFalse;
@@ -75,7 +73,7 @@ void JPXStream::init()
   if (oLen.isInt()) bufSize = oLen.getInt();
   oLen.free();
 
-  
+
   int length = 0;
   unsigned char *buf = str->toUnsignedChars(&length, bufSize);
   init2(buf, length, CODEC_JP2);
@@ -92,19 +90,19 @@ void JPXStream::init()
       unsigned char *cdata = (unsigned char *)image->comps[component].data;
       int adjust = 0;
       if (image->comps[component].prec > 8)
-	adjust = image->comps[component].prec - 8;
+        adjust = image->comps[component].prec - 8;
       int sgndcorr = 0;
       if (image->comps[component].sgnd)
-	sgndcorr = 1 << (image->comps[0].prec - 1);
+        sgndcorr = 1 << (image->comps[0].prec - 1);
       for (int i = 0; i < npixels; i++) {
-	int r = image->comps[component].data[i];
-	r += sgndcorr;
-	if (adjust) {
-	  r = (r >> adjust)+((r >> (adjust-1))%2);
-	  if (unlikely(r > 255))
-	    r = 255;
+        int r = image->comps[component].data[i];
+        r += sgndcorr;
+        if (adjust) {
+          r = (r >> adjust)+((r >> (adjust-1))%2);
+          if (unlikely(r > 255))
+            r = 255;
         }
-	*(cdata++) = r;
+        *(cdata++) = r;
       }
     }
   } else
