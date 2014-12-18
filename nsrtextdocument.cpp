@@ -58,47 +58,69 @@ NSRTextDocument::renderPage (int page)
 
 	if (data.open (QFile::ReadOnly)) {
 		QDataStream	in (&data);
-		QByteArray	ba, bn;
+		QByteArray	ba;
+		QString		text, fullText;
 		int		strPos;
 		int		bytesRead;
 
-		ba.resize (NSR_CORE_TEXT_PAGE_SIZE + NSR_CORE_TEXT_PAGE_SIZE / 2);
-		in.device()->seek ((page - 1) * NSR_CORE_TEXT_PAGE_SIZE);
+		QTextCodec *codec = QTextCodec::codecForName (charset.toAscii ());
 
-		if ((bytesRead = in.readRawData (ba.data (), NSR_CORE_TEXT_PAGE_SIZE + NSR_CORE_TEXT_PAGE_SIZE / 2)) == -1) {
+		if (page > 1) {
+			ba.resize (NSR_CORE_TEXT_PAGE_SIZE + NSR_CORE_TEXT_PAGE_SIZE / 2);
+			in.device()->seek ((page - 2) * NSR_CORE_TEXT_PAGE_SIZE + NSR_CORE_TEXT_PAGE_SIZE / 2);
+		} else {
+			ba.resize (NSR_CORE_TEXT_PAGE_SIZE);
+			in.device()->seek (0);
+		}
+
+		if ((bytesRead = in.readRawData (ba.data (), ba.size ())) == -1) {
 			data.close ();
 			return rinfo;
 		}
 
+		data.close ();
 		ba.truncate (bytesRead);
-		bn = ba.left (NSR_CORE_TEXT_PAGE_SIZE);
+
+		fullText = (codec == NULL) ? QString (ba) : codec->toUnicode (ba);
+
+		text = (codec == NULL) ? QString (ba.right (NSR_CORE_TEXT_PAGE_SIZE))
+				       : codec->toUnicode (ba.right (NSR_CORE_TEXT_PAGE_SIZE));
+
+		/* First and last characters may be broken as of multibyte charset */
+		if (!text.isEmpty () && !text.at(0).isSpace ())
+			text.remove (0, 1);
+
+		if (!text.isEmpty () && !text.at(text.size () - 1).isSpace ())
+			text.remove (text.size () - 1, 1);
 
 		/* Complete last word */
-		if (ba.size () > NSR_CORE_TEXT_PAGE_SIZE) {
-			strPos = NSR_CORE_TEXT_PAGE_SIZE;
-			while (strPos < ba.size () && !QChar(ba.at (strPos)).isSpace ())
-				bn.append (ba.at (strPos++));
-		}
+		strPos = text.size () - 1;
 
-		QTextCodec *codec = QTextCodec::codecForName (charset.toAscii ());
+		while (strPos >= 0 && !text.at(strPos).isSpace ())
+			--strPos;
 
-		_text = codec == NULL ? QString (bn) : codec->toUnicode (bn);
+		while (strPos >= 0 && text.at(strPos).isSpace ())
+			--strPos;
 
-		if (!_text.isEmpty () && page > 1) {
-			/* Remove previous semi-full words and spaces */
-			strPos = -1;
-			for (int i = 0; i < _text.size () / 2; ++i)
-				if (_text.at(i).isSpace ()) {
-					while (_text.at(++i).isSpace () && i < _text.size () / 2);
-					strPos = i;
-					break;
-				}
+		if (strPos < 0)
+			strPos = text.size () - 1;
 
-			if (strPos != -1)
-				_text = _text.right (_text.size () - strPos);
-		}
+		text = text.left (strPos + 1);
 
-		data.close ();
+		fullText = fullText.left (fullText.lastIndexOf (text));
+
+		/* Prepend semi-words at the start */
+		strPos = fullText.size () - 1;
+
+		while (strPos >= 0 && !fullText.at(strPos).isSpace ())
+			--strPos;
+
+		if (strPos < 0)
+			strPos = fullText.size () + 1;
+
+		text.prepend (fullText.right (fullText.size () - 1 - strPos));
+
+		_text = text;
 	}
 
 	rinfo.setSuccessRender (true);
