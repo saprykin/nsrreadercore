@@ -11,7 +11,7 @@
 #include <float.h>
 
 #define NSR_CORE_MAIN_RENDER_PROP	"nsr-main-render"
-#define NSR_CORE_VERSION		"1.4.3"
+#define NSR_CORE_VERSION		"1.5.0"
 
 NSRReaderCore::NSRReaderCore (const INSRSettings *	settings,
 			      INSRThumbnailer *		thumbnailer,
