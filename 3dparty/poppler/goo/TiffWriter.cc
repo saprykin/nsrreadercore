@@ -23,7 +23,7 @@
 #endif
 
 extern "C" {
-#include <tiffio.h>
+#include <../tiff/tiffio.h>
 }
 
 struct TiffWriterPrivate {
