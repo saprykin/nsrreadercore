@@ -71,17 +71,30 @@ set (SOURCES
 	nsrcroppads.cpp
 	nsrcroppadscache.cpp
 	nsrdjvudocument.cpp
+	nsrnormalizedpoint.cpp
+	nsrnormalizedrect.cpp
 	nsrpagecropper.cpp
 	nsrpagescache.cpp
 	nsrpopplerdocument.cpp
 	nsrreadercore.cpp
+	nsrregiontext.cpp
+	nsrregulararea.cpp
+	nsrregulararearect.cpp
 	nsrrenderedpage.cpp
 	nsrrenderinfo.cpp
 	nsrrenderrequest.cpp
 	nsrrenderthread.cpp
+	nsrsearchpoint.cpp
 	nsrsession.cpp
+	nsrtextbox.cpp
 	nsrtextdocument.cpp
+	nsrtextentity.cpp
+	nsrtextpage.cpp
+	nsrtextselection.cpp
+	nsrtextxycut.cpp
 	nsrtiffdocument.cpp
+	nsrtinytextentity.cpp
+	nsrwordwithcharacters.cpp
 )
 
 set (HEADERS
@@ -91,18 +104,31 @@ set (HEADERS
 	nsrcroppads.h
 	nsrcroppadscache.h
 	nsrdjvudocument.h
+	nsrnormalizedpoint.h
+	nsrnormalizedrect.h
 	nsrpagecropper.h
 	nsrpagescache.h
 	nsrpopplerdocument.h
 	nsrreadercore.h
 	nsrreadercore_global.h
+	nsrregiontext.h
+	nsrregulararea.h
+	nsrregulararearect.h
 	nsrrenderedpage.h
 	nsrrenderinfo.h
 	nsrrenderrequest.h
 	nsrrenderthread.h
+	nsrsearchpoint.h
 	nsrsession.h
+	nsrtextbox.h
 	nsrtextdocument.h
+	nsrtextentity.h
+	nsrtextpage.h
+	nsrtextselection.h
+	nsrtextxycut.h
 	nsrtiffdocument.h
+	nsrtinytextentity.h
+	nsrwordwithcharacters.h
 )
 
 include_directories (
