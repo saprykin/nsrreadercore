@@ -1,11 +1,14 @@
 #include "nsrpopplerdocument.h"
 #include "nsrpagecropper.h"
+#include "nsrtextbox.h"
+#include "nsrtextpage.h"
 
 #include "poppler/poppler/ErrorCodes.h"
 
 #include <qmath.h>
 
 #include <QFile>
+#include <QHash>
 
 #define NSR_CORE_PDF_MIN_ZOOM	25.0
 
@@ -76,21 +79,117 @@ NSRPopplerDocument::renderPage (int page)
 
 	_page = _catalog->getPage (page);
 
+	double cropWidth  = _page->getCropWidth ();
+	double cropHeight = _page->getCropHeight ();
+
 	if (isTextOnly ()) {
-		PDFRectangle	*rect;
-		GooString	*text;
-		TextOutputDev	*dev;
+		TextOutputDev *		dev;
+		QList<NSRTextBox *>	textList;
 
 		dev = new TextOutputDev (0, gFalse, 0, gFalse, gFalse);
 
 		_doc->displayPageSlice (dev, _page->getNum (), 72, 72, 0, gFalse, gTrue, gFalse, -1, -1, -1, -1);
 
-		rect = _page->getCropBox ();
-		text = dev->getText (rect->x1, rect->y1, rect->x2, rect->y2);
-		_text = processText (QString::fromUtf8 (text->getCString ()));
+		TextWordList *wordList = dev->makeWordList ();
 
-		delete text;
+		if (wordList == NULL) {
+			delete dev;
+			_text = QString ();
+			rinfo.setSuccessRender (true);
+
+			return rinfo;
+		}
+
+		QHash<TextWord *, NSRTextBox*> wordBoxMap;
+
+		for (int i = 0; i < wordList->getLength (); i++) {
+			TextWord *	word    = wordList->get (i);
+			GooString *	gooWord = word->getText ();
+			QString		string  = QString::fromUtf8 (gooWord->getCString ());
+			double		xMin, yMin, xMax, yMax;
+
+			delete gooWord;
+
+			word->getBBox (&xMin, &yMin, &xMax, &yMax);
+
+			NSRTextBox* textBox = new NSRTextBox (string, QRectF (xMin, yMin, xMax - xMin, yMax - yMin));
+			textBox->setHasSpaceAfter (word->hasSpaceAfter () == gTrue);
+			textBox->getCharBoundingBoxes().reserve (word->getLength ());
+
+			for (int j = 0; j < word->getLength (); ++j) {
+				word->getCharBBox (j, &xMin, &yMin, &xMax, &yMax);
+				textBox->getCharBoundingBoxes().append (QRectF (xMin, yMin, xMax - xMin, yMax - yMin));
+			}
+
+			wordBoxMap.insert (word, textBox);
+			textList.append (textBox);
+		}
+
+		for (int i = 0; i < wordList->getLength (); i++) {
+			TextWord *	word    = wordList->get (i);
+			NSRTextBox *	textBox = wordBoxMap.value (word);
+
+			textBox->setNextWord (wordBoxMap.value (word->nextWord ()));
+		}
+
+		delete wordList;
 		delete dev;
+
+		/* Text page processing */
+
+		NSRTextPage *	textPage = new NSRTextPage (QSize (cropWidth, cropHeight),
+							    getRotation (),
+							    (NSRAbstractDocument::NSRDocumentRotation)
+								(((_page->getRotate () % 360) + 360) % 360));
+		NSRTextBox *	next;
+		QString		s;
+		bool		addChar;
+
+		foreach (NSRTextBox *word, textList) {
+			const int qstringCharCount = word->getText().length ();
+			next = word->getNextWord ();
+			int textBoxChar = 0;
+
+			for (int j = 0; j < qstringCharCount; j++) {
+				const QChar c = word->getText().at (j);
+
+				if (c.isHighSurrogate ()) {
+					s       = c;
+					addChar = false;
+				} else if (c.isLowSurrogate ()) {
+					s       += c;
+					addChar  = true;
+				} else {
+					s       = c;
+					addChar = true;
+				}
+
+				if (addChar) {
+					QRectF charBBox = word->getCharBoundingBox (textBoxChar);
+					textPage->append ((j == qstringCharCount - 1 && !next) ? (s + "\n") : s,
+							  NSRNormalizedRect (charBBox.left   () / cropWidth,
+									     charBBox.bottom () / cropHeight,
+									     charBBox.right  () / cropWidth,
+									     charBBox.top    () / cropHeight));
+					textBoxChar++;
+				}
+			}
+
+			if (word->hasSpaceAfter () && next) {
+				QRectF wordBBox     = word->boundingBox ();
+				QRectF nextWordBBox = next->boundingBox ();
+
+				textPage->append (" ",
+						  NSRNormalizedRect (wordBBox.right    () / cropWidth,
+								     wordBBox.bottom   () / cropHeight,
+								     nextWordBBox.left () / cropWidth,
+								     wordBBox.top      () / cropHeight));
+			}
+		}
+
+		qDeleteAll (textList);
+		_text = textPage->text ();
+		delete textPage;
 
 		rinfo.setSuccessRender (true);
 
@@ -101,15 +200,15 @@ NSRPopplerDocument::renderPage (int page)
 
 	double pageWidth = (((getRotation () % 180) == 90 && !isLandscape) ||
 			    ((getRotation () % 180) == 0 && isLandscape)) ?
-				_page->getCropHeight () : _page->getCropWidth ();
+				cropHeight : cropWidth;
 
 	double minZoom, maxZoom;
 
 	/* Each pixel needs 4 bytes (RGBA) of memory */
-	double pageSize = _page->getCropWidth () * _page->getCropHeight () * 4;
+	double pageSize = cropWidth * cropHeight * 4;
 
 	maxZoom = qMin (sqrt (NSR_CORE_DOCUMENT_MAX_HEAP) * sqrt (72 * 72 / pageSize) / 72 * 100 + 0.5,
-			getMaxZoom (QSize (_page->getCropWidth (), _page->getCropHeight ())));
+			getMaxZoom (QSize (cropWidth, cropHeight)));
 
 	if (pageSize > NSR_CORE_DOCUMENT_MAX_HEAP)
 		minZoom = maxZoom;
@@ -134,7 +233,7 @@ NSRPopplerDocument::renderPage (int page)
 	if (getZoom () < minZoom)
 		setZoomSilent (minZoom);
 
-	setZoomSilent (validateMaxZoom (QSize (_page->getCropWidth (), _page->getCropHeight ()), getZoom ()));
+	setZoomSilent (validateMaxZoom (QSize (cropWidth, cropHeight), getZoom ()));
 
 	_dev->startPage (0, NULL, _doc->getXRef ());
 
