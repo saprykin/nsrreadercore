@@ -88,7 +88,7 @@ NSRPopplerDocument::renderPage (int page)
 
 		dev = new TextOutputDev (0, gFalse, 0, gFalse, gFalse);
 
-		_doc->displayPageSlice (dev, _page->getNum (), 72, 72, 0, gFalse, gTrue, gFalse, -1, -1, -1, -1);
+		_doc->displayPageSlice (dev, _page->getNum (), 72, 72, 0, gFalse, gFalse, gFalse, -1, -1, -1, -1);
 
 		TextWordList *wordList = dev->makeWordList ();
 
@@ -187,6 +187,7 @@ NSRPopplerDocument::renderPage (int page)
 		}
 
 		qDeleteAll (textList);
+		textPage->correctTextOrder ();
 		_text = textPage->text ();
 		delete textPage;
 
