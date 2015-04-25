@@ -87,8 +87,6 @@ NSRTextPage::NSRTextPage (const QSize&					size,
 
 		if (!e->getText().isEmpty ())
 			_words.append (new NSRTinyTextEntity (e->getText (), *e->getArea ()));
-
-		delete e;
 	}
 }
 
