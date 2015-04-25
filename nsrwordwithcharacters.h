@@ -13,6 +13,14 @@
 /**
  * @class NSRWordWithCharacters nsrwordwithcharacters.h
  * @brief Word with separate characters
+ *
+ * This class act like a light wrapper around given text and its characters.
+ * The idea is that you can sort, move and copy objects of this class to
+ * prevent useless memory allocation calls. Though you can free the memory
+ * using freeWord() and freeCharacters().
+ *
+ * Use this class to reuse pointers allocated previously to perform logical
+ * operations above the words.
  */
 class NSRWordWithCharacters
 {
@@ -26,6 +34,16 @@ public:
 
 	/** Destroys word with characters */
 	~NSRWordWithCharacters ();
+
+	/**
+	 * @brief Frees word memory
+	 */
+	void freeWord ();
+
+	/**
+	 * @brief Frees characters memory
+	 */
+	void freeCharacters ();
 
 	/**
 	 * @brief Gets the word
