@@ -20,7 +20,7 @@ NSRNormalizedRect::NSRNormalizedRect (double left, double top, double right, dou
 	if (_left > _right)
 		qSwap (_left, _right);
 
-	if (_bottom > _top)
+	if (_top > _bottom)
 		qSwap (_bottom, _top);
 }
 
