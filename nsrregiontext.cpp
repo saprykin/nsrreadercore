@@ -10,6 +10,10 @@ NSRRegionText::NSRRegionText (const NSRWordWithCharactersList& wordsWithCharacte
 {
 }
 
+NSRRegionText::~NSRRegionText ()
+{
+}
+
 QString
 NSRRegionText::getString () const
 {

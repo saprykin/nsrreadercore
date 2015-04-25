@@ -19,6 +19,10 @@
  * We will divide the whole page in some regions depending on the horizontal and
  * vertical spacing among different regions. Each region will have an area and an
  * associated #NSRWordWithCharactersList in sorted order.
+ *
+ * This class acts like a light wrapper around given word list. It doesn't manage
+ * the memory allocation, so you should manually free the memory allocated
+ * for given word list.
  */
 class NSRRegionText
 {
@@ -32,6 +36,9 @@ public:
 	 * @param area Area of the text region.
 	 */
 	NSRRegionText (const NSRWordWithCharactersList& wordsWithCharacters, const QRect& area);
+
+	/** Destructor */
+	~NSRRegionText ();
 
 	/**
 	 * @brief Gets the whole text as a string
