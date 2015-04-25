@@ -128,6 +128,7 @@ private:
 	 * @param pageWidth Page width, in pixels.
 	 * @param pageHeight Page height, in pixels.
 	 * @return A list of pairs of line and its area.
+	 * @note It reuses the pointers passed in @a words.
 	 */
 	static QList< QPair<NSRWordWithCharactersList, QRect> >
 	makeAndSortLines (const NSRWordWithCharactersList&	words,

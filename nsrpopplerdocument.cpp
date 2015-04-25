@@ -175,8 +175,8 @@ NSRPopplerDocument::renderPage (int page)
 			}
 
 			if (word->hasSpaceAfter () && next) {
-				QRectF wordBBox     = word->boundingBox ();
-				QRectF nextWordBBox = next->boundingBox ();
+				QRectF wordBBox     = word->getBoundingBox ();
+				QRectF nextWordBBox = next->getBoundingBox ();
 
 				textPage->append (" ",
 						  NSRNormalizedRect (wordBBox.right    () / cropWidth,

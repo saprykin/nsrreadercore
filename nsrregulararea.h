@@ -118,7 +118,7 @@ public:
 	 * @brief Appends the given area to the regular area
 	 * @param area Area to append.
 	 */
-	void appendArea (const NSRRegularArea<NormalizedShape,Shape> *area);
+	void appendArea (const NSRRegularArea<NormalizedShape, Shape> *area);
 
 	/**
 	 * @brief Appends the given shape to the regular area

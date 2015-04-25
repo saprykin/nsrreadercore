@@ -6,11 +6,25 @@
 #include <QVarLengthArray>
 #include <QMap>
 
+/* DPI scale ration for page size */
+#define NSR_TEXTXYCUT_DPI_RATIO			2000.0
+
+/* Geometry round ration */
+#define NSR_TEXTXYCUT_GEOM_RATIO		1000
+
+/* Overlap threshold in percents for Y-axis when making words */
+#define NSR_TEXTXYCUT_WORD_OVERLAP_THRESHOLD	60
+
+/* Overlap threshold in percents for Y-axis when making lines */
+#define NSR_TEXTXYCUT_LINE_OVERLAP_THRESHOLD	70
+
 static bool compareTinyTextEntityX (const NSRWordWithCharacters& first,
 				    const NSRWordWithCharacters& second)
 {
-	QRect firstArea  = first.getArea().roundedGeometry (1000, 1000);
-	QRect secondArea = second.getArea().roundedGeometry (1000, 1000);
+	QRect firstArea  = first.getArea().roundedGeometry (NSR_TEXTXYCUT_GEOM_RATIO,
+							    NSR_TEXTXYCUT_GEOM_RATIO);
+	QRect secondArea = second.getArea().roundedGeometry (NSR_TEXTXYCUT_GEOM_RATIO,
+							     NSR_TEXTXYCUT_GEOM_RATIO);
 
 	return firstArea.left () < secondArea.left ();
 }
@@ -18,18 +32,18 @@ static bool compareTinyTextEntityX (const NSRWordWithCharacters& first,
 static bool compareTinyTextEntityY (const NSRWordWithCharacters& first,
 				    const NSRWordWithCharacters& second)
 {
-	const QRect firstArea  = first.getArea().roundedGeometry (1000, 1000);
-	const QRect secondArea = second.getArea().roundedGeometry (1000, 1000);
+	const QRect firstArea  = first.getArea().roundedGeometry (NSR_TEXTXYCUT_GEOM_RATIO,
+								  NSR_TEXTXYCUT_GEOM_RATIO);
+	const QRect secondArea = second.getArea().roundedGeometry (NSR_TEXTXYCUT_GEOM_RATIO,
+								   NSR_TEXTXYCUT_GEOM_RATIO);
 
 	return firstArea.top () < secondArea.top ();
 }
 
-/*
- * Returns true if segments [left1, right1] and [left2, right2] on the real line
+/* Returns true if segments [left1, right1] and [left2, right2] on the real line
  * overlap within threshold percent, i.e. if the ratio of the length of the
  * intersection of the segments to the length of the shortest of the two input segments
- * is not smaller than the threshold.
- */
+ * is not smaller than the threshold. */
 static bool segmentsOverlap (double left1, double right1, double left2, double right2, int threshold)
 {
 	/* Check if one consumes another fully (speed optimization) */
@@ -74,35 +88,35 @@ NSRTextXYCut::XYCut (NSRTinyTextEntityList& list, const QSizeF& pageSize)
 		return;
 
 	/* Page width and height are in pixels at 100% zoom level, and thus depend
-	 * on display DPI. We scale pageWidth and pageHeight to remove the dependence.
+	 * on display DPI. We scale page width and page height to remove the dependence.
 	 * Otherwise bugs would be more difficult to reproduce and app could fail in
-	 * extreme cases like a large TV with low DPI.
-	 */
-	const double scalingFactor = 2000.0 / (pageSize.width () + pageSize.height ());
+	 * extreme cases like a large TV with low DPI. */
+	const double scalingFactor = NSR_TEXTXYCUT_DPI_RATIO / (pageSize.width () + pageSize.height ());
 	const int pageWidth        = (int) (scalingFactor * pageSize.width ());
 	const int pageHeight       = (int) (scalingFactor * pageSize.height ());
 
 	NSRTinyTextEntityList characters = list;
 
-	/** Remove spaces from the text */
+	/* Remove spaces from the text */
 	removeSpace (characters);
 
-	/** Construct words from characters */
+	/* Construct words from characters - copy the memory */
 	NSRWordWithCharactersList wordsWithCharacters = makeWordFromCharacters (characters,
 										pageWidth,
 										pageHeight);
 
-	/** Make a XY cut tree for segmentation of the texts */
+	/* Make a XY cut tree for segmentation of the texts - reuse the memory */
 	NSRRegionTextList tree = XYCutForBoundingBoxes (wordsWithCharacters,
 							NSRNormalizedRect (0, 0, 1, 1),
 							pageWidth,
 							pageHeight);
 
-	/** Add spaces to the word */
+	/* Add spaces to the word - may add more memory */
 	NSRWordWithCharactersList listWithWordsAndSpaces = addNecessarySpace (tree,
 									      pageWidth,
 									      pageHeight);
 
+	/* Free old memory */
 	qDeleteAll (list);
 	list.clear ();
 
@@ -136,12 +150,7 @@ NSRTextXYCut::makeWordFromCharacters (const NSRTinyTextEntityList&	characters,
 	 * NSRTinyTextEntity's in it. We will search NSRTinyTextEntity blocks
 	 * and merge them until we get a space between two consecutive
 	 * NSRTinyTextEntity's. When we get a space we can take it as a end
-	 * of word. Then we store the word as a NSRTinyTextEntity and keep it in newList.
-	 *
-	 * We create a NSRRegionText named regionWord that contains the word
-	 * and the characters associated with it and a rectangle area of the element
-	 * in newList.
-	 */
+	 * of word. */
 	NSRWordWithCharactersList wordsWithCharacters;
 
 	NSRTinyTextEntityList::ConstIterator it    = characters.begin ();
@@ -168,7 +177,7 @@ NSRTextXYCut::makeWordFromCharacters (const NSRTinyTextEntityList&	characters,
 			if (textString.length ()) {
 				newString.append (textString);
 
-				/* When textString is the start of the word */
+				/* When text string is the start of the word */
 				if (tmpIt == it) {
 					NSRNormalizedRect newRect (lineArea, pageWidth, pageHeight);
 					wordCharacters.append (new NSRTinyTextEntity (textString.normalized
@@ -176,23 +185,22 @@ NSRTextXYCut::makeWordFromCharacters (const NSRTinyTextEntityList&	characters,
 										      newRect));
 				} else {
 					NSRNormalizedRect newRect (elementArea, pageWidth, pageHeight);
-					wordCharacters.append(new NSRTinyTextEntity (textString.normalized
-										     (QString::NormalizationForm_KC),
-										     newRect));
+					wordCharacters.append (new NSRTinyTextEntity (textString.normalized
+										      (QString::NormalizationForm_KC),
+										      newRect));
 				}
 			}
 
+			/* We must have to put this line before the below condition,
+			 * otherwise the last character can be missed */
 			++it;
 
-			/* We must have to put this line before the if condition of (it == itEnd)
-			 * otherwise the last character can be missed
-			 */
 			if (it == itEnd)
 				break;
 
 			elementArea = (*it)->getArea().roundedGeometry (pageWidth, pageHeight);
 
-			if (!doesConsumeY (elementArea, lineArea, 60)) {
+			if (!doesConsumeY (elementArea, lineArea, NSR_TEXTXYCUT_WORD_OVERLAP_THRESHOLD)) {
 				--it;
 				break;
 			}
@@ -227,7 +235,7 @@ NSRTextXYCut::makeWordFromCharacters (const NSRTinyTextEntityList&	characters,
 			textString = (*it)->getText ();
 		}
 
-		/* If newString is not empty, save it */
+		/* If new text string is not empty, save it */
 		if (!newString.isEmpty ()) {
 			const NSRNormalizedRect newRect (lineArea, pageWidth, pageHeight);
 			NSRTinyTextEntity *word = new NSRTinyTextEntity (newString.
@@ -266,7 +274,7 @@ NSRTextXYCut::XYCutForBoundingBoxes (const NSRWordWithCharactersList&	wordsWithC
 
 		/* 1. Calculation of projection profiles */
 
-		/* Allocate the size of proj profiles and initialize with 0 */
+		/* Allocate the size of projection profiles and initialize with 0 */
 		int sizeProjY = node.getArea().height ();
 		int sizeProjX = node.getArea().width ();
 
@@ -280,7 +288,7 @@ NSRTextXYCut::XYCutForBoundingBoxes (const NSRWordWithCharactersList&	wordsWithC
 		for (int j = 0; j < sizeProjX; ++j)
 			projOnXaxis[j] = 0;
 
-		const QList<NSRWordWithCharacters> list = node.getText ();
+		const NSRWordWithCharactersList list = node.getText ();
 
 		/* Calculate tcx and tcy locally for each new region */
 		int wordSpacing;
@@ -307,7 +315,7 @@ NSRTextXYCut::XYCutForBoundingBoxes (const NSRWordWithCharactersList&	wordsWithC
 			NSRTinyTextEntity *ent = list.at(j).getWord ();
 			const QRect entRect = ent->getArea().geometry (pageWidth, pageHeight);
 
-			/* Calculate vertical projection profile projOnXaxis */
+			/* Calculate vertical projection profile on x-axis */
 			for (int k = entRect.left (); k <= entRect.left () + entRect.width (); ++k) {
 				if ((k - regionRect.left ()) < sizeProjX && (k - regionRect.left ()) >= 0)
 					projOnXaxis[k - regionRect.left ()] += entRect.height ();
@@ -340,7 +348,6 @@ NSRTextXYCut::XYCutForBoundingBoxes (const NSRWordWithCharactersList&	wordsWithC
 		if (count)
 			avgX /= count;
 
-
 		/* 2. Cleanup boundary white spaces and removal of noise */
 		int xbegin = 0;
 		int xend   = sizeProjX - 1;
@@ -359,7 +366,7 @@ NSRTextXYCut::XYCutForBoundingBoxes (const NSRWordWithCharactersList&	wordsWithC
 		while (yend >= 0 && projOnYaxis[yend] <= 0)
 			yend--;
 
-		/* Update the regionRect */
+		/* Update the region rectangle */
 		int oldLeft = regionRect.left ();
 		int oldTop  = regionRect.top ();
 
@@ -386,11 +393,11 @@ NSRTextXYCut::XYCutForBoundingBoxes (const NSRWordWithCharactersList&	wordsWithC
 		/* Find all horizontal gaps and find the maximum between them */
 		for (int j = 1; j < sizeProjY; ++j) {
 			/* Transition from white to black */
-			if (begin >= 0 && projOnYaxis[j-1] <= 0 && projOnYaxis[j] > 0)
+			if (begin >= 0 && projOnYaxis[j - 1] <= 0 && projOnYaxis[j] > 0)
 				end = j;
 
 			/* Transition from black to white */
-			if (projOnYaxis[j-1] > 0 && projOnYaxis[j] <= 0)
+			if (projOnYaxis[j - 1] > 0 && projOnYaxis[j] <= 0)
 				begin = j;
 
 			if (begin > 0 && end > 0 && end - begin > gapHor) {
@@ -409,11 +416,11 @@ NSRTextXYCut::XYCutForBoundingBoxes (const NSRWordWithCharactersList&	wordsWithC
 		/* Find all the vertical gaps and find the maximum between them */
 		for (int j = 1; j < sizeProjX; ++j) {
 			/* Transition from white to black */
-			if (begin >= 0 && projOnXaxis[j-1] <= 0 && projOnXaxis[j] > 0)
+			if (begin >= 0 && projOnXaxis[j - 1] <= 0 && projOnXaxis[j] > 0)
 				end = j;
 
 			/* Transition from black to white */
-			if (projOnXaxis[j-1] > 0 && projOnXaxis[j] <= 0)
+			if (projOnXaxis[j - 1] > 0 && projOnXaxis[j] <= 0)
 				begin = j;
 
 			if (begin > 0 && end > 0 && end - begin > gapVer) {
@@ -444,7 +451,7 @@ NSRTextXYCut::XYCutForBoundingBoxes (const NSRWordWithCharactersList&	wordsWithC
 					regionRect.width  (),
 					regionRect.height () - topHeight);
 
-		/* For vertical Cut */
+		/* For vertical cut */
 		const int leftWidth = cutPosX - (regionRect.left () - oldLeft);
 		const QRect leftRect (regionRect.left (),
 				      regionRect.top  (),
@@ -475,7 +482,7 @@ NSRTextXYCut::XYCutForBoundingBoxes (const NSRWordWithCharactersList&	wordsWithC
 
 		NSRWordWithCharactersList list1, list2;
 
-		/* Horizontal cut, topRect and bottomRect */
+		/* Horizontal cut, top rectangle and bottom rectangle */
 		if (cutHor) {
 			for (int j = 0; j < list.length (); ++j) {
 				const NSRWordWithCharacters word = list.at (j);
@@ -493,7 +500,7 @@ NSRTextXYCut::XYCutForBoundingBoxes (const NSRWordWithCharactersList&	wordsWithC
 			tree.replace (i, node1);
 			tree.insert (i + 1, node2);
 		}
-		/* Vertical cut, leftRect and rightRect */
+		/* Vertical cut, left rectangle and right rectangle */
 		else if (cutVer) {
 			for (int j = 0; j < list.length (); ++j) {
 				const NSRWordWithCharacters word = list.at (j);
@@ -519,12 +526,11 @@ NSRTextXYCut::XYCutForBoundingBoxes (const NSRWordWithCharactersList&	wordsWithC
 NSRWordWithCharactersList
 NSRTextXYCut::addNecessarySpace (NSRRegionTextList& tree, int pageWidth, int pageHeight)
 {
-	/* 1. Call makeAndSortLines () before adding spaces in between words in a line.
+	/* 1. Call makeAndSortLines() before adding spaces in between words in a line.
 	 * 2. Now add spaces between every two words in a line.
-	 * 3. Finally, extract all the space separated texts from each region and return it.
-	 */
+	 * 3. Finally, extract all the space separated texts from each region and return it. */
 
-	/* Only change the texts under NSRRegionTexts, not the area */
+	/* Only change the texts under NSRRegionText's, not the area */
 	for (int j = 0; j < tree.length (); j++) {
 		NSRRegionText& tmpRegion = tree[j];
 
@@ -541,11 +547,11 @@ NSRTextXYCut::addNecessarySpace (NSRRegionTextList& tree, int pageWidth, int pag
 				if (k + 1 >= list.length ())
 					break;
 
-				const QRect area2 = list.at(k+1).getArea().roundedGeometry (pageWidth, pageHeight);
+				const QRect area2 = list.at(k + 1).getArea().roundedGeometry (pageWidth, pageHeight);
 				const int space = area2.left () - area1.right ();
 
 				if (space != 0) {
-					/* Make a NSRTinyTextEntity of string space and push it between it and it + 1 */
+					/* Make a NSRTinyTextEntity of string space and push it between elements */
 					const int left   = area1.right ();
 					const int right  = area2.left ();
 					const int top    = area2.top () < area1.top () ? area2.top () : area1.top ();
@@ -593,8 +599,7 @@ NSRTextXYCut::calculateStatisticalInformation (const NSRWordWithCharactersList&	
 	/* For the region, defined by line rectangles and lines:
 	 * 1. Make line statistical analysis to find the line spacing.
 	 * 2. Make character statistical analysis to differentiate between
-	 *    word spacing and column spacing.
-	 */
+	 *    word spacing and column spacing. */
 
 	/* Step 0 */
 	const QList< QPair<NSRWordWithCharactersList, QRect> > sortedLines =
@@ -679,8 +684,7 @@ NSRTextXYCut::calculateStatisticalInformation (const NSRWordWithCharactersList&	
 				minSpace = space;
 
 			/* If we found a real space, whose length is not zero and also
-			 * less than the pageWidth
-			 */
+			 * less than the page width */
 			if (space != 0 && space != pageWidth) {
 				/* Increase the count of the space amount */
 				if (horSpaceStat.contains (space))
@@ -728,7 +732,7 @@ NSRTextXYCut::calculateStatisticalInformation (const NSRWordWithCharactersList&	
 			maxHorSpaceRects.append (QRect (0, 0, 0, 0));
 	}
 
-	/* All the between word space counts are in horSpaceStat */
+	/* All the between word space counts are in horizontal space statistics */
 	*wordSpacing  = 0;
 	weightedCount = 0;
 	QMapIterator<int, int> iterate (horSpaceStat);
@@ -772,15 +776,13 @@ NSRTextXYCut::makeAndSortLines (const NSRWordWithCharactersList&	words,
 	 * rectangle. The texts can be character, word, half-word anything.
 	 * So, we need to:
 	 * 1. Sort rectangles/boxes containing texts by y0 (top).
-	 * 2. Create textline where there is y overlap between NSRTinyTextEntity's.
-	 * 3. Within each line sort the NSRTinyTextEntity's by x0 (left).
-	 */
+	 * 2. Create text line where there is y-overlap between NSRTinyTextEntity's.
+	 * 3. Within each line sort the NSRTinyTextEntity's by x0 (left). */
 
 	QList< QPair<NSRWordWithCharactersList, QRect> > lines;
 
-	/* Make a new copy of the TextList in the words, so that the wordsTmp and lines do
-	 * not contain same pointers for all the NSRTinyTextEntity.
-	 */
+	/* Make a new copy of the text list, so that the words and lines do
+	 * not contain same pointers for all the NSRTinyTextEntity's */
 	NSRWordWithCharactersList wordsCopy = words;
 
 	/* Step 1 */
@@ -790,16 +792,15 @@ NSRTextXYCut::makeAndSortLines (const NSRWordWithCharactersList&	words,
 	QList<NSRWordWithCharacters>::Iterator it    = wordsCopy.begin ();
 	QList<NSRWordWithCharacters>::Iterator itEnd = wordsCopy.end ();
 
-	/* For every non-space texts (characters/words) in the textList */
+	/* For every non-space texts (characters/words) in the text list */
 	for (; it != itEnd; it++) {
 		const QRect elementArea = (*it).getArea().roundedGeometry (pageWidth, pageHeight);
 		bool found = false;
 
 		for (int i = 0; i < lines.length (); i++) {
 			/* The line area which will be expanded,
-			 * line rectangles is only necessary to preserve the topmin and bottommax
-			 * of all the texts in the line, left and right is not necessary at all.
-			 */
+			 * line rectangles is only necessary to preserve the top min and bottom max
+			 * of all the texts in the line, left and right is not necessary at all */
 			QRect &lineArea = lines[i].second;
 			const int textY1 = elementArea.top  ();
 			const int textY2 = elementArea.top  () + elementArea.height ();
@@ -811,10 +812,9 @@ NSRTextXYCut::makeAndSortLines (const NSRWordWithCharactersList&	words,
 			const int lineX1 = lineArea.left ();
 			const int lineX2 = lineArea.left () + lineArea.width ();
 
-			/* If the new text and the line has y overlapping parts of more than 70%,
-			 * the text will be added to this line
-			 */
-			if (doesConsumeY (elementArea, lineArea, 70)) {
+			/* If the new text and the line has y-overlapping parts of more than 70%,
+			 * the text will be added to this line */
+			if (doesConsumeY (elementArea, lineArea, NSR_TEXTXYCUT_LINE_OVERLAP_THRESHOLD)) {
 				NSRWordWithCharactersList &line = lines[i].first;
 				line.append (*it);
 
@@ -831,9 +831,8 @@ NSRTextXYCut::makeAndSortLines (const NSRWordWithCharactersList&	words,
 				break;
 		}
 
-		/* When we have found a new line create a new TextList containing
-		 * only one element and append it to the lines
-		 */
+		/* When we have found a new line create a new text list containing
+		 * only one element and append it to the lines */
 		if (!found) {
 			NSRWordWithCharactersList tmp;
 			tmp.append ((*it));

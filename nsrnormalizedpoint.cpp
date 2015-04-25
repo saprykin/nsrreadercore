@@ -96,9 +96,8 @@ NSRNormalizedPoint::distanceSqr (double				x,
 			/* Projection falls outside the line segment on the side of the current point */
 			thisDistance = point.distanceSqr (end._x, end._y, xScale, yScale);
 		else {
-			/* Projection is within [start, *i],
-			 * determine the length of the perpendicular distance from the projection
-			 * to the actual point */
+			/* Projection is within [start, *i], determine the length of the perpendicular
+			 * distance from the projection to the actual point */
 			NSRNormalizedPoint direction = end - start;
 			NSRNormalizedPoint projection = start - NSRNormalizedPoint (-t * direction._x, -t * direction._y);
 			thisDistance = projection.distanceSqr (x, y, xScale, yScale);

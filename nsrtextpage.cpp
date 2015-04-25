@@ -32,8 +32,7 @@ stringLengthAdaptedWithHyphen (const QString&					str,
 
 	/* Hyphenated '-' must be at the end of a word, so hyphenation means
 	 * we have a '-' just followed by a '\n' character, check if the
-	 * string contains a '-' character if the '-' is the last entry
-	 */
+	 * string contains a '-' character if the '-' is the last entry */
 	if (str.endsWith ('-')) {
 		/* Validity chek of it + 1 */
 		if ((it + 1) != textListEnd) {
@@ -48,8 +47,7 @@ stringLengthAdaptedWithHyphen (const QString&					str,
 				const NSRNormalizedRect& lookaheadArea = (*(it + 1))->getArea ();
 
 				/* Lookahead to check whether both the '-' rect and next
-				 * character rectangle overlap
-				 */
+				 * character rectangle overlap */
 				if (!NSRTextXYCut::doesConsumeY (hyphenArea, lookaheadArea, 70))
 					len -= 1;
 			}
@@ -123,8 +121,7 @@ NSRTextPage::findText (int			searchID,
 	const QMap< int, NSRSearchPoint * >::const_iterator sIt = _searchPoints.constFind (searchID);
 	if (sIt == _searchPoints.constEnd ()) {
 		/* If no previous run of this search is found, then set it to start
-		 * from the beginning (respecting the search direction)
-		 */
+		 * from the beginning (respecting the search direction) */
 		if (dir == NextResult)
 			dir = FromTop;
 		else if (dir == PreviousResult)
@@ -186,7 +183,7 @@ NSRTextPage::text (const NSRRegularAreaRect *area, TextAreaInclusionBehaviour b)
 	QString ret;
 
 	if (area) {
-		for ( ; it != itEnd; ++it ) {
+		for (; it != itEnd; ++it) {
 			if (b == AnyPixelTextAreaInclusionBehaviour) {
 				if (area->intersects ((*it)->getArea ()))
 					ret += (*it)->getText ();
@@ -265,9 +262,7 @@ NSRTextPage::wordAt (const NSRNormalizedPoint& p, QString *word) const
 
 			if (itText.right(1).at(0).isSpace ()) {
 				if (itText.endsWith ("-\n")) {
-					/* Is an hyphenated word,
-					 * continue searching the start of the word back
-					 */
+					/* Is an hyphenated word, continue searching the start of the word back */
 					continue;
 				}
 
@@ -320,10 +315,9 @@ NSRTextPage::textArea (const NSRTextSelection& sel) const
 	if (_words.isEmpty ())
 		return new NSRRegularAreaRect ();
 
-	/*
-	 * It works like this.
+	/* It works like this.
 	 * There are two cursors, we need to select all the text between them.
-	 * The coordinates are normalised, leftTop is (0,0), rightBottom is (1,1),
+	 * The coordinates are normalised, left top is (0, 0), right bottom is (1, 1),
 	 * so for cursors start (sx, sy) and end (ex, ey) we start with finding text
 	 * rectangles under those points, if not we search for the first that is to
 	 * the right to it in the same baseline, if none found, then we search for
@@ -336,8 +330,7 @@ NSRTextPage::textArea (const NSRTextSelection& sel) const
 	 *
 	 * To find the closest rectangle to cursor (cx, cy) we search for a rectangle
 	 * that either contains the cursor or that has a left border >= cx and
-	 * bottom border >= cy.
-	 */
+	 * bottom border >= cy. */
 	NSRRegularAreaRect * ret = new NSRRegularAreaRect ();
 	const QTransform matrix  = getTransformMatrix ();
 
@@ -356,7 +349,6 @@ NSRTextPage::textArea (const NSRTextSelection& sel) const
 	}
 
 	/* minX, maxX, minY, maxY give the bounding rectangle coordinates of the document */
-
 	const NSRNormalizedRect boundingRect = NSRNormalizedRect (0, 0, 1, 1);
 	const QRect content = boundingRect.geometry (scaleX, scaleY);
 	const double minX = content.left   ();
@@ -364,38 +356,37 @@ NSRTextPage::textArea (const NSRTextSelection& sel) const
 	const double minY = content.top    ();
 	const double maxY = content.bottom ();
 
-	/*
-	 * We will now find out the NSRTinyTextEntity for the startRectangle and
-	 * NSRTinyTextEntity for the endRectangle. We have four cases:
+	/* We will now find out the NSRTinyTextEntity for the start rectangle and
+	 * NSRTinyTextEntity for the end rectangle. We have four cases:
 	 *
 	 * Case 1 (a): both startpoint and endpoint are out of the bounding
-	 * rectangle and at one side, so the rectangle made of start and endPoint
+	 * rectangle and at one side, so the rectangle made of start and end points
 	 * are out of the bounding rectangle (do not intersect).
 	 *
-	 * Case 1 (b): both startpoint and endpoint are out of bounding rectangle,
+	 * Case 1 (b): both start point and end point are out of bounding rectangle,
 	 * but they are in different side, so is their rectangle.
 	 *
-	 * Case 2 (a): find the rectangle which contains start and endpoint and
+	 * Case 2 (a): find the rectangle which contains start and end points and
 	 * having some NSRTextEntity.
 	 *
-	 * Case 2 (b): if 2 (a) fails (if startPoint and endPoint both are unchanged),
+	 * Case 2 (b): if 2 (a) fails (if start point and end point both are unchanged),
 	 * then we check whether there is any NSRTextEntity within the rectangle
-	 * made by startPoint and endPoint.
+	 * made by start point and end point.
 	 *
 	 * Case 3: now, we may have two type of selection:
-	 * 1. startpoint is left-top of start_end and endpoint is right-bottom;
-	 * 2. startpoint is left-bottom of start_end and endpoint is top-right.
+	 * 1. start point is left-top of start-end and end point is right-bottom;
+	 * 2. start point is left-bottom of start-end and end point is top-right.
 	 *
-	 * Also, as 2 (b) is passed, we might have it, itEnd or both unchanged,
-	 * but the fact is that we have text within them. So, we need to search
-	 * for the best suitable text position for start and end.
+	 * Also, as 2 (b) is passed, we might have start iterator, end iterator
+	 * or both unchanged, but the fact is that we have text within them. So,
+	 * we need to search for the best suitable text position for start and end.
 	 *
 	 * Case 3 (a): we search the nearest rectangle consisting of some
-	 * NSRTinyTextEntity right to or bottom of the startPoint for selection 01.
+	 * NSRTinyTextEntity right to or bottom of the start point for selection 01.
 	 * And, for selection 02, we have to search for right and top.
 	 *
 	 * Case 3 (b): for endpoint, we have to find the point top of or left to
-	 * endpoint if we have selection 01. Otherwise, the search will be left
+	 * end point if we have selection 01. Otherwise, the search will be left
 	 * and bottom.
 	 */
 
@@ -409,12 +400,12 @@ NSRTextPage::textArea (const NSRTextSelection& sel) const
 	/* Case 1 (a) */
 	if (!boundingRect.intersects (startEnd))
 		return ret;
+
 	/* Case 1 (b)
 	 *
 	 * Note that, after swapping of start and end, we know that,
 	 * start is always left to end. But, we cannot say start is
-	 * positioned upper than end.
-	 */
+	 * positioned upper than end. */
 	else {
 		/* If start is left to content rectangle take it to content
 		 * rectangle boundary */
@@ -464,7 +455,7 @@ NSRTextPage::textArea (const NSRTextSelection& sel) const
 
 	if (start == it && end == itEnd) {
 		for (; it != itEnd; ++it) {
-			/* Is there any text reactangle within the start_end rectangle */
+			/* Is there any text reactangle within the start-end rectangle */
 			tmp = (*it)->getArea ();
 
 			if (startEnd.intersects (tmp))
@@ -580,8 +571,7 @@ NSRTextPage::textArea (const NSRTextSelection& sel) const
 
 	/* If start and end in selection 02 are in the same column, and we
 	 * start at an empty space we have to remove the selection of last
-	 * character
-	 */
+	 * character */
 	if (selectionTwoStart && start > end)
 		start = start - 1;
 
@@ -644,10 +634,8 @@ NSRTextPage::findTextInternalForward (int						searchID,
 	/* Normalize query search all unicode (including glyphs) */
 	const QString queryNorm = query.normalized (QString::NormalizationForm_KC);
 
-	/* j is the current position in our query,
-	 * len is the length of the string in NSRTextEntity,
-	 * queryLeft is the length of the query we have left
-	 */
+	/* j is the current position in our query, len is the length of the string in NSRTextEntity,
+	 * queryLeft is the length of the query we have left */
 	int j = 0;
 	int queryLeft = queryNorm.length ();
 
@@ -678,31 +666,24 @@ NSRTextPage::findTextInternalForward (int						searchID,
 		int min = qMin (queryLeft, len - offset);
 
 		/* We have equal (or less than) area of the query left as the length
-		 * of the current entity
-		 */
+		 * of the current entity */
 		if (!comparer (str.midRef (offset, min), queryNorm.midRef (j, min))) {
-			/* We have not matched,
-			 * this means we do not have a complete match,
-			 * we need to get back to query start
-			 * and continue the search from this place
-			 */
+			/* We have not matched, this means we do not have a complete match,
+			 * we need to get back to query start and continue the search from this place */
 			j         = 0;
 			queryLeft = queryNorm.length ();
 			it        = itBegin;
 			offset    = offsetBegin + 1;
 			itBegin   = NSRTinyTextEntityList::ConstIterator ();
 		} else {
-			/* We have a match,
-			 * move the current position in the query
-			 * to the position after the length of this string
-			 * we matched, subtract the length of the current
-			 * entity from the left length of the query
-			 */
+			/* We have a match, move the current position in the query to the position
+			 * after the length of this string we matched, subtract the length of the
+			 * current entity from the left length of the query */
 			j         += min;
 			queryLeft -= min;
 
 			if (queryLeft == 0) {
-				/* Save or update the search point for the current searchID */
+				/* Save or update the search point for the current search ID */
 				QMap< int, NSRSearchPoint * >::iterator sIt = _searchPoints.find (searchID);
 
 				if (sIt == _searchPoints.end ())
@@ -746,10 +727,8 @@ NSRTextPage::findTextInternalBackward (int						searchID,
 	/* Normalize query to search all unicode (including glyphs) */
 	const QString queryNorm = query.normalized (QString::NormalizationForm_KC);
 
-	/* j is the current position in our query,
-	 * len is the length of the string in NSRTextEntity,
-	 * queryLeft is the length of the query we have left
-	*/
+	/* j is the current position in our query, len is the length of the string in NSRTextEntity,
+	 * queryLeft is the length of the query we have left */
 	int j         = queryNorm.length ();
 	int queryLeft = queryNorm.length ();
 
@@ -784,30 +763,26 @@ NSRTextPage::findTextInternalBackward (int						searchID,
 		int min = qMin (queryLeft, offset);
 
 		/* We have equal (or less than) area of the query left as the length of the current
-		 * entity
-		 */
+		 * entity */
 
 		/* Note len is not str.length () so we can't use rightRef here */
 		if (!comparer (str.midRef (offset - min, min), queryNorm.midRef (j - min, min))) {
 			/* We have not matched, this means we do not have a complete match
-			 * we need to get back to query start and continue the search from this place
-			 */
+			 * we need to get back to query start and continue the search from this place */
 			j         = queryNorm.length ();
 			queryLeft = queryNorm.length ();
 			it        = itBegin;
 			offset    = offsetBegin - 1;
 			itBegin   = NSRTinyTextEntityList::ConstIterator ();
 		} else {
-			/* We have a match, move the current position in the query
-			 * to the position after the length of this string we matched,
-			 * subtract the length of the current entity from the left
-			 * length of the query
-			 */
+			/* We have a match, move the current position in the query to the position after
+			 * the length of this string we matched, subtract the length of the current entity
+			 * from the left length of the query */
 			j         -= min;
 			queryLeft -= min;
 
 			if (queryLeft == 0) {
-				/* Save or update the search point for the current searchID */
+				/* Save or update the search point for the current search ID */
 				QMap< int, NSRSearchPoint * >::iterator sIt = _searchPoints.find (searchID);
 
 				if (sIt == _searchPoints.end ())

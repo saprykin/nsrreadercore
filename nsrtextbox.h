@@ -47,7 +47,7 @@ public:
 	 * @brief Gets the position of the text
 	 * @return Position of the text, in point, i.e., 1/72 of an inch.
 	 */
-	inline QRectF boundingBox () const {
+	inline QRectF getBoundingBox () const {
 		return _bBox;
 	}
 

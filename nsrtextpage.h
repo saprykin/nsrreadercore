@@ -24,10 +24,10 @@
 #include <QSizeF>
 
 /**
- * @brief Returns whether the two strings match
+ * @brief Returns whether the two strings are matched
  * @param from First string.
  * @param to Second string.
- * @return True if the strings are equal.
+ * @return True if the strings are matched.
  */
 typedef bool (*NSRTextComparisonFunction) (const QStringRef& from, const QStringRef& to);
 
@@ -120,7 +120,7 @@ public:
 	 *
 	 * Uses #TextAreaInclusionBehaviour::AnyPixelTextAreaInclusionBehaviour.
 	 */
-	QString text (const NSRRegularAreaRect * rect = NULL) const;
+	QString text (const NSRRegularAreaRect *rect = NULL) const;
 
 	/**
 	 * @brief Extracts text from the page
@@ -130,7 +130,7 @@ public:
 	 * the whole page text if @a rect is a NULL pointer, the text which is
 	 * included by rectangular area @a rect otherwise.
 	 */
-	QString text (const NSRRegularAreaRect * rect, TextAreaInclusionBehaviour b) const;
+	QString text (const NSRRegularAreaRect *rect, TextAreaInclusionBehaviour b) const;
 
 	/**
 	 * @brief Extracts text entities.
@@ -139,7 +139,7 @@ public:
 	 * @return Words including their bounding rectangles.
 	 * @note Ownership of the contents of the returned list belongs to the caller.
 	 */
-	NSRTextEntityList words (const NSRRegularAreaRect * rect, TextAreaInclusionBehaviour b) const;
+	NSRTextEntityList words (const NSRRegularAreaRect *rect, TextAreaInclusionBehaviour b) const;
 
 	/**
 	 * @brief Gets the area and text of the word at the given point
@@ -179,7 +179,7 @@ private:
 	 * @return Mapped area.
 	 * @note Ownership of the returned area belongs to the caller.
 	 */
-	NSRRegularAreaRect * searchPointToArea (const NSRSearchPoint* sp);
+	NSRRegularAreaRect * searchPointToArea (const NSRSearchPoint *sp);
 
 	/**
 	 * @brief Searches text in forward direction
