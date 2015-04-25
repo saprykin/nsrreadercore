@@ -167,9 +167,9 @@ NSRPopplerDocument::renderPage (int page)
 					QRectF charBBox = word->getCharBoundingBox (textBoxChar);
 					textPage->append ((j == qstringCharCount - 1 && !next) ? (s + "\n") : s,
 							  NSRNormalizedRect (charBBox.left   () / cropWidth,
-									     charBBox.bottom () / cropHeight,
+									     charBBox.top    () / cropHeight,
 									     charBBox.right  () / cropWidth,
-									     charBBox.top    () / cropHeight));
+									     charBBox.bottom () / cropHeight));
 					textBoxChar++;
 				}
 			}
@@ -180,9 +180,9 @@ NSRPopplerDocument::renderPage (int page)
 
 				textPage->append (" ",
 						  NSRNormalizedRect (wordBBox.right    () / cropWidth,
-								     wordBBox.bottom   () / cropHeight,
+								     wordBBox.top      () / cropHeight,
 								     nextWordBBox.left () / cropWidth,
-								     wordBBox.top      () / cropHeight));
+								     wordBBox.bottom   () / cropHeight));
 			}
 		}
 
