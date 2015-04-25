@@ -21,7 +21,7 @@
 #include <QList>
 #include <QString>
 #include <QTransform>
-#include <QSize>
+#include <QSizeF>
 
 /**
  * @brief Returns whether the two strings match
@@ -70,7 +70,7 @@ public:
 	 * @param rotation Page rotation angle (user defined).
 	 * @param orientation Page orientation angle (file defined).
 	 */
-	NSRTextPage (const QSize&				size,
+	NSRTextPage (const QSizeF&				size,
 		     NSRAbstractDocument::NSRDocumentRotation	rotation,
 		     NSRAbstractDocument::NSRDocumentRotation	orientation);
 
@@ -81,7 +81,7 @@ public:
 	 * @param orientation Page orientation angle (file defined).
 	 * @param words Text words.
 	 */
-	NSRTextPage (const QSize&				size,
+	NSRTextPage (const QSizeF&				size,
 		     NSRAbstractDocument::NSRDocumentRotation	rotation,
 		     NSRAbstractDocument::NSRDocumentRotation	orientation,
 		     const NSRTextEntityList&			words);
@@ -225,7 +225,7 @@ private:
 
 	NSRTinyTextEntityList				_words;		/**< Page words				*/
 	QMap< int, NSRSearchPoint * >			_searchPoints;	/**< Search points			*/
-	QSize						_size;		/**< Page size, in pixels		*/
+	QSizeF						_size;		/**< Page size, in pixels		*/
 	NSRAbstractDocument::NSRDocumentRotation	_rotation;	/**< Rotation angle (user defined)	*/
 	NSRAbstractDocument::NSRDocumentRotation	_orientation;	/**< Orientation angle (file defined)	*/
 };

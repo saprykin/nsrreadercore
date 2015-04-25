@@ -1,5 +1,7 @@
 #include "nsrtextxycut.h"
 
+#include <float.h>
+
 #include <QtAlgorithms>
 #include <QVarLengthArray>
 #include <QMap>
@@ -66,9 +68,9 @@ NSRTextXYCut::doesConsumeY (const NSRNormalizedRect& first, const NSRNormalizedR
 }
 
 void
-NSRTextXYCut::XYCut (NSRTinyTextEntityList& list, const QSize& pageSize)
+NSRTextXYCut::XYCut (NSRTinyTextEntityList& list, const QSizeF& pageSize)
 {
-	if (pageSize.width () * pageSize.height () <= 0)
+	if (pageSize.width () * pageSize.height () < DBL_EPSILON)
 		return;
 
 	/* Page width and height are in pixels at 100% zoom level, and thus depend

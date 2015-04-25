@@ -62,7 +62,7 @@ stringLengthAdaptedWithHyphen (const QString&					str,
 	return len;
 }
 
-NSRTextPage::NSRTextPage (const QSize&					size,
+NSRTextPage::NSRTextPage (const QSizeF&					size,
 			  NSRAbstractDocument::NSRDocumentRotation	rotation,
 			  NSRAbstractDocument::NSRDocumentRotation	orientation) :
 	_size (size),
@@ -71,7 +71,7 @@ NSRTextPage::NSRTextPage (const QSize&					size,
 {
 }
 
-NSRTextPage::NSRTextPage (const QSize&					size,
+NSRTextPage::NSRTextPage (const QSizeF&					size,
 			  NSRAbstractDocument::NSRDocumentRotation	rotation,
 			  NSRAbstractDocument::NSRDocumentRotation	orientation,
 			  const NSRTextEntityList&			words) :

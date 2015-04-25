@@ -12,7 +12,7 @@
 #include "nsrwordwithcharacters.h"
 #include "nsrregiontext.h"
 
-#include <QSize>
+#include <QSizeF>
 #include <QPair>
 
 /**
@@ -47,7 +47,7 @@ public:
 	 * @param[in, out] list List of words.
 	 * @param pageSize Size of the page, in pixels.
 	 */
-	static void XYCut (NSRTinyTextEntityList& list, const QSize& pageSize);
+	static void XYCut (NSRTinyTextEntityList& list, const QSizeF& pageSize);
 
 private:
 	Q_DISABLE_COPY (NSRTextXYCut)

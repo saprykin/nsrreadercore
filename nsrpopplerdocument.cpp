@@ -136,8 +136,7 @@ NSRPopplerDocument::renderPage (int page)
 		delete dev;
 
 		/* Text page processing */
-
-		NSRTextPage *	textPage = new NSRTextPage (QSize (cropWidth, cropHeight),
+		NSRTextPage *	textPage = new NSRTextPage (QSizeF (cropWidth, cropHeight),
 							    getRotation (),
 							    (NSRAbstractDocument::NSRDocumentRotation)
 								(((_page->getRotate () % 360) + 360) % 360));
