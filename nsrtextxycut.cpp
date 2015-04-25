@@ -104,10 +104,13 @@ NSRTextXYCut::XYCut (NSRTinyTextEntityList& list, const QSizeF& pageSize)
 									      pageHeight);
 
 	qDeleteAll (list);
+	list.clear ();
 
-	/** Break the words into characters */
-	foreach (const NSRWordWithCharacters &word, listWithWordsAndSpaces)
+	/* Break the words into characters and free unused memory */
+	foreach (NSRWordWithCharacters word, listWithWordsAndSpaces) {
 	    list.append (word.getCharacters ());
+	    word.freeWord ();
+	}
 }
 
 void
