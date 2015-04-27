@@ -18,6 +18,9 @@
 /* Overlap threshold in percents for Y-axis when making lines */
 #define NSR_TEXTXYCUT_LINE_OVERLAP_THRESHOLD	70
 
+/* Percantage of the filled line after which linebreak will follow */
+#define NSR_TEXTXYCUT_LINE_BREAK_RATIO		0.2
+
 static bool compareTinyTextEntityX (const NSRWordWithCharacters& first,
 				    const NSRWordWithCharacters& second)
 {
@@ -531,7 +534,9 @@ NSRTextXYCut::addNecessarySpace (NSRRegionTextList& tree, int pageWidth, int pag
 	 * 3. Finally, extract all the space separated texts from each region and return it. */
 
 	/* Only change the texts under NSRRegionText's, not the area */
-	for (int j = 0; j < tree.length (); j++) {
+	int regionCount = tree.count ();
+
+	for (int j = 0; j < regionCount; j++) {
 		NSRRegionText& tmpRegion = tree[j];
 
 		/* Step 01 */
@@ -539,13 +544,67 @@ NSRTextXYCut::addNecessarySpace (NSRRegionTextList& tree, int pageWidth, int pag
 				makeAndSortLines (tmpRegion.getText (), pageWidth, pageHeight);
 
 		/* Step 02 */
-		for (int i = 0; i < sortedLines.length (); i++) {
-			NSRWordWithCharactersList& list = sortedLines[i].first;
-			for (int k = 0; k < list.length (); k++) {
+		int lineCount     = sortedLines.count ();
+		bool wasLineBreak = false;
+		bool wasHyphen    = false;
+
+		for (int i = 0; i < lineCount; i++) {
+			NSRWordWithCharactersList&	list         = sortedLines[i].first;
+
+			/* Prepend a space to the line if following conditions are met:
+			 * 1. Was no line break after previous line.
+			 * 2. This is not the first line of the text region.
+			 * 3. The line is not already empty. */
+			if (!wasHyphen && !wasLineBreak && i > 0) {
+				const QRect area1 = list.at(0).getArea().roundedGeometry (pageWidth, pageHeight);
+
+				const QString spaceStr (" ");
+				const QRect rect (QPoint (area1.left (), area1.top ()),
+						  QPoint (area1.left (), area1.bottom ()));
+				const NSRNormalizedRect entRect (rect, pageWidth, pageHeight);
+
+				NSRTinyTextEntity *ent1 = new NSRTinyTextEntity (spaceStr, entRect);
+				NSRTinyTextEntity *ent2 = new NSRTinyTextEntity (spaceStr, entRect);
+				NSRWordWithCharacters word (ent1, QList<NSRTinyTextEntity *> () << ent2);
+
+				list.insert (0, word);
+			}
+
+			wasLineBreak = false;
+			wasHyphen    = false;
+
+			for (int k = 0; k < list.count (); k++) {
 				const QRect area1 = list.at(k).getArea().roundedGeometry (pageWidth, pageHeight);
 
-				if (k + 1 >= list.length ())
+				if (k + 1 == list.count ()) {
+					int endDelta = qAbs ((area1.right () - tmpRegion.getArea().right ()));
+
+					if (list.at(k).getText().endsWith ("-"))
+						wasHyphen = true;
+
+					/* Add line break in following cases:
+					 * 1. At least more than NSR_TEXTXYCUT_LINE_BREAK_RATIO percent
+					 *    of the line is not filled with text.
+					 * 2. This is the last line in text region. */
+					if (endDelta > tmpRegion.getArea().width () * NSR_TEXTXYCUT_LINE_BREAK_RATIO ||
+					    (i + 1) == lineCount) {
+						const QString spaceStr ("\n");
+						const QRect rect (QPoint (area1.right (), area1.top ()),
+								  QPoint (area1.right (), area1.bottom ()));
+						const NSRNormalizedRect entRect (rect, pageWidth, pageHeight);
+
+						NSRTinyTextEntity *ent1 = new NSRTinyTextEntity (spaceStr, entRect);
+						NSRTinyTextEntity *ent2 = new NSRTinyTextEntity (spaceStr, entRect);
+						NSRWordWithCharacters word (ent1, NSRTinyTextEntityList () << ent2);
+
+						list.insert (k + 1, word);
+
+						/* Indicate to not to add space before next line */
+						wasLineBreak = true;
+					}
+
 					break;
+				}
 
 				const QRect area2 = list.at(k + 1).getArea().roundedGeometry (pageWidth, pageHeight);
 				const int space = area2.left () - area1.right ();
@@ -573,7 +632,7 @@ NSRTextXYCut::addNecessarySpace (NSRRegionTextList& tree, int pageWidth, int pag
 		}
 
 		NSRWordWithCharactersList tmpList;
-		for (int i = 0; i < sortedLines.length (); i++)
+		for (int i = 0; i < lineCount; i++)
 			tmpList += sortedLines.at(i).first;
 
 		tmpRegion.setText (tmpList);
