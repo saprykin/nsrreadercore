@@ -165,11 +165,10 @@ NSRPopplerDocument::renderPage (int page)
 
 				if (addChar) {
 					QRectF charBBox = word->getCharBoundingBox (textBoxChar);
-					textPage->append ((j == qstringCharCount - 1 && !next) ? (s + "\n") : s,
-							  NSRNormalizedRect (charBBox.left   () / cropWidth,
-									     charBBox.top    () / cropHeight,
-									     charBBox.right  () / cropWidth,
-									     charBBox.bottom () / cropHeight));
+					textPage->append (s, NSRNormalizedRect (charBBox.left   () / cropWidth,
+										charBBox.top    () / cropHeight,
+										charBBox.right  () / cropWidth,
+										charBBox.bottom () / cropHeight));
 					textBoxChar++;
 				}
 			}
