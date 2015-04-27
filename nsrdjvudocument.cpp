@@ -230,7 +230,6 @@ NSRDjVuDocument::renderPage (int page)
 	NSRRenderInfo	rinfo;
 	double		resFactor;
 	int		rot;
-	int		tmp;
 
 	if (_doc == NULL || page > getPagesCount () || page < 1)
 		return rinfo;
@@ -328,18 +327,14 @@ NSRDjVuDocument::renderPage (int page)
 		break;
 	case NSRAbstractDocument::NSR_DOCUMENT_ROTATION_90:
 		rot = 3;
-		tmp = width;
-		width = height;
-		height = tmp;
+		qSwap (width, height);
 		break;
 	case NSRAbstractDocument::NSR_DOCUMENT_ROTATION_180:
 		rot = 2;
 		break;
 	case NSRAbstractDocument::NSR_DOCUMENT_ROTATION_270:
 		rot = 1;
-		tmp = width;
-		width = height;
-		height = tmp;
+		qSwap (width, height);
 		break;
 	default:
 		rot = 0;
