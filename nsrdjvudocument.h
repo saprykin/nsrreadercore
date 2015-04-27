@@ -8,6 +8,7 @@
  */
 
 #include "nsrabstractdocument.h"
+#include "nsrtextentity.h"
 
 #include <djvu/DjVuFileCache.h>
 #include <djvu/DjVuDocument.h>
@@ -72,6 +73,25 @@ public:
 private:
 	/** Clears rendered data */
 	void clearRenderedData ();
+
+	/**
+	 * @brief Gets page text with given detail level
+	 * @param page Page number, from 1.
+	 * @param detail Detail level.
+	 * @return List of text enities from the page.
+	 *
+	 * The caller takes ownership for the words within returned list.
+	 *
+	 * Detail level can be selected from one of the following:
+	 * -page;
+	 * -column;
+	 * -region;
+	 * -para;
+	 * -line;
+	 * -word;
+	 * -char.
+	 */
+	NSRTextEntityList getPageText (int page, const QSize& size, const QString& detail);
 
 	GP<DjVuFileCache>	_cache;			/**< File cache			*/
 	GP<DjVuDocument>	_doc;			/**< DjVu file handler		*/

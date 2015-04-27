@@ -1,5 +1,6 @@
 #include "nsrdjvudocument.h"
 #include "nsrpagecropper.h"
+#include "nsrtextpage.h"
 
 #include <djvu/DjVuImage.h>
 #include <djvu/DjVuText.h>
@@ -10,11 +11,9 @@
 #include <qmath.h>
 
 #include <QString>
+#include <QQueue>
 
 #define NSR_CORE_DJVU_MIN_ZOOM	25.0
-
-/* DjVu stuff for text extraction */
-#define S(n,s) (n = miniexp_symbol(s))
 
 static struct zone_names_s {
 	const char *name;
@@ -30,71 +29,6 @@ static struct zone_names_s {
 		 {"char",	DjVuTXT::CHARACTER,	0},
 		 { 0, (DjVuTXT::ZoneType) 0,		0}
 };
-
-static bool
-miniexp_get_int (miniexp_t &r, int &x)
-{
-	if (! miniexp_numberp (miniexp_car (r)))
-		return false;
-	x = miniexp_to_int (miniexp_car (r));
-	r = miniexp_cdr (r);
-	return true;
-}
-
-static bool
-miniexp_get_rect_from_points (miniexp_t &r, QRect &rect)
-{
-	int x1, y1, x2, y2;
-
-	if (!(miniexp_get_int (r, x1) && miniexp_get_int (r, y1) &&
-	      miniexp_get_int (r, x2) && miniexp_get_int (r, y2)))
-		return false;
-
-	if (x2 < x1 || y2 < y1)
-		return false;
-
-	rect.setCoords (x1, y1, x2, y2);
-	return true;
-}
-
-static void
-flatten_hiddentext_sub (miniexp_t p, minivar_t &d)
-{
-	QRect		rect;
-	miniexp_t	type = miniexp_car (p);
-	miniexp_t	r = miniexp_cdr (p);
-
-	if (miniexp_symbolp (type) && miniexp_get_rect_from_points (r, rect)) {
-		if (miniexp_stringp (miniexp_car (r)))
-			d = miniexp_cons (p, d);
-		else {
-			while (miniexp_consp (r)) {
-				flatten_hiddentext_sub (miniexp_car (r), d);
-				r = miniexp_cdr (r);
-			}
-
-			d = miniexp_cons (type, d);
-		}
-	}
-}
-
-/*
- * Output list contains
- * - terminals of the hidden text tree
- *   (keyword x1 y1 x2 y2 string)
- * - or a keyword symbol indicating the need for a separator
- *   page,column,region,para,line,word
- */
-static miniexp_t
-flatten_hiddentext (miniexp_t p)
-{
-	minivar_t d;
-
-	flatten_hiddentext_sub (p, d);
-	d = miniexp_reverse (d);
-
-	return d;
-}
 
 static miniexp_t
 pagetext_sub (const GP<DjVuTXT> &txt, DjVuTXT::Zone &zone, DjVuTXT::ZoneType detail)
@@ -189,9 +123,7 @@ fmt_convert_pixmap (GPixmap *pm, char *buffer, int rowsize)
 		memcpy (buffer, (*pm)[r], w * 3);
 }
 
-/*
- * OK, we are using color render mode and BGR24 pixel format
- */
+/* OK, we are using color render mode and BGR24 pixel format */
 NSRDjVuDocument::NSRDjVuDocument (const QString& file, QObject *parent) :
 	NSRAbstractDocument (file, parent),
 	_pagesCount (0),
@@ -236,90 +168,34 @@ NSRDjVuDocument::renderPage (int page)
 
 	clearRenderedData ();
 
-	if (isTextOnly ()) {
-		QString		ans;
-		miniexp_t	seps[7];
-		miniexp_t	ptext;
-		int		separator;
-
-		S(seps[0], zone_names[0].name);
-		S(seps[1], zone_names[1].name);
-		S(seps[2], zone_names[2].name);
-		S(seps[3], zone_names[3].name);
-		S(seps[4], zone_names[4].name);
-		S(seps[5], zone_names[5].name);
-		S(seps[6], zone_names[6].name);
-
-		ptext = miniexp_nil;
-		GP<DjVuFile> file = _doc->get_djvu_file (page - 1);
-
-		if (file != NULL) {
-			GP<ByteStream> bs = file->get_text ();
-
-			if (bs != NULL) {
-				GP<DjVuText> text = DjVuText::create ();
-				text->decode (bs);
-
-				GP<DjVuTXT> txt = text->txt;
-
-				if (txt != NULL)
-					ptext = pagetext_sub (txt, txt->page_zone, DjVuTXT::CHARACTER);
-			}
-		}
-
-		if (ptext == miniexp_nil) {
-			_text = QString ();
-
-			rinfo.setSuccessRender (true);
-			return rinfo;
-		}
-
-		ptext = flatten_hiddentext (ptext);
-		separator = 6;
-
-		while (miniexp_consp (ptext)) {
-			QRect		rect;
-			miniexp_t	r = miniexp_car (ptext);
-			miniexp_t	type = r;
-
-			ptext = miniexp_cdr (ptext);
-
-			if (miniexp_consp (r)) {
-				type = miniexp_car(r);
-				r = miniexp_cdr(r);
-
-				if (miniexp_symbolp (type) && miniexp_get_rect_from_points (r, rect)) {
-					if (!ans.isEmpty ()) {
-						if (separator == 0)
-							ans += "\n\f";
-						else if (separator <= 4)
-							ans += "\n";
-						else if (separator <= 5)
-							ans += " ";
-					}
-					separator = 6;
-					ans += QString::fromUtf8 (miniexp_to_str (miniexp_car (r)));
-				}
-			}
-
-			for (int s = separator - 1; s >= 0; s--)
-				if (type == seps[s])
-					separator = s;
-		}
-
-		_text = processText (ans);
-
-		rinfo.setSuccessRender (true);
-		return rinfo;
-	}
-
 	GP<DjVuImage> img = _doc->get_page (page - 1, true, NULL);
 
 	if (img == NULL)
 		return rinfo;
 
-	int width = img->get_width ();
+	int width  = img->get_width ();
 	int height = img->get_height ();
+
+	if (isTextOnly ()) {
+		NSRTextEntityList words = getPageText (page, QSize (width, height), "word");
+
+		if (words.isEmpty ())
+			words = getPageText (page, QSize (width, height), "line");
+
+		NSRTextPage *textPage = new NSRTextPage (QSize (width, height),
+							 getRotation (),
+							 NSRAbstractDocument::NSR_DOCUMENT_ROTATION_0,
+							 words);
+
+		qDeleteAll (words);
+		textPage->correctTextOrder ();
+		_text = textPage->text ();
+		delete textPage;
+
+		rinfo.setSuccessRender (true);
+
+		return rinfo;
+	}
 
 	switch (getRotation ()) {
 	case NSRAbstractDocument::NSR_DOCUMENT_ROTATION_0:
@@ -495,4 +371,67 @@ NSRDjVuDocument::clearRenderedData ()
 		_imgData = NULL;
 		_imgSize = QSize (0, 0);
 	}
+}
+
+NSRTextEntityList NSRDjVuDocument::getPageText (int page, const QSize& size, const QString& detail)
+{
+	NSRTextEntityList	ret;
+	miniexp_t		ptext = miniexp_nil;
+
+	GP<DjVuFile> file = _doc->get_djvu_file (page - 1);
+
+	if (file != NULL) {
+		GP<ByteStream> bs = file->get_text ();
+
+		if (bs != NULL) {
+			GP<DjVuText> text = DjVuText::create ();
+			text->decode (bs);
+
+			GP<DjVuTXT> txt = text->txt;
+
+			if (txt != NULL) {
+				DjVuTXT::ZoneType detailZone = DjVuTXT::CHARACTER;
+
+				for (int i = 0; zone_names[i].name; i++)
+					if (detail == QString (zone_names[i].name))
+						detailZone = zone_names[i].ztype;
+
+				ptext = pagetext_sub (txt, txt->page_zone, detailZone);
+			}
+		}
+	}
+
+	if (ptext == miniexp_nil)
+		return ret;
+
+	QQueue<miniexp_t> queue;
+	queue.enqueue (ptext);
+
+	while (!queue.isEmpty ()) {
+		miniexp_t cur = queue.dequeue ();
+
+		if (miniexp_listp (cur) && (miniexp_length (cur) > 0) &&
+		    miniexp_symbolp (miniexp_nth (0, cur))) {
+			int curLen    = miniexp_length (cur);
+			QString sym = QString::fromUtf8 (miniexp_to_name (miniexp_nth (0, cur)));
+
+			if (sym == detail) {
+				if (curLen >= 6) {
+					int xmin = miniexp_to_int (miniexp_nth (1, cur));
+					int ymin = miniexp_to_int (miniexp_nth (2, cur));
+					int xmax = miniexp_to_int (miniexp_nth (3, cur));
+					int ymax = miniexp_to_int (miniexp_nth (4, cur));
+					QRect rect (xmin, size.height () - ymax, xmax - xmin, ymax - ymin);
+
+					ret.append (new NSRTextEntity (QString::fromUtf8 (miniexp_to_str (miniexp_nth (5, cur))),
+								       new NSRNormalizedRect (rect, size.width (), size.height ())));
+				}
+			} else {
+				for (int i = 5; i < curLen; ++i)
+					queue.enqueue (miniexp_nth (i, cur));
+			}
+		}
+	}
+
+	return ret;
 }
