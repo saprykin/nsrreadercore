@@ -78,52 +78,6 @@ NSRAbstractDocument::setZoom (double zoom)
 	_zoomToWidth = false;
 }
 
-QString
-NSRAbstractDocument::processText (const QString &text)
-{
-	int		size;
-	QString		buf;
-	QRegExp		endSigns;
-
-	size = text.length ();
-	endSigns = QRegExp ("[\\.\\;\\.{3}\\)]");
-
-	for (int i = 0; i < size; ++i) {
-		/* Check for previous spaces */
-		if (text.at (i) == ' ') {
-			if (i > 0 && buf.size () > 0 &&
-			    (buf.at (buf.size () - 1) == ' ' || buf.at (buf.size () - 1) == '\n'))
-				continue;
-
-		}
-
-		/* Check for extra new lines */
-		if (text.at (i) == '\n' && i < size - 1 && buf.size () > 0) {
-			int nextIdx = i + 1;
-
-			/* Skip foreward spaces */
-			while (nextIdx < (size - 1) && text.at (nextIdx) == ' ')
-				++nextIdx;
-
-			if ((endSigns.indexIn (buf.at (buf.size () - 1)) == -1 || buf.at(buf.size () - 1).isSpace ()) &&
-			     text.at(nextIdx).isLower ()) {
-
-				if (buf.at (buf.size () - 1) != ' ')
-					buf += ' ';
-
-				continue;
-			}
-		}
-
-		buf += text.at (i);
-
-		if (text.at (i) == '\n')
-			buf += "   ";
-	}
-
-	return buf;
-}
-
 double
 NSRAbstractDocument::validateMaxZoom (const QSize& pageSize, double zoom) const
 {

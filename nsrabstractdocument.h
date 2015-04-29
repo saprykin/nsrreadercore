@@ -349,15 +349,6 @@ protected:
 	}
 
 	/**
-	 * @brief Processes text to more appealing style
-	 * @param text Text to process.
-	 * @return Processed text.
-	 *
-	 * Removes empty paragraphs, prolog spaces, etc.
-	 */
-	QString processText (const QString& text);
-
-	/**
 	 * @brief Validates page zoom for maximum supported
 	 * @param pageSize Page size.
 	 * @param zoom Zoom value, in %.
