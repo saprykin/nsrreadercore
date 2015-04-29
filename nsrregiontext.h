@@ -15,6 +15,7 @@
 /**
  * @class NSRRegionText nsrregiontext.h
  * @brief Text page region
+ * @since 1.5.1
  *
  * We will divide the whole page in some regions depending on the horizontal and
  * vertical spacing among different regions. Each region will have an area and an
@@ -43,12 +44,14 @@ public:
 	/**
 	 * @brief Gets the whole text as a string
 	 * @return The whole text as a string.
+	 * @since 1.5.1
 	 */
 	QString getString () const;
 
 	/**
 	 * @brief Gets list of words with characters
 	 * @return List of words with characters.
+	 * @since 1.5.1
 	 */
 	inline NSRWordWithCharactersList getText () const {
 		return _words;
@@ -57,6 +60,7 @@ public:
 	/**
 	 * @brief Gets text region area
 	 * @return Text region area.
+	 * @since 1.5.1
 	 */
 	inline QRect getArea () const {
 		return _area;
@@ -65,6 +69,7 @@ public:
 	/**
 	 * @brief Sets list of words with characters
 	 * @param wordsWithCharacters List of words with characters.
+	 * @since 1.5.1
 	 */
 	inline void setText (const NSRWordWithCharactersList& wordsWithCharacters) {
 		_words = wordsWithCharacters;
@@ -73,6 +78,7 @@ public:
 	/**
 	 * @brief Sets text region area
 	 * @param area Text region area.
+	 * @since 1.5.1
 	 */
 	inline void setArea (const QRect& area) {
 		_area = area;

@@ -13,6 +13,7 @@
 /**
  * @class NSRWordWithCharacters nsrwordwithcharacters.h
  * @brief Word with separate characters
+ * @since 1.5.1
  *
  * This class act like a light wrapper around given text and its characters.
  * The idea is that you can sort, move and copy objects of this class to
@@ -37,17 +38,20 @@ public:
 
 	/**
 	 * @brief Frees word memory
+	 * @since 1.5.1
 	 */
 	void freeWord ();
 
 	/**
 	 * @brief Frees characters memory
+	 * @since 1.5.1
 	 */
 	void freeCharacters ();
 
 	/**
 	 * @brief Gets the word
 	 * @return The word.
+	 * @since 1.5.1
 	 */
 	inline NSRTinyTextEntity * getWord () const {
 		return _word;
@@ -56,6 +60,7 @@ public:
 	/**
 	 * @brief Gets list of characters
 	 * @return List of characters.
+	 * @since 1.5.1
 	 * @note Returned list will be sharing the same internal pointers.
 	 */
 	inline NSRTinyTextEntityList getCharacters () const {
@@ -65,6 +70,7 @@ public:
 	/**
 	 * @brief Gets the word as a string
 	 * @return The word as a string.
+	 * @since 1.5.1
 	 */
 	inline QString getText () const {
 		return _word != NULL ? _word->getText () : QString ();
@@ -73,6 +79,7 @@ public:
 	/**
 	 * @brief Gets the word's area
 	 * @return The word's area.
+	 * @since 1.5.1
 	 */
 	inline NSRNormalizedRect getArea () const {
 		return _word != NULL ? _word->getArea () : NSRNormalizedRect ();

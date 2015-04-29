@@ -13,6 +13,7 @@
 /**
  * @class NSRNormalizedPoint nsrnormalizedpoint.h
  * @brief Point with normalized coordinates
+ * @since 1.5.1
  *
  * NormalizedPoint is a helper class which stores the coordinates
  * of a normalized point. Normalized means that the coordinates are
@@ -55,6 +56,7 @@ public:
 	 * @brief Copy operator
 	 * @param p Point to copy.
 	 * @return Reference to resulting point.
+	 * @since 1.5.1
 	 */
 	NSRNormalizedPoint& operator= (const NSRNormalizedPoint& p);
 
@@ -62,12 +64,14 @@ public:
 	 * @brief Substratcs point one point from another one
 	 * @param p Point to substract.
 	 * @return Vector between two points.
+	 * @since 1.5.1
 	 */
 	NSRNormalizedPoint operator- (const NSRNormalizedPoint& p) const;
 
 	/**
 	 * @brief Gets x-axis coordinate
 	 * @return x-axis coordinate.
+	 * @since 1.5.1
 	 */
 	inline double getX () const {
 		return _x;
@@ -76,6 +80,7 @@ public:
 	/**
 	 * @brief Gets y-axis coordinate
 	 * @return y-axis coordinate.
+	 * @since 1.5.1
 	 */
 	inline double getY () const {
 		return _y;
@@ -84,6 +89,7 @@ public:
 	/**
 	 * @brief Sets x-axis coordinate
 	 * @param x x-axis coordinate.
+	 * @since 1.5.1
 	 */
 	inline void setX (double x) {
 		_x = x;
@@ -92,6 +98,7 @@ public:
 	/**
 	 * @brief Sets y-axis coordinate
 	 * @param y y-axis coordinate.
+	 * @since 1.5.1
 	 */
 	inline void setY (double y) {
 		_y = y;
@@ -100,6 +107,7 @@ public:
 	/**
 	 * @brief Transforms the normalized point
 	 * @param matrix Transformation matrix.
+	 * @since 1.5.1
 	 */
 	void transform (const QTransform &matrix);
 
@@ -110,6 +118,7 @@ public:
 	 * @param xScale Scale for x-axis.
 	 * @param yScale Scale for y-axis.
 	 * @return Squared distance to point.
+	 * @since 1.5.1
 	 */
 	double distanceSqr (double x, double y, double xScale, double yScale) const;
 
@@ -122,6 +131,7 @@ public:
 	 * @param start Start point of the line segment.
 	 * @param end End point of the line segment.
 	 * @return Distance from the point to line segment.
+	 * @since 1.5.1
 	 */
 	static double distanceSqr (double			x,
 				   double			y,

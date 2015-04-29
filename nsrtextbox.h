@@ -17,6 +17,7 @@
 /**
  * @class NSRTextBox nsrtextbox.h
  * @brief Text with related area
+ * @since 1.5.1
  *
  * Describes the physical location of text on a document page.
  */
@@ -38,6 +39,7 @@ public:
 	/**
 	 * @brief Gets text of the box
 	 * @return Text of the box.
+	 * @since 1.5.1
 	 */
 	inline QString getText () const {
 		return _text;
@@ -46,6 +48,7 @@ public:
 	/**
 	 * @brief Gets the position of the text
 	 * @return Position of the text, in point, i.e., 1/72 of an inch.
+	 * @since 1.5.1
 	 */
 	inline QRectF getBoundingBox () const {
 		return _bBox;
@@ -54,6 +57,7 @@ public:
 	/**
 	 * @brief Gets pointer to the next text box, if any
 	 * @return Pointer to the next text box if any, NULL otherwise.
+	 * @since 1.5.1
 	 */
 	inline NSRTextBox * getNextWord () const {
 		return _nextWord;
@@ -63,6 +67,7 @@ public:
 	 * @brief Gets bounding box of the i-th character of the word
 	 * @param i Index of the character.
 	 * @return Bounding box of the i-th character.
+	 * @since 1.5.1
 	 */
 	inline QRectF getCharBoundingBox (int i) const {
 		return _charBBoxes.value (i);
@@ -71,6 +76,7 @@ public:
 	/**
 	 * @brief Gets char bounding boxes
 	 * @return Char bounding boxes.
+	 * @since 1.5.1
 	 */
 	inline QVector<QRectF>& getCharBoundingBoxes () {
 		return _charBBoxes;
@@ -79,6 +85,7 @@ public:
 	/**
 	 * @brief Checks whether there is a space character after this text box
 	 * @return True in case of success, false otherwise.
+	 * @since 1.5.1
 	 */
 	inline bool hasSpaceAfter () const {
 		return _hasSpaceAfter;
@@ -87,6 +94,7 @@ public:
 	/**
 	 * @brief Sets text
 	 * @param text Text to set.
+	 * @since 1.5.1
 	 */
 	inline void setText (const QString text) {
 		_text = text;
@@ -95,6 +103,7 @@ public:
 	/**
 	 * @brief Sets text bounding box
 	 * @param bBox Text bounding box.
+	 * @since 1.5.1
 	 */
 	inline void setBoundingBox (const QRectF& bBox) {
 		_bBox = bBox;
@@ -103,6 +112,7 @@ public:
 	/**
 	 * @brief Sets next word
 	 * @param word Next word.
+	 * @since 1.5.1
 	 */
 	inline void setNextWord (NSRTextBox *word) {
 		_nextWord = word;
@@ -111,6 +121,7 @@ public:
 	/**
 	 * @brief Sets whether the next word is a space
 	 * @param hasSpace Whether the next word is a space.
+	 * @since 1.5.1
 	 */
 	inline void setHasSpaceAfter (bool hasSpace) {
 		_hasSpaceAfter = hasSpace;

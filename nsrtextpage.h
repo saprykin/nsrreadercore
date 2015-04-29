@@ -34,6 +34,7 @@ typedef bool (*NSRTextComparisonFunction) (const QStringRef& from, const QString
 /**
  * @class NSRTextPage nsrtextpage.h
  * @brief Text of the page.
+ * @since 1.5.1
  *
  * Represents the text of a page by providing #NSRTextEntity items for every
  * word/character of the page.
@@ -93,6 +94,7 @@ public:
 	 * @brief Appends the text with given area as new text entity
 	 * @param text Text to append.
 	 * @param area Text area.
+	 * @since 1.5.1
 	 */
 	void append (const QString& text, const NSRNormalizedRect& area);
 
@@ -104,6 +106,7 @@ public:
 	 * @param caseSensitivity Case sensivity.
 	 * @return Bounding rectangle of the text which matches the following criteria
 	 * or NULL if the search is not successful.
+	 * @since 1.5.1
 	 * @note Ownership of the returned area belongs to the caller.
 	 */
 	NSRRegularAreaRect * findText (int			id,
@@ -117,6 +120,7 @@ public:
 	 * @return Empty string if @a rect is a valid pointer to a null area,
 	 * the whole page text if @a rect is a NULL pointer, the text which is
 	 * included by rectangular area @a rect otherwise.
+	 * @since 1.5.1
 	 *
 	 * Uses #TextAreaInclusionBehaviour::AnyPixelTextAreaInclusionBehaviour.
 	 */
@@ -129,6 +133,7 @@ public:
 	 * @return Empty string if @a rect is a valid pointer to a null area,
 	 * the whole page text if @a rect is a NULL pointer, the text which is
 	 * included by rectangular area @a rect otherwise.
+	 * @since 1.5.1
 	 */
 	QString text (const NSRRegularAreaRect *rect, TextAreaInclusionBehaviour b) const;
 
@@ -137,6 +142,7 @@ public:
 	 * @param rect Text rectangle to extract.
 	 * @param b Text area inclusion behaviour.
 	 * @return Words including their bounding rectangles.
+	 * @since 1.5.1
 	 * @note Ownership of the contents of the returned list belongs to the caller.
 	 */
 	NSRTextEntityList words (const NSRRegularAreaRect *rect, TextAreaInclusionBehaviour b) const;
@@ -146,6 +152,7 @@ public:
 	 * @param p Point where to search.
 	 * @param[out] word Text at a given point.
 	 * @return Text area.
+	 * @since 1.5.1
 	 * @note Ownership of the returned area belongs to the caller.
 	 */
 	NSRRegularAreaRect * wordAt (const NSRNormalizedPoint& p, QString *word = NULL) const;
@@ -154,6 +161,7 @@ public:
 	 * @brief Gets the rectangular area of a given selection
 	 * @param selection Selection to get rectangular area for.
 	 * @return Rectangular area of a given selection.
+	 * @since 1.5.1
 	 * @note Ownership of the returned area belongs to the caller.
 	 */
 	NSRRegularAreaRect * textArea (const NSRTextSelection& selection) const;
@@ -161,12 +169,14 @@ public:
 	/**
 	 * @brief Copies text list.
 	 * @param list List to copy.
+	 * @since 1.5.1
 	 */
 	void setWordList (const NSRTinyTextEntityList& list);
 
 	/**
 	 * @brief Makes necessary modifications in the text list to make
 	 * the text order correct, so that text selection works fine
+	 * @since 1.5.1
 	 */
 	void correctTextOrder ();
 
@@ -177,6 +187,7 @@ private:
 	 * @brief Maps search point to area
 	 * @param sp Search point to map.
 	 * @return Mapped area.
+	 * @since 1.5.1
 	 * @note Ownership of the returned area belongs to the caller.
 	 */
 	NSRRegularAreaRect * searchPointToArea (const NSRSearchPoint *sp);
@@ -190,6 +201,7 @@ private:
 	 * @param startOffset Text start offset within the word.
 	 * @param end End position.
 	 * @return Text area in case of success, NULL otherwise.
+	 * @since 1.5.1
 	 * @note Ownership of the returned area belongs to the caller.
 	 */
 	NSRRegularAreaRect * findTextInternalForward (int						searchID,
@@ -208,6 +220,7 @@ private:
 	 * @param startOffset Text start offset within the word.
 	 * @param end End position.
 	 * @return Text area in case of success, NULL otherwise.
+	 * @since 1.5.1
 	 * @note Ownership of the returned area belongs to the caller.
 	 */
 	NSRRegularAreaRect * findTextInternalBackward (int						searchID,
@@ -220,6 +233,7 @@ private:
 	/**
 	 * @brief Gets page transformation matrix
 	 * @return Page transformation matrix.
+	 * @since 1.5.1
 	 */
 	QTransform getTransformMatrix () const;
 

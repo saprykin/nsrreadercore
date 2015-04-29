@@ -13,6 +13,7 @@
 /**
  * @class NSRSearchPoint nsrsearchpoint.h
  * @brief Text search point
+ * @since 1.5.1
  */
 class NSRSearchPoint
 {
@@ -23,6 +24,7 @@ public:
 	/**
 	 * @brief Gets begin iterator
 	 * @return Begin iterator.
+	 * @since 1.5.1
 	 */
 	inline NSRTinyTextEntityList::ConstIterator getBegin () const {
 		return _itBegin;
@@ -31,6 +33,7 @@ public:
 	/**
 	 * @brief Gets end iterator
 	 * @return End iterator.
+	 * @since 1.5.1
 	 */
 	inline NSRTinyTextEntityList::ConstIterator getEnd () const {
 		return _itEnd;
@@ -39,6 +42,7 @@ public:
 	/**
 	 * @brief Gets begin offset
 	 * @return Begin offset.
+	 * @since 1.5.1
 	 */
 	inline int getOffsetBegin () const {
 		return _offsetBegin;
@@ -47,6 +51,7 @@ public:
 	/**
 	 * @brief Gets end offset
 	 * @return End offset.
+	 * @since 1.5.1
 	 */
 	inline int getOffsetEnd () const {
 		return _offsetEnd;
@@ -55,6 +60,7 @@ public:
 	/**
 	 * @brief Sets begin iterator
 	 * @param begin Begin iterator.
+	 * @since 1.5.1
 	 */
 	inline void setBegin (const NSRTinyTextEntityList::ConstIterator& begin) {
 		_itBegin = begin;
@@ -63,6 +69,7 @@ public:
 	/**
 	 * @brief Sets end iterator
 	 * @param end End iterator.
+	 * @since 1.5.1
 	 */
 	inline void setEnd (const NSRTinyTextEntityList::ConstIterator& end) {
 		_itEnd = end;
@@ -71,6 +78,7 @@ public:
 	/**
 	 * @brief Sets begin offset
 	 * @param offset Begin offset.
+	 * @since 1.5.1
 	 */
 	inline void setOffsetBegin (int offset) {
 		_offsetBegin = offset;
@@ -79,6 +87,7 @@ public:
 	/**
 	 * @brief Sets end offset
 	 * @param offset End offset.
+	 * @since 1.5.1
 	 */
 	inline void setOffsetEnd (int offset) {
 		_offsetEnd = offset;

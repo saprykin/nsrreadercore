@@ -67,6 +67,7 @@ static T& deref (T* t)
 /**
  * @class NSRRegularArea nsrregulararea.h
  * @brief Regular area
+ * @since 1.5.1
  *
  * A regular area of NormalizedShape which normalizes a Shape.
  *
@@ -90,6 +91,7 @@ public:
 	 * @param x Coordinate of x-axis.
 	 * @param y Coordinate of y-axis.
 	 * @return True in case of success, false otherwise.
+	 * @since 1.5.1
 	 */
 	bool contains (double x, double y) const;
 
@@ -97,6 +99,7 @@ public:
 	 * @brief Checks whether the regular area contains the given shape
 	 * @param shape Shape to check.
 	 * @return True in case of success, false otherwise.
+	 * @since 1.5.1
 	 */
 	bool contains (const NormalizedShape& shape) const;
 
@@ -104,6 +107,7 @@ public:
 	 * @brief Checks whether the regular area intersects with the given area
 	 * @param area Area to check intersection with.
 	 * @return True in case of success, false otherwise.
+	 * @since 1.5.1
 	 */
 	bool intersects (const NSRRegularArea<NormalizedShape, Shape> *area) const;
 
@@ -111,12 +115,14 @@ public:
 	 * @brief Checks whether the regular area intersects with the given shape
 	 * @param shape Shape to check intersection with.
 	 * @return True in case of success, false otherwise.
+	 * @since 1.5.1
 	 */
 	bool intersects (const NormalizedShape& shape) const;
 
 	/**
 	 * @brief Appends the given area to the regular area
 	 * @param area Area to append.
+	 * @since 1.5.1
 	 */
 	void appendArea (const NSRRegularArea<NormalizedShape, Shape> *area);
 
@@ -124,15 +130,20 @@ public:
 	 * @brief Appends the given shape to the regular area
 	 * @param shape Shape to append.
 	 * @param side Merging mode.
+	 * @since 1.5.1
 	 */
 	void appendShape (const NormalizedShape& shape, NSRRegularAreaMergeSide side = MergeAll);
 
-	/** Simplifies the regular area by merging its intersecting subareas */
+	/**
+	 * @brief Simplifies the regular area by merging its intersecting subareas
+	 * @since 1.5.1
+	 */
 	void simplify ();
 
 	/**
 	 * @brief Checks whether the regular area is a null area
 	 * @return True in case of success, false otherwise.
+	 * @since 1.5.1
 	 */
 	bool isNull () const;
 
@@ -144,12 +155,14 @@ public:
 	 * @param dx Offset for x-axis.
 	 * @param dy Offset for y-axis.
 	 * @return Subareas of the regular areas as shapes.
+	 * @since 1.5.1
 	 */
 	QList<Shape> geometry (int xScale, int yScale, int dx = 0, int dy = 0) const;
 
 	/**
 	 * @brief Transforms the regular area
 	 * @param matrix Transformation matrix.
+	 * @since 1.5.1
 	 */
 	void transform (const QTransform &matrix);
 };

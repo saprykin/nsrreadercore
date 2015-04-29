@@ -14,6 +14,7 @@
 /**
  * @class NSRRegularAreaRect nsrregulararearect.h
  * @brief Regular area rectangle
+ * @since 1.5.1
  */
 class NSRRegularAreaRect : public NSRRegularArea< NSRNormalizedRect, QRect >
 {
@@ -34,6 +35,7 @@ public:
 	 * @brief Assignment operator
 	 * @param rar Regular area to assign.
 	 * @return Reference to resulting regular area rectangle.
+	 * @since 1.5.1
 	 */
 	NSRRegularAreaRect& operator= (const NSRRegularAreaRect& rar);
 };

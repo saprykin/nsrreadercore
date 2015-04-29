@@ -16,6 +16,7 @@
 /**
  * @class NSRTextEntity nsrtextentity.h
  * @brief Abstract text entity
+ * @since 1.5.1
  *
  * A document can provide different forms of information about textual representation
  * of its contents. It can include information about positions of every character on the
@@ -45,6 +46,7 @@ public:
 	/**
 	 * @brief Gets the text of the text entity
 	 * @return Text of the text entity.
+	 * @since 1.5.1
 	 */
 	inline QString getText () const {
 		return _text;
@@ -53,6 +55,7 @@ public:
 	/**
 	 * @brief Gets the bounding area of the text entity
 	 * @return Bounding area of the text entity.
+	 * @since 1.5.1
 	 */
 	inline NSRNormalizedRect * getArea () const {
 		return _area;
@@ -61,6 +64,7 @@ public:
 	/**
 	 * @brief Gets the transformed area of the text entity
 	 * @return Transformed area of the text entity.
+	 * @since 1.5.1
 	 */
 	NSRNormalizedRect getTransformedArea (const QTransform& matrix) const;
 

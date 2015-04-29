@@ -15,6 +15,7 @@
 /**
  * @class NSRTinyTextEntity
  * @brief Tiny text entity
+ * @since 1.5.1
  *
  * Rationale behind tiny text entity.
  * Instead of storing directly a @a QString for the text of an entity,
@@ -44,12 +45,14 @@ public:
 	/**
 	 * @brief Gets entity text
 	 * @return Entity text.
+	 * @since 1.5.1
 	 */
 	QString getText () const;
 
 	/**
 	 * @brief Gets entity bounding rectangle
 	 * @return Entity bounding rectangle.
+	 * @since 1.5.1
 	 */
 	inline NSRNormalizedRect& getArea () {
 		return _area;
@@ -59,6 +62,7 @@ public:
 	 * @brief Gets transformed bounding rectangle
 	 * @param matrix Transformation matrix.
 	 * @return Transformed bounding rectangle.
+	 * @since 1.5.1
 	 */
 	NSRNormalizedRect getTransformedArea (const QTransform& matrix) const;
 

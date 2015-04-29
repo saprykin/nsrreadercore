@@ -18,6 +18,7 @@
 /**
  * @class NSRTextXYCut nsrtextxycut.h
  * @brief Implementation of XY cut algorithm for text page
+ * @since 1.5.1
  */
 class NSRTextXYCut
 {
@@ -28,6 +29,7 @@ public:
 	 * @param second Second area.
 	 * @param threshold Overlap thresholsd value.
 	 * @return True in case of success, false otherwise.
+	 * @since 1.5.1
 	 */
 	static bool doesConsumeY (const QRect& first, const QRect& second, int threshold);
 
@@ -37,6 +39,7 @@ public:
 	 * @param second Second normalized area.
 	 * @param threshold Overlap thresholsd value.
 	 * @return True in case of success, false otherwise.
+	 * @since 1.5.1
 	 */
 	static bool doesConsumeY (const NSRNormalizedRect&	first,
 				  const NSRNormalizedRect&	second,
@@ -46,6 +49,7 @@ public:
 	 * @brief Performs XY cut algorithm on given text word list
 	 * @param[in, out] list List of words.
 	 * @param pageSize Size of the page, in pixels.
+	 * @since 1.5.1
 	 */
 	static void XYCut (NSRTinyTextEntityList& list, const QSizeF& pageSize);
 
@@ -55,6 +59,7 @@ private:
 	/**
 	 * @brief Removes all the spaces in between texts
 	 * @param[in, out] words List of text words.
+	 * @since 1.5.1
 	 *
 	 * It will make all the generators same, whether they save spaces (like PDF)
 	 * or not (like DjVu).
@@ -67,6 +72,7 @@ private:
 	 * @param pageWidth Page width, in pixels.
 	 * @param pageHeight Page height, in pixels.
 	 * @return List of words with characters.
+	 * @since 1.5.1
 	 * @note Characters might be already characters for some generators, but we will keep
 	 * the nomenclature characters for the generator produced data.
 	 *
@@ -84,6 +90,7 @@ private:
 	 * @param pageWidth Page width, in pixels.
 	 * @param pageHeight Page height, in pixels.
 	 * @return List of text regions.
+	 * @since 1.5.1
 	 * @note The returned list will contain words and their characters reused from
 	 * @a wordsWithCharacters, so no new nor delete memory calls happens in this function.
 	 */
@@ -100,6 +107,7 @@ private:
 	 * @param pageHeight Page height, in pixels.
 	 * @return List of words with characters and spaces between.
 	 * @note It reuses the pointers passed in @a tree and might add new ones.
+	 * @since 1.5.1
 	 *
 	 * The caller takes ownership for the words within returned list.
 	 */
@@ -114,6 +122,7 @@ private:
 	 * @param[out] wordSpacing Word spacing statistics.
 	 * @param[out] lineSpacing Line spacing statistics.
 	 * @param[out] colSpacing Column spacing statistics.
+	 * @since 1.5.1
 	 */
 	static void calculateStatisticalInformation (const NSRWordWithCharactersList&	words,
 						     int				pageWidth,
@@ -128,6 +137,7 @@ private:
 	 * @param pageWidth Page width, in pixels.
 	 * @param pageHeight Page height, in pixels.
 	 * @return A list of pairs of line and its area.
+	 * @since 1.5.1
 	 * @note It reuses the pointers passed in @a words.
 	 */
 	static QList< QPair<NSRWordWithCharactersList, QRect> >

@@ -13,6 +13,7 @@
 /**
  * @class NSRTextSelection nsrtextselection.h
  * @brief Wrapper around the information needed to generate the selection area
+ * @since 1.5.1
  *
  * There are two assumptions inside this class:
  * 1. The start never changes, one instance of this class is used for one selection,
@@ -37,18 +38,21 @@ public:
 	/**
 	 * @brief Gets start point of the selection
 	 * @return Start point if the selection.
+	 * @since 1.5.1
 	 */
 	NSRNormalizedPoint getStart () const;
 
 	/**
 	 * @brief Gets end point of the selection
 	 * @return End point of the selection.
+	 * @since 1.5.1
 	 */
 	NSRNormalizedPoint getEnd () const;
 
 	/**
 	 * @brief Sets the end point of the selection
 	 * @param point End point of the selection.
+	 * @since 1.5.1
 	 */
 	void setEnd (const NSRNormalizedPoint& point);
 
