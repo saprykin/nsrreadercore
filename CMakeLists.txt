@@ -70,65 +70,80 @@ set (SOURCES
 	nsrcharsetdetector.cpp
 	nsrcroppads.cpp
 	nsrcroppadscache.cpp
-	nsrdjvudocument.cpp
-	nsrnormalizedpoint.cpp
-	nsrnormalizedrect.cpp
 	nsrpagecropper.cpp
 	nsrpagescache.cpp
-	nsrpopplerdocument.cpp
 	nsrreadercore.cpp
-	nsrregiontext.cpp
-	nsrregulararea.cpp
-	nsrregulararearect.cpp
 	nsrrenderedpage.cpp
 	nsrrenderinfo.cpp
 	nsrrenderrequest.cpp
 	nsrrenderthread.cpp
-	nsrsearchpoint.cpp
 	nsrsession.cpp
-	nsrtextbox.cpp
-	nsrtextdocument.cpp
-	nsrtextentity.cpp
-	nsrtextpage.cpp
-	nsrtextselection.cpp
-	nsrtextxycut.cpp
-	nsrtiffdocument.cpp
-	nsrtinytextentity.cpp
-	nsrwordwithcharacters.cpp
+)
+
+set (FORMATS_SOURCES
+	formats/nsrdjvudocument.cpp
+	formats/nsrpopplerdocument.cpp
+	formats/nsrtextdocument.cpp
+	formats/nsrtiffdocument.cpp
+)
+
+set (TEXT_SOURCES
+	text/nsrnormalizedpoint.cpp
+	text/nsrnormalizedrect.cpp
+	text/nsrregiontext.cpp
+	text/nsrregulararea.cpp
+	text/nsrregulararearect.cpp
+	text/nsrsearchpoint.cpp
+	text/nsrtextbox.cpp
+	text/nsrtextentity.cpp
+	text/nsrtextpage.cpp
+	text/nsrtextselection.cpp
+	text/nsrtextxycut.cpp
+	text/nsrtinytextentity.cpp
+	text/nsrwordwithcharacters.cpp
 )
 
 set (HEADERS
-	insrsettings.h
-	insrthumbnailer.h
 	nsrabstractdocument.h
 	nsrcroppads.h
 	nsrcroppadscache.h
-	nsrdjvudocument.h
-	nsrnormalizedpoint.h
-	nsrnormalizedrect.h
 	nsrpagecropper.h
 	nsrpagescache.h
-	nsrpopplerdocument.h
 	nsrreadercore.h
 	nsrreadercore_global.h
-	nsrregiontext.h
-	nsrregulararea.h
-	nsrregulararearect.h
 	nsrrenderedpage.h
 	nsrrenderinfo.h
 	nsrrenderrequest.h
 	nsrrenderthread.h
-	nsrsearchpoint.h
-	nsrsession.h
-	nsrtextbox.h
-	nsrtextdocument.h
-	nsrtextentity.h
-	nsrtextpage.h
-	nsrtextselection.h
-	nsrtextxycut.h
-	nsrtiffdocument.h
-	nsrtinytextentity.h
-	nsrwordwithcharacters.h
+	nsrsession.h	
+)
+
+set (FORMATS_HEADERS
+	formats/nsrtextdocument.h
+	formats/nsrdjvudocument.h
+	formats/nsrpopplerdocument.h
+	formats/nsrtiffdocument.h
+)
+
+set (TEXT_HEADERS
+	text/nsrnormalizedpoint.h
+	text/nsrnormalizedrect.h
+	text/nsrregiontext.h
+	text/nsrregulararea.h
+	text/nsrregulararearect.h
+	text/nsrsearchpoint.h
+	text/nsrtextbox.h
+	text/nsrtextentity.h
+	text/nsrtextpage.h
+	text/nsrtextselection.h
+	text/nsrtextxycut.h
+	text/nsrtinytextentity.h
+	text/nsrwordwithcharacters.h
+)
+
+set (INTERFACES_HEADERS
+	interfaces/insrsettings.h
+	interfaces/insrthumbnailer.h
 )
 
 include_directories (
@@ -147,8 +162,13 @@ include_directories (AFTER ${NSR_INCLUDE_DIRECTORIES})
 
 add_library (${PROJECT_NAME} SHARED
 	${SOURCES}
+	${FORMATS_SOURCES}
+	${TEXT_SOURCES}
 	${THIRDPARTY_SOURCES}
 	${HEADERS}
+	${FORMATS_HEADERS}
+	${TEXT_HEADERS}
+	${INTERFACES_HEADERS}
 	${THIRDPARTY_HEADERS}
 	$<TARGET_OBJECTS:jbigkit>
 	$<TARGET_OBJECTS:jpegturbo>

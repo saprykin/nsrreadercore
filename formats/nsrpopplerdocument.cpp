@@ -1,7 +1,7 @@
 #include "nsrpopplerdocument.h"
 #include "nsrpagecropper.h"
-#include "nsrtextbox.h"
-#include "nsrtextpage.h"
+#include "text/nsrtextbox.h"
+#include "text/nsrtextpage.h"
 
 #include "poppler/poppler/ErrorCodes.h"
 

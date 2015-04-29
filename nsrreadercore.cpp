@@ -1,8 +1,8 @@
 #include "nsrreadercore.h"
-#include "nsrpopplerdocument.h"
-#include "nsrdjvudocument.h"
-#include "nsrtiffdocument.h"
-#include "nsrtextdocument.h"
+#include "formats/nsrpopplerdocument.h"
+#include "formats/nsrdjvudocument.h"
+#include "formats/nsrtiffdocument.h"
+#include "formats/nsrtextdocument.h"
 
 #include <QVariant>
 #include <QFile>

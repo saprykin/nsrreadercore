@@ -7,8 +7,8 @@
  * @brief Rendering engine API
  */
 
-#include "insrsettings.h"
-#include "insrthumbnailer.h"
+#include "interfaces/insrsettings.h"
+#include "interfaces/insrthumbnailer.h"
 #include "nsrabstractdocument.h"
 #include "nsrrenderthread.h"
 #include "nsrrenderrequest.h"

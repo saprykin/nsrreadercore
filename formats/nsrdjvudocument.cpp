@@ -1,6 +1,6 @@
 #include "nsrdjvudocument.h"
 #include "nsrpagecropper.h"
-#include "nsrtextpage.h"
+#include "text/nsrtextpage.h"
 
 #include <djvu/DjVuImage.h>
 #include <djvu/DjVuText.h>

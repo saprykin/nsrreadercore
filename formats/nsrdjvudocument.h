@@ -8,7 +8,7 @@
  */
 
 #include "nsrabstractdocument.h"
-#include "nsrtextentity.h"
+#include "text/nsrtextentity.h"
 
 #include <djvu/DjVuFileCache.h>
 #include <djvu/DjVuDocument.h>
