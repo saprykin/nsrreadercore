@@ -32,7 +32,7 @@ public:
 	virtual ~NSRTIFFDocument ();
 
 	/* Reimplemented from NSRAbstractDocument */
-	int getPagesCount () const;
+	int getPageCount () const;
 	NSRRenderInfo renderPage (int page);
 	NSR_CORE_IMAGE_DATATYPE getCurrentPage ();
 	bool isValid () const;
@@ -40,6 +40,10 @@ public:
 
 	NSRAbstractDocument::NSRDocumentStyle getPreferredDocumentStyle () const {
 		return NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC;
+	}
+
+	bool hasDynamicPages () const {
+		return false;
 	}
 
 	QString getPassword () const {

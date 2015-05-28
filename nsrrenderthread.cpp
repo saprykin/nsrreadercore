@@ -169,7 +169,8 @@ NSRRenderThread::run ()
 		/* Do we have new pages to render? */
 		NSRRenderedPage page (getRequest ());
 
-		if (page.getNumber () < 1 || page.getNumber () > _doc->getPagesCount ()) {
+		if (page.getNumber () < 1 ||
+		    (!_doc->hasDynamicPages () && page.getNumber () > _doc->getPageCount ())) {
 			emit renderDone ();
 			return;
 		}
@@ -179,7 +180,7 @@ NSRRenderThread::run ()
 
 		setCurrentRequest (page);
 
-		if (!page.isTextOnly() && page.isAutoCrop ()) {
+		if (!page.isTextOnly () && page.isAutoCrop ()) {
 			if (!page.getCropPads().isDetected ()) {
 				prepareRenderContextForCrop (page);
 

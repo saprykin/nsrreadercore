@@ -34,7 +34,7 @@ NSRTIFFDocument::~NSRTIFFDocument ()
 }
 
 int
-NSRTIFFDocument::getPagesCount () const
+NSRTIFFDocument::getPageCount () const
 {
 	if (_tiff == NULL)
 		return 0;
@@ -57,7 +57,7 @@ NSRTIFFDocument::renderPage (int page)
 	char *		imgBuf;
 	QImage *	img;
 
-	if (_tiff == NULL || page > getPagesCount () || page < 1)
+	if (_tiff == NULL || page > getPageCount () || page < 1)
 		return rinfo;
 
 	if (_pagesCount > 0 && TIFFSetDirectory (_tiff, page - 1) == 0)

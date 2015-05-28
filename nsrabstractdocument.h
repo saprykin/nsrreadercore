@@ -79,10 +79,10 @@ public:
 	virtual ~NSRAbstractDocument ();
 
 	/**
-	 * @brief Gets pages count in file
-	 * @return Pages count in file.
+	 * @brief Gets page count in file
+	 * @return Page count in file.
 	 */
-	virtual int getPagesCount () const			= 0;
+	virtual int getPageCount () const			= 0;
 
 	/**
 	 * @brief Renders page internally
@@ -116,6 +116,13 @@ public:
 	 * @return Preferred representing style.
 	 */
 	virtual NSRAbstractDocument::NSRDocumentStyle getPreferredDocumentStyle () const		= 0;
+
+	/**
+	 * @brief Indicates whether file has dynamic page count
+	 * @return True in case of success, false otherwise.
+	 * @since 1.5.2
+	 */
+	virtual bool hasDynamicPages () const = 0;
 
 	/**
 	 * @brief Gets path to file

@@ -145,7 +145,7 @@ NSRDjVuDocument::~NSRDjVuDocument ()
 }
 
 int
-NSRDjVuDocument::getPagesCount () const
+NSRDjVuDocument::getPageCount () const
 {
 	return _pagesCount;
 }
@@ -163,7 +163,7 @@ NSRDjVuDocument::renderPage (int page)
 	double		resFactor;
 	int		rot;
 
-	if (_doc == NULL || page > getPagesCount () || page < 1)
+	if (_doc == NULL || page > getPageCount () || page < 1)
 		return rinfo;
 
 	clearRenderedData ();

@@ -212,7 +212,7 @@ NSRReaderCore::getPagesCount () const
 	if (_doc == NULL)
 		return 0;
 
-	return _doc->getPagesCount ();
+	return _doc->getPageCount ();
 }
 
 NSRRenderedPage
@@ -699,8 +699,9 @@ NSRReaderCore::loadPage (PageLoad				dir,
 
 	if (pageToLoad < 1)
 		pageToLoad = 1;
-	else if (pageToLoad > _doc->getPagesCount ())
-		pageToLoad = _doc->getPagesCount ();
+
+	if (!_doc->hasDynamicPages () && pageToLoad > _doc->getPageCount ())
+		pageToLoad = _doc->getPageCount ();
 
 	if (_pagesLimit > 0 && pageToLoad > _pagesLimit) {
 		pageToLoad = _pagesLimit;
@@ -847,7 +848,7 @@ NSRReaderCore::isPageRelevant (const NSRRenderedPage& page) const
 		relevant = relevant && (_renderRequest.getEncoding () == page.getEncoding ());
 
 	if (!_renderRequest.isZoomToWidth ())
-			relevant = relevant && qAbs (_renderRequest.getZoom () - page.getZoom ()) <= DBL_EPSILON;
+		relevant = relevant && qAbs (_renderRequest.getZoom () - page.getZoom ()) <= DBL_EPSILON;
 
 	return relevant;
 }
@@ -858,7 +859,7 @@ NSRReaderCore::preloadPages ()
 	if (!isFileOpened ())
 		return;
 
-	int pageToLoadNext = qMin (_doc->getPagesCount (), _renderRequest.getNumber () + 1);
+	int pageToLoadNext = qMin (_doc->getPageCount (), _renderRequest.getNumber () + 1);
 	int pageToLoadPrev = qMax (1, _renderRequest.getNumber () - 1);
 
 	bool needNext = !_cache->isPageExists (pageToLoadNext) && pageToLoadNext != _renderRequest.getNumber ();

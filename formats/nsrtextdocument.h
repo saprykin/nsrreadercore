@@ -9,7 +9,7 @@
 
 #include "nsrabstractdocument.h"
 
-#include <QMap>
+#include <QHash>
 
 /**
  * @class NSRTextDocument nsrtextdocument.h
@@ -32,7 +32,7 @@ public:
 	virtual ~NSRTextDocument ();
 
 	/* Reimplemented from NSRAbstractDocument */
-	int getPagesCount () const;
+	int getPageCount () const;
 	NSRRenderInfo renderPage (int page);
 	NSR_CORE_IMAGE_DATATYPE getCurrentPage ();
 	bool isValid ()	const;
@@ -41,6 +41,10 @@ public:
 
 	NSRAbstractDocument::NSRDocumentStyle getPreferredDocumentStyle () const {
 		return NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT;
+	}
+
+	bool hasDynamicPages () const {
+		return true;
 	}
 
 	double getZoom () const {
@@ -120,10 +124,18 @@ private:
 	 */
 	QString detectCharset ();
 
-	QString	_text;			/**< Page text			*/
-	QString	_autodetectedEncoding;	/**< Autodetected charset	*/
-	int	_pagesCount;		/**< Pages count		*/
-	bool	_wasEncodingDetected;	/**< Charset autodetection flag	*/
+	/**
+	 * @brief Rebuilds internal hash
+	 * @param encoding Text encoding to rebuild hash with.
+	 */
+	void rebuildHash (const QString& encoding);
+
+	QHash<int, QString>	_textData;		/**< Hashed data		*/
+	QString			_text;			/**< Current page text		*/
+	QString			_hashBuildEncoding;	/**< Hashed data encoding	*/
+	QString			_autodetectedEncoding;	/**< Autodetected charset	*/
+	int			_pageCount;		/**< Page count			*/
+	bool			_wasEncodingDetected;	/**< Charset autodetection flag	*/
 };
 
 #endif /* __NSRTEXTDOCUMENT_H__ */

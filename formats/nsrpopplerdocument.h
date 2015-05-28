@@ -41,7 +41,7 @@ public:
 	virtual ~NSRPopplerDocument ();
 
 	/* Reimplemented from NSRAbstractDocument */
-	int getPagesCount () const;
+	int getPageCount () const;
 	NSRRenderInfo renderPage (int page);
 	NSR_CORE_IMAGE_DATATYPE getCurrentPage ();
 	bool isValid () const;
@@ -49,6 +49,10 @@ public:
 	bool isDocumentStyleSupported (NSRAbstractDocument::NSRDocumentStyle style) const;
 	NSRAbstractDocument::NSRDocumentStyle getPreferredDocumentStyle () const {
 		return NSRAbstractDocument::NSR_DOCUMENT_STYLE_GRAPHIC;
+	}
+
+	bool hasDynamicPages () const {
+		return false;
 	}
 
 	void setPassword (const QString &passwd);

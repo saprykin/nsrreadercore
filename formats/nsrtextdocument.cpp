@@ -7,18 +7,16 @@
 #include <QFileInfo>
 #include <QDataStream>
 #include <QTextCodec>
+#include <QTextStream>
 
-#define NSR_CORE_TEXT_PAGE_SIZE		5120
 #define NSR_CORE_TEXT_DETECT_CHARS	1024
+#define NSR_CORE_TEXT_LINES_IN_PAGE	25
 
 NSRTextDocument::NSRTextDocument (const QString &file, QObject *parent) :
 	NSRAbstractDocument (file, parent),
-	_pagesCount (0),
+	_pageCount (0),
 	_wasEncodingDetected (false)
 {
-	QFileInfo info (file);
-
-	_pagesCount = (int) (ceil ((double) info.size () / NSR_CORE_TEXT_PAGE_SIZE) + 0.5);
 }
 
 NSRTextDocument::~NSRTextDocument ()
@@ -26,9 +24,9 @@ NSRTextDocument::~NSRTextDocument ()
 }
 
 int
-NSRTextDocument::getPagesCount () const
+NSRTextDocument::getPageCount () const
 {
-	return _pagesCount;
+	return _pageCount;
 }
 
 NSRRenderInfo
@@ -36,7 +34,7 @@ NSRTextDocument::renderPage (int page)
 {
 	NSRRenderInfo rinfo;
 
-	if (page < 1 || page > getPagesCount ())
+	if (page < 1)
 		return rinfo;
 
 	if (!isValid ())
@@ -48,80 +46,19 @@ NSRTextDocument::renderPage (int page)
 
 	if (charset.isEmpty () && !_wasEncodingDetected) {
 		_autodetectedEncoding = detectCharset ();
-		_wasEncodingDetected = true;
+		_wasEncodingDetected  = true;
 	}
 
 	if (charset.isEmpty ())
 		charset = _autodetectedEncoding;
 
-	QFile data (getDocumentPath ());
+	if (charset != _hashBuildEncoding)
+		rebuildHash (charset);
 
-	if (data.open (QFile::ReadOnly)) {
-		QDataStream	in (&data);
-		QByteArray	ba;
-		QString		text, fullText;
-		int		strPos;
-		int		bytesRead;
+	if (page > getPageCount ())
+		return rinfo;
 
-		QTextCodec *codec = QTextCodec::codecForName (charset.toAscii ());
-
-		if (page > 1) {
-			ba.resize (NSR_CORE_TEXT_PAGE_SIZE + NSR_CORE_TEXT_PAGE_SIZE / 2);
-			in.device()->seek ((page - 2) * NSR_CORE_TEXT_PAGE_SIZE + NSR_CORE_TEXT_PAGE_SIZE / 2);
-		} else {
-			ba.resize (NSR_CORE_TEXT_PAGE_SIZE);
-			in.device()->seek (0);
-		}
-
-		if ((bytesRead = in.readRawData (ba.data (), ba.size ())) == -1) {
-			data.close ();
-			return rinfo;
-		}
-
-		data.close ();
-		ba.truncate (bytesRead);
-
-		fullText = (codec == NULL) ? QString (ba) : codec->toUnicode (ba);
-
-		text = (codec == NULL) ? QString (ba.right (NSR_CORE_TEXT_PAGE_SIZE))
-				       : codec->toUnicode (ba.right (NSR_CORE_TEXT_PAGE_SIZE));
-
-		/* First and last characters may be broken as of multibyte charset */
-		if (!text.isEmpty () && !text.at(0).isSpace ())
-			text.remove (0, 1);
-
-		if (!text.isEmpty () && !text.at(text.size () - 1).isSpace ())
-			text.remove (text.size () - 1, 1);
-
-		/* Complete last word */
-		strPos = text.size () - 1;
-
-		while (strPos >= 0 && !text.at(strPos).isSpace ())
-			--strPos;
-
-		while (strPos >= 0 && text.at(strPos).isSpace ())
-			--strPos;
-
-		if (strPos < 0)
-			strPos = text.size () - 1;
-
-		text = text.left (strPos + 1);
-
-		fullText = fullText.left (fullText.lastIndexOf (text));
-
-		/* Prepend semi-words at the start */
-		strPos = fullText.size () - 1;
-
-		while (strPos >= 0 && !fullText.at(strPos).isSpace ())
-			--strPos;
-
-		if (strPos < 0)
-			strPos = fullText.size () + 1;
-
-		text.prepend (fullText.right (fullText.size () - 1 - strPos));
-
-		_text = text;
-	}
+	_text = _textData.value (page, QString ());
 
 	rinfo.setSuccessRender (true);
 
@@ -139,7 +76,7 @@ NSRTextDocument::isValid () const
 {
 	QFileInfo info (getDocumentPath ());
 
-	return info.exists();
+	return info.exists ();
 }
 
 QString
@@ -157,7 +94,8 @@ NSRTextDocument::isDocumentStyleSupported (NSRAbstractDocument::NSRDocumentStyle
 	return (style == NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT);
 }
 
-QString NSRTextDocument::detectCharset ()
+QString
+NSRTextDocument::detectCharset ()
 {
 	if (!QFile::exists (getDocumentPath ()))
 		return QString ();
@@ -192,4 +130,43 @@ QString NSRTextDocument::detectCharset ()
 
 	/* The best try */
 	return detector.getCharset ();
+}
+
+void
+NSRTextDocument::rebuildHash (const QString& encoding)
+{
+	_textData.clear ();
+
+	QFile data (getDocumentPath ());
+
+	if (!data.open (QFile::ReadOnly))
+		return;
+
+	QTextStream stream (&data);
+	stream.setCodec (encoding.toAscii().data ());
+
+	int pageCounter  = 1;
+	int totalCounter = 0;
+
+	while (!stream.atEnd () && totalCounter <= NSR_CORE_DOCUMENT_MAX_HEAP) {
+		QString pageText;
+		int lineCounter = 0;
+
+		while (lineCounter != NSR_CORE_TEXT_LINES_IN_PAGE && !stream.atEnd ()) {
+			QString line = stream.readLine () + QString ("\n");
+
+			pageText     += line;
+			totalCounter += line.toAscii().length ();
+
+			++lineCounter;
+
+			if (totalCounter > NSR_CORE_DOCUMENT_MAX_HEAP)
+				break;
+		}
+
+		_textData.insert (pageCounter++, pageText);
+	}
+
+	_pageCount         = pageCounter - 1;
+	_hashBuildEncoding = encoding;
 }

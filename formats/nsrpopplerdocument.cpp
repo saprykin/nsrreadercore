@@ -54,7 +54,7 @@ NSRPopplerDocument::~NSRPopplerDocument ()
 }
 
 int
-NSRPopplerDocument::getPagesCount () const
+NSRPopplerDocument::getPageCount () const
 {
 	if (_doc == NULL)
 		return 0;
@@ -74,7 +74,7 @@ NSRPopplerDocument::renderPage (int page)
 	NSRRenderInfo	rinfo;
 	double		dpix, dpiy;
 
-	if (_doc == NULL || page > getPagesCount () || page < 1)
+	if (_doc == NULL || page > getPageCount () || page < 1)
 		return rinfo;
 
 	_page = _catalog->getPage (page);
