@@ -3,7 +3,10 @@
 #include "text/nsrtextbox.h"
 #include "text/nsrtextpage.h"
 
+#include "poppler/poppler/Outline.h"
 #include "poppler/poppler/ErrorCodes.h"
+#include "poppler/poppler/Link.h"
+#include "poppler/goo/GooList.h"
 
 #include <qmath.h>
 
@@ -12,8 +15,9 @@
 
 #define NSR_CORE_PDF_MIN_ZOOM	25.0
 
-int NSRPopplerDocument::_refcount = 0;
 QMutex NSRPopplerDocument::_mutex;
+int NSRPopplerDocument::_refcount = 0;
+UnicodeMap * NSRPopplerDocument::_utf8Map = NULL;
 
 NSRPopplerDocument::NSRPopplerDocument (const QString& file, const QString& passwd, QObject *parent) :
 	NSRAbstractDocument (file, parent),
@@ -24,8 +28,13 @@ NSRPopplerDocument::NSRPopplerDocument (const QString& file, const QString& pass
 {
 	_mutex.lock ();
 
-	if (_refcount == 0)
+	if (_refcount == 0) {
 		globalParams = new GlobalParams ();
+
+		GooString encoding ("UTF-8");
+		_utf8Map = globalParams->getUnicodeMap (&encoding);
+		_utf8Map->incRefCnt ();
+	}
 
 	++_refcount;
 	_mutex.unlock ();
@@ -47,8 +56,10 @@ NSRPopplerDocument::~NSRPopplerDocument ()
 	_mutex.lock ();
 	--_refcount;
 
-	if (_refcount == 0)
+	if (_refcount == 0) {
+		_utf8Map->decRefCnt ();
 		delete globalParams;
+	}
 
 	_mutex.unlock ();
 }
@@ -345,6 +356,30 @@ NSRPopplerDocument::isDocumentStyleSupported (NSRAbstractDocument::NSRDocumentSt
 		style == NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT);
 }
 
+NSRTocEntry *
+NSRPopplerDocument::getToc () const
+{
+	if (_doc == NULL)
+		return NULL;
+
+	Outline *outline = _doc->getOutline ();
+
+	if (outline == NULL)
+		return NULL;
+
+	GooList * items = outline->getItems ();
+
+	if (!items || items->getLength () < 1)
+		return NULL;
+
+	NSRTocEntry *toc = new NSRTocEntry (QString (), -1);
+
+	if (items->getLength () > 0)
+		addTocChildren (toc, items);
+
+	return toc;
+}
+
 void
 NSRPopplerDocument::createInternalDoc (QString passwd)
 {
@@ -386,4 +421,142 @@ NSRPopplerDocument::createInternalDoc (QString passwd)
 	_catalog = _doc->getCatalog ();
 	_page = _catalog->getPage (1);
 	_dev->startDoc (_doc);
+}
+
+void
+NSRPopplerDocument::addTocChildren (NSRTocEntry *parent, GooList *items) const
+{
+	if (parent == NULL || items == NULL)
+		return;
+
+	int numItems = items->getLength ();
+
+	for (int i = 0; i < numItems; ++i) {
+		/* Iterate over every object in items */
+		OutlineItem * outlineItem = (OutlineItem *) items->get (i);
+
+		/* 1. Create entry using outline item's title */
+		Unicode *uniChar = outlineItem->getTitle ();
+		int titleLength  = outlineItem->getTitleLength ();
+		QString name     = unicodeToQString (uniChar, titleLength);
+
+		NSRTocEntry *entry = new NSRTocEntry (name, -1);
+		parent->appendChild (entry);
+
+		/* 2. Find the page the link refers to */
+		LinkAction * action = outlineItem->getAction ();
+
+		if (action != NULL) {
+			switch (action->getKind ()) {
+			case actionGoTo:
+			{
+				GBool      freeDest    = gFalse;
+				LinkGoTo * goToLink    = static_cast<LinkGoTo *> (action);
+				LinkDest * destination = goToLink->getDest ();
+
+				if (destination == NULL && goToLink->getNamedDest () != NULL) {
+					destination = _doc->findDest (goToLink->getNamedDest ());
+
+					if (destination != NULL)
+						freeDest = gTrue;
+
+					if (entry->getTitle().isEmpty ())
+						entry->setTitle (QString (goToLink->getNamedDest()->getCString ()));
+				}
+
+				if (destination != NULL && destination->isOk ()) {
+					if (!destination->isPageRef ())
+						entry->setPage (destination->getPageNum ());
+					else {
+						Ref ref = destination->getPageRef ();
+						entry->setPage (_doc->findPage (ref.num, ref.gen));
+					}
+				}
+
+				if (destination != NULL && freeDest)
+					delete destination;
+
+				break;
+			}
+			case actionGoToR:
+			{
+				GBool       freeDest    = gFalse;
+				LinkGoToR * goToRLink   = static_cast<LinkGoToR *> (action);
+				LinkDest *  destination = goToRLink->getDest ();
+
+				entry->setExternal (goToRLink->getFileName () != NULL);
+				entry->setExternalFile (QString (goToRLink->getFileName()->getCString ()));
+
+				if (destination == NULL && goToRLink->getNamedDest () != NULL && !entry->isExternal ()) {
+					destination = _doc->findDest (goToRLink->getNamedDest ());
+
+					if (destination != NULL)
+						freeDest = gTrue;
+				}
+
+				if (entry->getTitle().isEmpty () && goToRLink->getNamedDest () != NULL)
+					entry->setTitle (QString (goToRLink->getNamedDest()->getCString ()));
+
+				if (destination != NULL && destination->isOk ()) {
+					if (!destination->isPageRef ())
+						entry->setPage (destination->getPageNum ());
+					else {
+						Ref ref = destination->getPageRef ();
+						entry->setPage (_doc->findPage (ref.num, ref.gen));
+					}
+				}
+
+				if (destination != NULL && freeDest)
+					delete destination;
+
+				break;
+			}
+			case actionURI:
+			{
+				LinkURI * uri = static_cast<LinkURI *> (action);
+				entry->setUri (QString (uri->getURI()->getCString ()));
+				entry->setExternal (true);
+
+				if (entry->getTitle().isEmpty ())
+					entry->setTitle (entry->getUri ());
+			}
+			default:
+				break;
+			}
+		}
+
+		if (entry->getTitle().isEmpty ())
+			/* Skip entries without title */
+			delete entry;
+		else {
+			/* 3. Recursively descend over children */
+			outlineItem->open ();
+			GooList * children = outlineItem->getKids ();
+
+			if (children)
+				addTocChildren (entry, children);
+		}
+	}
+
+}
+
+QString
+NSRPopplerDocument::unicodeToQString (Unicode *u, int len) const
+{
+	if (u == NULL || len <= 0)
+		return QString ();
+
+	/* Ignore the last character if it is 0x0 */
+	if ((u[len - 1] == 0))
+		--len;
+
+	GooString convertedStr;
+
+	for (int i = 0; i < len; ++i) {
+		char buf[8];
+		const int n = _utf8Map->mapUnicode (u[i], buf, sizeof (buf));
+		convertedStr.append (buf, n);
+	}
+
+	return QString::fromUtf8 (convertedStr.getCString (), convertedStr.getLength ());
 }

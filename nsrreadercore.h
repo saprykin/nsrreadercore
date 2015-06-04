@@ -15,6 +15,7 @@
 #include "nsrpagescache.h"
 #include "nsrcroppadscache.h"
 #include "nsrsession.h"
+#include "nsrtocentry.h"
 #include "nsrreadercore_global.h"
 
 #include <QObject.h>
@@ -251,6 +252,15 @@ public:
 	 * @since 1.4.3
 	 */
 	void setCacheSize (qint64 cacheSize);
+
+	/**
+	 * @brief Gets file TOC if any
+	 * @return TOC in case of success, NULL otherwise.
+	 * @since 1.5.2
+	 *
+	 * Caller takes ownership of the returned object.
+	 */
+	NSRTocEntry * getToc () const;
 
 Q_SIGNALS:
 	/**

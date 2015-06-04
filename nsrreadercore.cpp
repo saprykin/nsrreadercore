@@ -407,14 +407,25 @@ NSRReaderCore::switchInvertedColors ()
 		loadPage (PAGE_LOAD_CUSTOM, NSRRenderRequest::NSR_RENDER_REASON_SETTINGS, _renderRequest.getNumber ());
 }
 
-qint64 NSRReaderCore::getCacheSize () const
+qint64
+NSRReaderCore::getCacheSize () const
 {
 	return _cache->getMaxMemory ();
 }
 
-void NSRReaderCore::setCacheSize (qint64 cacheSize)
+void
+NSRReaderCore::setCacheSize (qint64 cacheSize)
 {
 	_cache->setMaxMemory (cacheSize);
+}
+
+NSRTocEntry *
+NSRReaderCore::getToc () const
+{
+	if (_doc == NULL)
+		return NULL;
+
+	return _doc->getToc ();
 }
 
 void

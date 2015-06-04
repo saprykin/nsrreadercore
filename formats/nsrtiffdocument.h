@@ -46,6 +46,10 @@ public:
 		return false;
 	}
 
+	NSRTocEntry * getToc () const {
+		return NULL;
+	}
+
 	QString getPassword () const {
 		return QString ();
 	}

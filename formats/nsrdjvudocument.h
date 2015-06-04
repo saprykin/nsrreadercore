@@ -15,6 +15,8 @@
 #include <djvu/ddjvuapi.h>
 #include <djvu/miniexp.h>
 
+#include <QHash>
+
 /**
  * @class NSRDjVuDocument nsrdjvudocument.h
  * @brief Class for DjVu file handler
@@ -58,6 +60,8 @@ public:
 		return false;
 	}
 
+	NSRTocEntry * getToc () const;
+
 	QString getPassword () const {
 		return QString ();
 	}
@@ -97,12 +101,39 @@ private:
 	 */
 	NSRTextEntityList getPageText (int page, const QSize& size, const QString& detail);
 
-	GP<DjVuFileCache>	_cache;			/**< File cache			*/
-	GP<DjVuDocument>	_doc;			/**< DjVu file handler		*/
-	QSize			_imgSize;		/**< Rendered image size	*/
-	QString			_text;			/**< Page text			*/
-	int			_pagesCount;		/**< Pages count		*/
-	char			*_imgData;		/**< Rendered image data	*/
+	/**
+	 * @brief Appends TOC entries to parent item
+	 * @param parent Parent TOC item.
+	 * @param exp S-expression with toc entries.
+	 * @param offset Offset in @a exp expression.
+	 * @since 1.5.2
+	 */
+	void addTocChildren (NSRTocEntry *parent, miniexp_t exp, int offset) const;
+
+	/**
+	 * @brief Converts page name into actual number
+	 * @param name Page name.
+	 * @return Page number (from 0) in case of success, -1 otherwise.
+	 * @since 1.5.2
+	 */
+	int pageFromName (const QString& name) const;
+
+	/**
+	 * @brief Gets information about internal page file
+	 * @param fileno Page file number, from 0.
+	 * @param[out] info Output page file information.
+	 * @return True in case of success, false otherwise.
+	 * @since 1.5.2
+	 */
+	bool getPageFileInfo (int fileno, ddjvu_fileinfo_t *info) const;
+
+	mutable QHash<QString, int>	_pageNamesCache;	/**< Cache with page names	*/
+	GP<DjVuFileCache>		_cache;			/**< File cache			*/
+	GP<DjVuDocument>		_doc;			/**< DjVu file handler		*/
+	QSize				_imgSize;		/**< Rendered image size	*/
+	QString				_text;			/**< Page text			*/
+	int				_pagesCount;		/**< Pages count		*/
+	char *				_imgData;		/**< Rendered image data	*/
 };
 
 #endif /* __NSRDJVUDOCUMENT_H__ */

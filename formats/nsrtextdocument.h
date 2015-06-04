@@ -47,6 +47,10 @@ public:
 		return true;
 	}
 
+	NSRTocEntry * getToc () const {
+		return NULL;
+	}
+
 	double getZoom () const {
 		return 100.0;
 	}

@@ -9,6 +9,7 @@
 
 #include "nsrcroppads.h"
 #include "nsrrenderinfo.h"
+#include "nsrtocentry.h"
 #include "nsrreadercore_global.h"
 
 #include <QObject>
@@ -123,6 +124,15 @@ public:
 	 * @since 1.5.2
 	 */
 	virtual bool hasDynamicPages () const = 0;
+
+	/**
+	 * @brief Gets file TOC if any
+	 * @return TOC in case of success, NULL otherwise.
+	 * @since 1.5.2
+	 *
+	 * Caller takes ownership of the returned object.
+	 */
+	virtual NSRTocEntry * getToc () const = 0;
 
 	/**
 	 * @brief Gets path to file

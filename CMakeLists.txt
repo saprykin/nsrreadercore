@@ -78,6 +78,7 @@ set (SOURCES
 	nsrrenderrequest.cpp
 	nsrrenderthread.cpp
 	nsrsession.cpp
+	nsrtocentry.cpp
 )
 
 set (FORMATS_SOURCES
@@ -115,7 +116,8 @@ set (HEADERS
 	nsrrenderinfo.h
 	nsrrenderrequest.h
 	nsrrenderthread.h
-	nsrsession.h	
+	nsrsession.h
+	nsrtocentry.h
 )
 
 set (FORMATS_HEADERS

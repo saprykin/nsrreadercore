@@ -4,6 +4,11 @@
 
 #include <djvu/DjVuImage.h>
 #include <djvu/DjVuText.h>
+#include <djvu/DjVuNavDir.h>
+#include <djvu/DjVmNav.h>
+#include <djvu/DjVmDir.h>
+#include <djvu/DjVmDir0.h>
+#include <djvu/DataPool.h>
 #include <djvu/GBitmap.h>
 #include <djvu/ByteStream.h>
 #include <djvu/IFFByteStream.h>
@@ -121,6 +126,26 @@ fmt_convert_pixmap (GPixmap *pm, char *buffer, int rowsize)
 
 	for (int r = h - 1; r >= 0; r--, buffer += rowsize)
 		memcpy (buffer, (*pm)[r], w * 3);
+}
+
+static miniexp_t
+outline_sub (const GP<DjVmNav>& nav, int& pos, int count)
+{
+	GP<DjVmNav::DjVuBookMark>	entry;
+	minivar_t			p, q, s;
+
+	while (count > 0 && pos < nav->getBookMarkCount ()) {
+		nav->getBookMark (entry, pos++);
+		q = outline_sub (nav, pos, entry->count);
+		s = miniexp_string ((const char *) (entry->url));
+		q = miniexp_cons (s, q);
+		s = miniexp_string ((const char *) (entry->displayname));
+		q = miniexp_cons (s, q);
+		p = miniexp_cons (q, p);
+		count--;
+	}
+
+	return miniexp_reverse (p);
 }
 
 /* OK, we are using color render mode and BGR24 pixel format */
@@ -363,6 +388,34 @@ NSRDjVuDocument::isDocumentStyleSupported (NSRAbstractDocument::NSRDocumentStyle
 		style == NSRAbstractDocument::NSR_DOCUMENT_STYLE_TEXT);
 }
 
+NSRTocEntry *
+NSRDjVuDocument::getToc () const
+{
+	if (_doc == NULL)
+		return NULL;
+
+	GP<DjVmNav> nav = _doc->get_djvm_nav ();
+
+	if (!nav)
+		return NULL;
+
+	int pos = 0;
+
+	minivar_t result = outline_sub (nav, pos, nav->getBookMarkCount ());
+	result = miniexp_cons (miniexp_symbol ("bookmarks"), result);
+
+	NSRTocEntry *toc = NULL;
+
+	if (miniexp_listp (result) && (miniexp_length (result) > 0) &&
+	    miniexp_symbolp (miniexp_nth (0, result)) &&
+	   (QString::fromUtf8 (miniexp_to_name (miniexp_nth (0, result))) == QLatin1String ("bookmarks"))) {
+		toc = new NSRTocEntry (QString (), -1);
+		addTocChildren (toc, result, 1);
+	}
+
+	return toc;
+}
+
 void
 NSRDjVuDocument::clearRenderedData ()
 {
@@ -373,10 +426,14 @@ NSRDjVuDocument::clearRenderedData ()
 	}
 }
 
-NSRTextEntityList NSRDjVuDocument::getPageText (int page, const QSize& size, const QString& detail)
+NSRTextEntityList
+NSRDjVuDocument::getPageText (int page, const QSize& size, const QString& detail)
 {
 	NSRTextEntityList	ret;
 	miniexp_t		ptext = miniexp_nil;
+
+	if (_doc == NULL)
+		return ret;
 
 	GP<DjVuFile> file = _doc->get_djvu_file (page - 1);
 
@@ -434,4 +491,198 @@ NSRTextEntityList NSRDjVuDocument::getPageText (int page, const QSize& size, con
 	}
 
 	return ret;
+}
+
+void
+NSRDjVuDocument::addTocChildren (NSRTocEntry *parent, miniexp_t exp, int offset) const
+{
+	if (!miniexp_listp (exp))
+		return;
+
+	int l = miniexp_length (exp);
+
+	for (int i = qMax (offset, 0); i < l; ++i) {
+		miniexp_t cur = miniexp_nth (i, exp);
+
+		if (miniexp_consp (cur) && (miniexp_length (cur) > 0) &&
+		    miniexp_stringp (miniexp_nth (0, cur)) && miniexp_stringp (miniexp_nth (1, cur))) {
+			QString title = QString::fromUtf8 (miniexp_to_str (miniexp_nth (0, cur)));
+			QString dest  = QString::fromUtf8 (miniexp_to_str (miniexp_nth (1, cur)));
+
+			NSRTocEntry *entry = new NSRTocEntry (title, -1);
+
+			if (!dest.isEmpty ()) {
+				if (dest.at (0) == QLatin1Char ('#')) {
+					dest.remove (0, 1);
+					bool isNumber = false;
+					dest.toInt (&isNumber);
+
+					if (isNumber) {
+						/* It might be an actual page number, but could also be a page label,
+						 * so resolve the number, and get the real page number */
+						int pageNo = pageFromName (dest);
+
+						if (pageNo != -1)
+							entry->setPage (pageNo + 1);
+						else
+							entry->setPage (dest.toInt ());
+					} else
+						entry->setPage (pageFromName (dest));
+
+					if (entry->getTitle().isEmpty ())
+						entry->setTitle (dest);
+				} else {
+					entry->setUri (dest);
+					entry->setExternal (true);
+
+					if (entry->getTitle().isEmpty ())
+						entry->setTitle (entry->getUri ());
+				}
+			}
+
+			if (entry->getTitle().isEmpty ())
+				delete entry;
+			else {
+				parent->appendChild (entry);
+
+				if (miniexp_length (cur) > 2)
+					addTocChildren (entry, cur, 2);
+			}
+		}
+	}
+}
+
+int
+NSRDjVuDocument::pageFromName (const QString& name) const
+{
+	if (_doc == NULL)
+		return -1;
+
+	int pageNo = _pageNamesCache.value (name, -1);
+
+	if (pageNo != -1)
+		return pageNo;
+
+	QByteArray utfName = name.toUtf8 ();
+
+	int docType = _doc->get_doc_type ();
+	int fileNum = -1;
+
+	if (docType == DjVuDocument::BUNDLED || docType == DjVuDocument::INDIRECT) {
+		GP<DjVmDir> dir = _doc->get_djvm_dir ();
+		fileNum = dir->get_files_num ();
+	} else if (docType == DjVuDocument::OLD_BUNDLED) {
+		GP<DjVmDir0> dir0 = _doc->get_djvm_dir0 ();
+		fileNum = dir0->get_files_num ();
+	} else
+		fileNum = _doc->get_pages_num ();
+
+	ddjvu_fileinfo_t info;
+
+	for (int i = 0; i < fileNum; ++i) {
+		if (!getPageFileInfo (i, &info))
+			continue;
+
+		if (info.type != 'P')
+			continue;
+
+		if ((utfName == info.id) || (utfName == info.name) || (utfName == info.title)) {
+			_pageNamesCache.insert (name, info.pageno);
+			return info.pageno;
+		}
+	}
+
+	return -1;
+}
+
+bool
+NSRDjVuDocument::getPageFileInfo (int fileno, ddjvu_fileinfo_t *info) const
+{
+	if (_doc == NULL || info == NULL)
+		return false;
+
+	ddjvu_fileinfo_t fileInfo;
+
+	memset (info, 0, sizeof (*info));
+	memset (&fileInfo, 0, sizeof (fileInfo));
+
+	int type = _doc->get_doc_type ();
+
+	if (type == DjVuDocument::BUNDLED || type == DjVuDocument::INDIRECT) {
+		GP<DjVmDir> dir = _doc->get_djvm_dir ();
+		GP<DjVmDir::File> file = dir->pos_to_file (fileno, &fileInfo.pageno);
+
+		if (!file)
+			return false;
+
+		fileInfo.type = 'I';
+
+		if (file->is_page ())
+			fileInfo.type = 'P';
+		else
+			fileInfo.pageno = -1;
+
+		if (file->is_thumbnails ())
+			fileInfo.type = 'T';
+
+		if (file->is_shared_anno ())
+			fileInfo.type = 'S';
+
+		fileInfo.size  = file->size;
+		fileInfo.id    = file->get_load_name ();
+		fileInfo.name  = file->get_save_name ();
+		fileInfo.title = file->get_title ();
+
+		memcpy (info, &fileInfo, sizeof (fileInfo));
+
+		return true;
+	} else if (type == DjVuDocument::OLD_BUNDLED) {
+		GP<DjVmDir0> dir0  = _doc->get_djvm_dir0 ();
+		GP<DjVuNavDir> nav = _doc->get_nav_dir ();
+
+		GP<DjVmDir0::FileRec> frec = dir0->get_file (fileno);
+
+		if (!frec)
+			return false;
+
+		fileInfo.size = frec->size;
+		fileInfo.id   = (const char *) frec->name;
+		fileInfo.name = fileInfo.title = fileInfo.id;
+
+		if (!nav)
+			return false;
+		else if (nav->name_to_page (frec->name) >= 0)
+			fileInfo.type = 'P';
+		else
+			fileInfo.type = 'I';
+
+		memcpy (info, &fileInfo, sizeof (fileInfo));
+
+		return true;
+	} else {
+		if (fileno < 0 || fileno >= _doc->get_pages_num ())
+			return false;
+
+		fileInfo.type   = 'P';
+		fileInfo.pageno = fileno;
+		fileInfo.size   = -1;
+
+		GP<DjVuNavDir> nav = _doc->get_nav_dir ();
+
+		fileInfo.id = (nav) ? (const char *) nav->page_to_name (fileno) : 0;
+		fileInfo.name = fileInfo.title = fileInfo.id;
+
+		GP<DjVuFile> file = _doc->get_djvu_file (fileno, true);
+		GP<DataPool> pool;
+
+		if (file)
+			pool = file->get_init_data_pool ();
+
+		if (pool)
+			fileInfo.size = pool->get_length ();
+
+		memcpy (info, &fileInfo, sizeof (fileInfo));
+
+		return true;
+	}
 }

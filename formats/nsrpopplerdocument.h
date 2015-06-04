@@ -16,6 +16,7 @@
 #include "poppler/poppler/SplashOutputDev.h"
 #include "poppler/poppler/TextOutputDev.h"
 #include "poppler/poppler/OutputDev.h"
+#include "poppler/poppler/UnicodeMap.h"
 #include "poppler/splash/SplashTypes.h"
 #include "poppler/splash/SplashBitmap.h"
 
@@ -55,6 +56,8 @@ public:
 		return false;
 	}
 
+	NSRTocEntry * getToc () const;
+
 	void setPassword (const QString &passwd);
 
 	inline void setEncoding (const QString& encoding) {
@@ -72,8 +75,26 @@ private:
 	 */
 	void createInternalDoc (QString passwd = QString ());
 
-	static QMutex	_mutex;			/**< Mutex for global config	*/
-	static int	_refcount;		/**< Reference count for config	*/
+	/**
+	 * @brief Appends TOC entries to parent item
+	 * @param parent Parent TOC item.
+	 * @param items TOC entries to append.
+	 * @since 1.5.2
+	 */
+	void addTocChildren (NSRTocEntry *parent, GooList *items) const;
+
+	/**
+	 * @brief Converts Poppler Unicode string to Qt's one
+	 * @param u Unicode string to convert.
+	 * @param len String length, in charcters.
+	 * @return Converted Qt string.
+	 * @since 1.5.2
+	 */
+	QString unicodeToQString (Unicode* u, int len) const;
+
+	static QMutex		_mutex;		/**< Mutex for global config	*/
+	static int		_refcount;	/**< Reference count for config	*/
+	static UnicodeMap *	_utf8Map;	/**< Unicode map		*/
 
 	QString		_text;			/**< Page text			*/
 	PDFDoc		*_doc;			/**< PDF file handler		*/
