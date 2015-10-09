@@ -12,10 +12,10 @@ NSRTinyTextEntity::NSRTinyTextEntity (const QString& text, const NSRNormalizedRe
 	switch (_length) {
 #if QT_POINTER_SIZE >= 8
 	case 4:
-		d.qc[3] = text.at(3).unicode ();
+        _d.qc[3] = text.at(3).unicode ();
 		/* Fall through */
 	case 3:
-		d.qc[2] = text.at(2).unicode ();
+        _d.qc[2] = text.at(2).unicode ();
 		/* Fall through */
 #endif
 	case 2:
