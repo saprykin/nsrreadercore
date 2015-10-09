@@ -2,6 +2,7 @@ cmake_minimum_required (VERSION 2.8.11)
 project (nsrreadercore C CXX)
 
 string (TOLOWER ${CMAKE_C_COMPILER_ID} COMPILER_ID)
+string (TOLOWER ${CMAKE_SYSTEM_NAME} SYSTEM_NAME)
 
 if (NOT CMAKE_BUILD_TYPE)
 	set (CMAKE_BUILD_TYPE "Debug")
@@ -45,6 +46,21 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 	add_definitions (${NSR_PLATFORM_DEFINES_DEBUG})
 else()
 	add_definitions (${NSR_PLATFORM_DEFINES_RELEASE})
+endif()
+
+# CMP0042, see http://www.cmake.org/Wiki/CMake_RPATH_handling
+if (SYSTEM_NAME STREQUAL darwin)
+	set (CMAKE_MACOSX_RPATH TRUE)
+	set (CMAKE_SKIP_BUILD_RPATH FALSE)
+	set (CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) 
+	set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+	set (CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+	list (FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+
+	if ("${isSystemDir}" STREQUAL "-1")
+		set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+	endif ("${isSystemDir}" STREQUAL "-1")
 endif()
 
 include_directories (BEFORE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_BINARY_DIR})
