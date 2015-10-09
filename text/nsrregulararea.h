@@ -178,9 +178,6 @@ NSRRegularArea<NormalizedShape, Shape>::~NSRRegularArea ()
 template <class NormalizedShape, class Shape>
 bool NSRRegularArea<NormalizedShape, Shape>::contains (double x, double y) const
 {
-	if (!this)
-		return false;
-
 	if (this->isEmpty ())
 		return false;
 
@@ -234,9 +231,6 @@ bool NSRRegularArea<NormalizedShape, Shape>::intersects (const NSRRegularArea<No
 template <class NormalizedShape, class Shape>
 bool NSRRegularArea<NormalizedShape, Shape>::intersects (const NormalizedShape& rect) const
 {
-	if (!this)
-		return false;
-
 	if (this->isEmpty ())
 		return false;
 
@@ -267,9 +261,6 @@ template <class NormalizedShape, class Shape>
 void NSRRegularArea<NormalizedShape, Shape>::appendShape (const NormalizedShape&	shape,
 							  NSRRegularAreaMergeSide	side)
 {
-	if (!this)
-		return;
-
 	int size = this->count ();
 
 	/* If the list is empty, adds the shape normally */
@@ -356,9 +347,6 @@ void NSRRegularArea<NormalizedShape, Shape>::simplify ()
 template <class NormalizedShape, class Shape>
 bool NSRRegularArea<NormalizedShape, Shape>::isNull () const
 {
-	if (!this)
-		return false;
-
 	if (this->isEmpty ())
 		return false;
 

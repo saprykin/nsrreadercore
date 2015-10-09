@@ -547,7 +547,7 @@ NSRPopplerDocument::unicodeToQString (Unicode *u, int len) const
 		return QString ();
 
 	/* Ignore the last character if it is 0x0 */
-	if ((u[len - 1] == 0))
+	if (u[len - 1] == 0)
 		--len;
 
 	GooString convertedStr;

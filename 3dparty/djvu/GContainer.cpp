@@ -740,7 +740,7 @@ GSetBase::rehash(int newbuckets)
 // delete [] table;
   gtable.resize(0);
   nbuckets = newbuckets;
-  typedef HNode *HNodePtr;
+//  typedef HNode *HNodePtr;
 // table = new HNodePtr[nbuckets];
   gtable.resize(nbuckets);
   gtable.clear();
