@@ -12,7 +12,7 @@ option (LIBJPEGTURBO_WITH_ARITH_ENC "Use arithmetic encoding support" true)
 option (LIBJPEGTURBO_WITH_ARITH_DEC "Use arithmetic decoding support" true)
 
 set (JPEG_LIB_VERSION "62")
-set (LIBJPEGTURBO_VERSION "1.3.1")
+set (LIBJPEGTURBO_VERSION "1.4.2")
 
 if (LIBJPEGTURBO_WITH_ARITH_ENC)
 	set (C_ARITH_CODING_SUPPORTED true)
@@ -21,6 +21,8 @@ endif()
 if (LIBJPEGTURBO_WITH_ARITH_DEC)
 	set (D_ARITH_CODING_SUPPORTED true)
 endif()
+
+set (BITS_IN_JSAMPLE 8)
 
 set (MEM_SRCDST_SUPPORTED		true)
 set (HAVE_PROTOTYPES			true)
@@ -160,13 +162,20 @@ if (LIBJPEGTURBO_WITH_SIMD)
 
 		set (WITH_SIMD ${SIMD_ARM})
 	elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "x86" OR
-		CMAKE_SYSTEM_PROCESSOR MATCHES "i.86")
+		CMAKE_SYSTEM_PROCESSOR MATCHES "i.86" OR
+		CMAKE_SYSTEM_PROCESSOR MATCHES "ia32")
 		if (SIZEOF_UNSIGNED_CHAR_P MATCHES 8)
 			set (SIMD_X86_64 true)
 		else()
 			set (SIMD_I386 true)
 		endif()
 
+		set (WITH_SIMD true)
+	elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64.*")
+		set (SIMD_AARCH64 true)
+		set (WITH_SIMD true)
+	elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "mips.*")
+		set (SIMD_MIPS true)
 		set (WITH_SIMD true)
 	endif()
 endif()
@@ -255,28 +264,29 @@ set (HEADERS
 	jsimd.h
 	jsimddct.h
 	jversion.h
+	jpeg_nbits_table.h
 )
 
 if (WITH_SIMD)
 	if (SIMD_X86_64)
 		set (SOURCES ${SOURCES} simd/jsimd_x86_64.c)
 
-		set (SOURCES ${SOURCES}
-			simd/jfsseflt-64.asm
-			simd/jccolss2-64.asm
-			simd/jdcolss2-64.asm
-			simd/jcgrass2-64.asm
-			simd/jcsamss2-64.asm
-			simd/jdsamss2-64.asm
-			simd/jdmerss2-64.asm
-			simd/jcqnts2i-64.asm
-			simd/jfss2fst-64.asm
-			simd/jfss2int-64.asm
-			simd/jiss2red-64.asm
-			simd/jiss2int-64.asm
-			simd/jiss2fst-64.asm
-			simd/jcqnts2f-64.asm
-			simd/jiss2flt-64.asm
+		set (SOURCES ${SOURCES}			
+			simd/jfdctflt-sse-64.asm
+			simd/jccolor-sse2-64.asm
+			simd/jcgray-sse2-64.asm
+			simd/jcsample-sse2-64.asm
+			simd/jdcolor-sse2-64.asm
+			simd/jdmerge-sse2-64.asm
+			simd/jdsample-sse2-64.asm
+			simd/jfdctfst-sse2-64.asm
+			simd/jfdctint-sse2-64.asm
+			simd/jidctflt-sse2-64.asm
+			simd/jidctfst-sse2-64.asm
+			simd/jidctint-sse2-64.asm
+			simd/jidctred-sse2-64.asm
+			simd/jquantf-sse2-64.asm
+			simd/jquanti-sse2-64.asm
 		)
 
 		message (STATUS "Building libjpeg-turbo with x86_64 SIMD acceleration")
@@ -285,38 +295,38 @@ if (WITH_SIMD)
 
 		set (SOURCES ${SOURCES}
 			simd/jsimdcpu.asm
-			simd/jccolmmx.asm
-			simd/jcgrammx.asm
-			simd/jdcolmmx.asm
-			simd/jcsammmx.asm
-			simd/jdsammmx.asm
-			simd/jdmermmx.asm
-			simd/jcqntmmx.asm
-			simd/jfmmxfst.asm
-			simd/jfmmxint.asm
-			simd/jimmxred.asm
-			simd/jimmxint.asm
-			simd/jimmxfst.asm
-			simd/jcqnt3dn.asm
-			simd/jf3dnflt.asm
-			simd/ji3dnflt.asm
-			simd/jcqntsse.asm
-			simd/jfsseflt.asm
-			simd/jisseflt.asm
-			simd/jccolss2.asm
-			simd/jcgrass2.asm
-			simd/jdcolss2.asm
-			simd/jcsamss2.asm
-			simd/jdsamss2.asm
-			simd/jdmerss2.asm
-			simd/jcqnts2i.asm
-			simd/jfss2fst.asm
-			simd/jfss2int.asm
-			simd/jiss2red.asm
-			simd/jiss2int.asm
-			simd/jiss2fst.asm
-			simd/jcqnts2f.asm
-			simd/jiss2flt.asm
+			simd/jfdctflt-3dn.asm
+			simd/jidctflt-3dn.asm
+			simd/jquant-3dn.asm
+			simd/jccolor-mmx.asm
+			simd/jcgray-mmx.asm
+			simd/jcsample-mmx.asm
+			simd/jdcolor-mmx.asm
+			simd/jdmerge-mmx.asm
+			simd/jdsample-mmx.asm
+			simd/jfdctfst-mmx.asm
+			simd/jfdctint-mmx.asm
+			simd/jidctfst-mmx.asm
+			simd/jidctint-mmx.asm
+			simd/jidctred-mmx.asm
+			simd/jquant-mmx.asm
+			simd/jfdctflt-sse.asm
+			simd/jidctflt-sse.asm
+			simd/jquant-sse.asm
+			simd/jccolor-sse2.asm
+			simd/jcgray-sse2.asm
+			simd/jcsample-sse2.asm
+			simd/jdcolor-sse2.asm
+			simd/jdmerge-sse2.asm
+			simd/jdsample-sse2.asm
+			simd/jfdctfst-sse2.asm
+			simd/jfdctint-sse2.asm
+			simd/jidctflt-sse2.asm
+			simd/jidctfst-sse2.asm
+			simd/jidctint-sse2.asm
+			simd/jidctred-sse2.asm
+			simd/jquantf-sse2.asm
+			simd/jquanti-sse2.asm
 		)
 
 		message (STATUS "Building libjpeg-turbo with i386 SIMD acceleration")
@@ -329,6 +339,24 @@ if (WITH_SIMD)
 		set_source_files_properties (simd/jsimd_arm_neon.S PROPERTIES LANGUAGE C)
 
 		message (STATUS "Building libjpeg-turbo with NEON SIMD acceleration")
+	elseif (SIMD_AARCH64)
+		set (SOURCES ${SOURCES}
+			simd/jsimd_arm64.c
+			simd/jsimd_arm64_neon.S
+		)
+
+		set_source_files_properties (simd/jsimd_arm64_neon.S PROPERTIES LANGUAGE C)
+
+		message (STATUS "Building libjpeg-turbo with NEON64 SIMD acceleration")
+	elseif (SIMD_MIPS)
+		set (SOURCES ${SOURCES}
+			simd/jsimd_mips.c
+			simd/jsimd_mips_dspr2.S
+		)
+
+		set_source_files_properties (simd/jsimd_mips_dspr2.S PROPERTIES LANGUAGE C)
+
+		message (STATUS "Building libjpeg-turbo with MIPS SIMD acceleration")
 	endif()
 
 	if (NOT SIMD_ARM)

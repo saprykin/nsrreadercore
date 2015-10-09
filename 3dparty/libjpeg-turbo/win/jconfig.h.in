@@ -6,6 +6,8 @@
 #cmakedefine C_ARITH_CODING_SUPPORTED 1
 #cmakedefine D_ARITH_CODING_SUPPORTED 1
 #cmakedefine MEM_SRCDST_SUPPORTED 1
+#cmakedefine BITS_IN_JSAMPLE  @BITS_IN_JSAMPLE@      /* use 8 or 12 */
+#cmakedefine SIZEOF_SIZE_T @SIZEOF_SIZE_T@
 
 #define HAVE_PROTOTYPES
 #define HAVE_UNSIGNED_CHAR

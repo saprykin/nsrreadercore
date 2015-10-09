@@ -52,6 +52,9 @@
 /* Define to 1 if you have custom `size_t' type. */
 #cmakedefine HAVE_CUSTOM_SIZE_T 1
 
+/* Define to size of 'size_t' type */
+#cmakedefine SIZEOF_SIZE_T @SIZEOF_SIZE_T@
+
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
 #ifndef __cplusplus
