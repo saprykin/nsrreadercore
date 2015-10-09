@@ -7,6 +7,8 @@
  * @brief Table of contents (TOC)
  */
 
+#include "nsrreadercore_global.h"
+
 #include <QString>
 #include <QList>
 
@@ -15,7 +17,7 @@
  * @brief TOC representation
  * @since 1.5.2
  */
-class NSRTocEntry
+class NSRREADERCORE_SHARED NSRTocEntry
 {
 public:
 	/**
