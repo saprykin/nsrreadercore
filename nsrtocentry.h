@@ -31,6 +31,15 @@ public:
 	~NSRTocEntry ();
 
 	/**
+	 * @brief Clones TOC entry
+	 * @return Cloned TOC entry.
+	 * @since 1.5.3
+	 *
+	 * Caller takes ownership of the returned object.
+	 */
+	NSRTocEntry * clone () const;
+
+	/**
 	 * @brief Gets list of available children TOC entries
 	 * @return Children TOC entries.
 	 * @since 1.5.2

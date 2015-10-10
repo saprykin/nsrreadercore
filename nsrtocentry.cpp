@@ -14,6 +14,20 @@ NSRTocEntry::~NSRTocEntry ()
 	_children.clear ();
 }
 
+NSRTocEntry *NSRTocEntry::clone () const
+{
+	NSRTocEntry *entry = new NSRTocEntry (_title, _page);
+
+	entry->_isExternal   = _isExternal;
+	entry->_externalFile = _externalFile;
+	entry->_uri          = _uri;
+
+	foreach (NSRTocEntry* child, _children)
+		entry->appendChild (child->clone ());
+
+	return entry;
+}
+
 QList<const NSRTocEntry *> NSRTocEntry::getChildren () const
 {
 	QList<const NSRTocEntry *> ret;
