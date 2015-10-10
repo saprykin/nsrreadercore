@@ -11,11 +11,11 @@
 // All changes made under the Poppler project to this file are licensed
 // under GPL version 2 or later
 //
-// Copyright (C) 2005-2014 Albert Astals Cid <aacid@kde.org>
+// Copyright (C) 2005-2015 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2005 Marco Pesenti Gritti <mpg@redhat.com>
-// Copyright (C) 2010-2014 Thomas Freitag <Thomas.Freitag@alfa.de>
+// Copyright (C) 2010-2015 Thomas Freitag <Thomas.Freitag@alfa.de>
 // Copyright (C) 2010 Christian Feuersänger <cfeuersaenger@googlemail.com>
-// Copyright (C) 2011-2013 William Bader <williambader@hotmail.com>
+// Copyright (C) 2011-2013, 2015 William Bader <williambader@hotmail.com>
 // Copyright (C) 2012 Markus Trippelsdorf <markus@trippelsdorf.de>
 // Copyright (C) 2012 Adrian Johnson <ajohnson@redneon.com>
 // Copyright (C) 2012 Matthias Kramm <kramm@quiss.org>
@@ -271,6 +271,7 @@ inline void Splash::pipeInit(SplashPipe *pipe, int x, int y,
   // source alpha
   pipe->aInput = aInput;
   pipe->usesShape = usesShape;
+  pipe->shape = 0;
 
   // knockout
   pipe->knockout = knockout;
@@ -604,7 +605,7 @@ void Splash::pipeRun(SplashPipe *pipe) {
     //----- blend function
 
     if (state->blendFunc) {
-#ifdef SPLASH_CMYK
+#if SPLASH_CMYK
       if (bitmap->mode == splashModeDeviceN8) {
         for (int k = 4; k < 4 + SPOT_NCOMPS; k++) {
           cBlend[k] = 0;
@@ -3207,6 +3208,8 @@ void Splash::arbitraryTransformMask(SplashImageMaskSource src, void *srcData,
 			         ((SplashCoord)y + 0.5 - section[i].yb0) *
 			           section[i].dxdyb,
 			       glyphMode);
+      if (unlikely(xa < 0))
+        xa = 0;
       // make sure narrow images cover at least one pixel
       if (xa == xb) {
 	++xb;
@@ -3658,7 +3661,7 @@ void Splash::blitMask(SplashBitmap *src, int xDest, int yDest,
   }
 }
 
-SplashError Splash::drawImage(SplashImageSource src, void *srcData,
+SplashError Splash::drawImage(SplashImageSource src, SplashICCTransform tf, void *srcData,
 			      SplashColorMode srcMode, GBool srcAlpha,
 			      int w, int h, SplashCoord *mat, GBool interpolate,
 			      GBool tilingPattern) {
@@ -3749,6 +3752,9 @@ SplashError Splash::drawImage(SplashImageSource src, void *srcData,
       if (scaledImg == NULL) {
         return splashErrBadArg;
       }
+      if  (tf != NULL) {
+	(*tf)(srcData, scaledImg);
+      }
       blitImage(scaledImg, srcAlpha, x0, y0, clipRes);
       delete scaledImg;
     }
@@ -3787,6 +3793,9 @@ SplashError Splash::drawImage(SplashImageSource src, void *srcData,
       if (scaledImg == NULL) {
         return splashErrBadArg;
       }
+      if  (tf != NULL) {
+	(*tf)(srcData, scaledImg);
+      }
       vertFlipImage(scaledImg, scaledWidth, scaledHeight, nComps);
       blitImage(scaledImg, srcAlpha, x0, y0, clipRes);
       delete scaledImg;
@@ -3794,14 +3803,14 @@ SplashError Splash::drawImage(SplashImageSource src, void *srcData,
 
   // all other cases
   } else {
-    return arbitraryTransformImage(src, srcData, srcMode, nComps, srcAlpha,
+    return arbitraryTransformImage(src, tf, srcData, srcMode, nComps, srcAlpha,
 			    w, h, mat, interpolate, tilingPattern);
   }
 
   return splashOk;
 }
 
-SplashError Splash::arbitraryTransformImage(SplashImageSource src, void *srcData,
+SplashError Splash::arbitraryTransformImage(SplashImageSource src, SplashICCTransform tf, void *srcData,
 				     SplashColorMode srcMode, int nComps,
 				     GBool srcAlpha,
 				     int srcWidth, int srcHeight,
@@ -3936,6 +3945,9 @@ SplashError Splash::arbitraryTransformImage(SplashImageSource src, void *srcData
     return splashErrBadArg;
   }
 
+  if  (tf != NULL) {
+    (*tf)(srcData, scaledImg);
+  }
   // construct the three sections
   i = 0;
   if (vy[1] < vy[i]) {
@@ -5214,6 +5226,10 @@ SplashError Splash::composite(SplashBitmap *src, int xSrc, int ySrc,
     return splashErrModeMismatch;
   }
 
+  if (unlikely(!bitmap->data)) {
+    return splashErrZeroImage;
+  }
+
   if(src->getSeparationList()->getLength() > bitmap->getSeparationList()->getLength()) {
     for (x = bitmap->getSeparationList()->getLength(); x < src->getSeparationList()->getLength(); x++)
       bitmap->getSeparationList()->append(((GfxSeparationColorSpace *)src->getSeparationList()->get(x))->copy());
@@ -5781,6 +5797,10 @@ SplashError Splash::blitTransparent(SplashBitmap *src, int xSrc, int ySrc,
 
   if (src->mode != bitmap->mode) {
     return splashErrModeMismatch;
+  }
+
+  if (unlikely(!bitmap->data)) {
+    return splashErrZeroImage;
   }
 
   switch (bitmap->mode) {

@@ -29,11 +29,6 @@
 #include "GlobalParams.h"
 #include "Object.h"
 #include "PDFDoc.h"
-#ifdef _WIN32
-#include "WinPDFCore.h"
-#else
-#include "XPDFCore.h"
-#endif
 #include "XpdfPluginAPI.h"
 
 //------------------------------------------------------------------------
@@ -60,30 +55,6 @@ XpdfObject _xpdfGetCatalog(XpdfDoc doc) {
   obj = allocObj();
   return (XpdfObject)((PDFDoc *)doc)->getXRef()->getCatalog(obj);
 }
-
-#ifdef _WIN32
-
-HWND _xpdfWin32GetWindow(XpdfDoc doc) {
-  WinPDFCore *core;
-
-  if (!(core = (WinPDFCore *)((PDFDoc *)doc)->getCore())) {
-    return NULL;
-  }
-  return core->getDrawFrame();
-}
-
-#else
-
-Widget _xpdfXGetWindow(XpdfDoc doc) {
-  XPDFCore *core;
-
-  if (!(core = (XPDFCore *)((PDFDoc *)doc)->getCore())) {
-    return NULL;
-  }
-  return core->getWidget();
-}
-
-#endif
 
 //------------------------------------------------------------------------
 // Object access functions.
@@ -243,11 +214,6 @@ XpdfPluginVecTable xpdfPluginVecTable = {
   xpdfPluginAPIVersion,
   &_xpdfGetInfoDict,
   &_xpdfGetCatalog,
-#ifdef _WIN32
-  &_xpdfWin32GetWindow,
-#else
-  &_xpdfXGetWindow,
-#endif
   &_xpdfObjIsBool,
   &_xpdfObjIsInt,
   &_xpdfObjIsReal,

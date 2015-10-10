@@ -15,13 +15,14 @@
 //
 // Copyright (C) 2006 Raj Kumar <rkumar@archive.org>
 // Copyright (C) 2006 Paul Walmsley <paul@booyaka.com>
-// Copyright (C) 2006-2010, 2012, 2014 Albert Astals Cid <aacid@kde.org>
+// Copyright (C) 2006-2010, 2012, 2014, 2015 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2009 David Benjamin <davidben@mit.edu>
 // Copyright (C) 2011 Edward Jiang <ejiang@google.com>
 // Copyright (C) 2012 William Bader <williambader@hotmail.com>
 // Copyright (C) 2012 Thomas Freitag <Thomas.Freitag@alfa.de>
 // Copyright (C) 2013 Adrian Johnson <ajohnson@redneon.com>
 // Copyright (C) 2013, 2014 Fabio D'Urso <fabiodurso@hotmail.it>
+// Copyright (C) 2015 Suzuki Toshiya <mpsuzuki@hiroshima-u.ac.jp>
 //
 // To see a description of the changes please see the Changelog file that
 // came with your tarball or type make ChangeLog if you are building from git
@@ -589,7 +590,7 @@ int JBIG2MMRDecoder::getBlackCode() {
 	code = buf >> (bufLen - 12);
       }
       if (unlikely((code & 0xff) < 64)) {
-	break;
+        break;
       }
       p = &blackTab2[(code & 0xff) - 64];
     } else {
@@ -685,7 +686,7 @@ public:
   int getLineSize() { return line; }
   int getPixel(int x, int y)
     { return (x < 0 || x >= w || y < 0 || y >= h) ? 0 :
-	     (data[y * line + (x >> 3)] >> (7 - (x & 7))) & 1; }
+             (data[y * line + (x >> 3)] >> (7 - (x & 7))) & 1; }
   void setPixel(int x, int y)
     { data[y * line + (x >> 3)] |= 1 << (7 - (x & 7)); }
   void clearPixel(int x, int y)
@@ -764,9 +765,9 @@ JBIG2Bitmap *JBIG2Bitmap::getSlice(Guint x, Guint y, Guint wA, Guint hA) {
     slice->clearToZero();
     for (yy = 0; yy < hA; ++yy) {
       for (xx = 0; xx < wA; ++xx) {
-	if (getPixel(x + xx, y + yy)) {
+        if (getPixel(x + xx, y + yy)) {
 	  slice->setPixel(xx, yy);
-	}
+        }
       }
     }
   } else {
@@ -1168,7 +1169,7 @@ JBIG2CodeTable::~JBIG2CodeTable() {
 // JBIG2Stream
 //------------------------------------------------------------------------
 
-JBIG2Stream::JBIG2Stream(Stream *strA, Object *globalsStreamA):
+JBIG2Stream::JBIG2Stream(Stream *strA, Object *globalsStreamA, Object *globalsStreamRefA):
   FilterStream(strA)
 {
   pageBitmap = NULL;
@@ -1193,7 +1194,12 @@ JBIG2Stream::JBIG2Stream(Stream *strA, Object *globalsStreamA):
   huffDecoder = new JBIG2HuffmanDecoder();
   mmrDecoder = new JBIG2MMRDecoder();
 
-  globalsStreamA->copy(&globalsStream);
+  if (globalsStreamA->isStream()) {
+    globalsStreamA->copy(&globalsStream);
+    if (globalsStreamRefA->isRef())
+      globalsStreamRef = globalsStreamRefA->getRef();
+  }
+
   segments = globalSegments = NULL;
   curStr = NULL;
   dataPtr = dataEnd = NULL;
@@ -1392,7 +1398,7 @@ void JBIG2Stream::readSegments() {
       goto eofError2;
     }
 
-    // keep track of the start of the segment data
+    // keep track of the start of the segment data 
     segDataPos = curStr->getPos();
 
     // check for missing page information segment
@@ -1479,7 +1485,7 @@ void JBIG2Stream::readSegments() {
       break;
     }
 
-    // Make sure the segment handler read all of the bytes in the
+    // Make sure the segment handler read all of the bytes in the 
     // segment data, unless this segment is marked as having an
     // unknown length (section 7.2.7 of the JBIG2 Final Committee Draft)
 
@@ -1490,34 +1496,34 @@ void JBIG2Stream::readSegments() {
 
 	// If we didn't read all of the bytes in the segment data,
 	// indicate an error, and throw away the rest of the data.
-
+	
 	// v.3.1.01.13 of the LuraTech PDF Compressor Server will
 	// sometimes generate an extraneous NULL byte at the end of
 	// arithmetic-coded symbol dictionary segments when numNewSyms
 	// == 0.  Segments like this often occur for blank pages.
-
+	
 	error(errSyntaxError, curStr->getPos(), "{0:lld} extraneous byte{1:s} after segment",
 	      segExtraBytes, (segExtraBytes > 1) ? "s" : "");
-
+	
 	// Burn through the remaining bytes -- inefficient, but
 	// hopefully we're not doing this much
-
+	
 	int trash;
 	for (Goffset i = segExtraBytes; i > 0; i--) {
 	  readByte(&trash);
 	}
-
+	
       } else if (segExtraBytes < 0) {
-
-	// If we read more bytes than we should have, according to the
+	
+	// If we read more bytes than we should have, according to the 
 	// segment length field, note an error.
-
+	
 	error(errSyntaxError, curStr->getPos(), "Previous segment handler read too many bytes");
-
+	
       }
 
     }
-
+    
     gfree(refSegs);
   }
 
@@ -1626,7 +1632,7 @@ GBool JBIG2Stream::readSymbolDictSeg(Guint segNum, Guint length,
 	}
 	numInputSyms += j;
       } else if (seg->getType() == jbig2SegCodeTable) {
-	codeTables->append(seg);
+        codeTables->append(seg);
       }
     } else {
       delete codeTables;
@@ -2269,7 +2275,7 @@ void JBIG2Stream::readTextRegionSeg(Guint segNum, GBool imm,
     // combine the region bitmap into the page bitmap
     if (imm) {
       if (pageH == 0xffffffff && y + h > curPageH) {
-	pageBitmap->expand(y + h, pageDefPixel);
+        pageBitmap->expand(y + h, pageDefPixel);
       }
       pageBitmap->combine(bitmap, x, y, extCombOp);
       delete bitmap;
@@ -2433,7 +2439,7 @@ JBIG2Bitmap *JBIG2Stream::readTextRegion(GBool huff, GBool refine,
 	    decodeSuccess = decodeSuccess && arithDecoder->decodeInt(&rdx, iardxStats);
 	    decodeSuccess = decodeSuccess && arithDecoder->decodeInt(&rdy, iardyStats);
 	  }
-
+	  
 	  if (decodeSuccess && syms[symID])
 	  {
 	    refDX = ((rdw >= 0) ? rdw : rdw - 1) / 2 + rdx;
@@ -2468,7 +2474,7 @@ JBIG2Bitmap *JBIG2Stream::readTextRegion(GBool huff, GBool refine,
 	    if (unlikely(s > 2 * bitmap->getHeight())) {
 	      error(errSyntaxError, curStr->getPos(), "Invalid JBIG2 combine");
 	      if (ri) {
-		delete symbolBitmap;
+	        delete symbolBitmap;
 	      }
 	      delete bitmap;
 	      return NULL;
@@ -2695,8 +2701,13 @@ void JBIG2Stream::readHalftoneRegionSeg(Guint segNum, GBool imm,
       i >>= 1;
     }
   }
-  patW = patternDict->getBitmap(0)->getWidth();
-  patH = patternDict->getBitmap(0)->getHeight();
+  patternBitmap = patternDict->getBitmap(0);
+  if (unlikely(patternBitmap == NULL)) {
+    error(errSyntaxError, curStr->getPos(), "Bad pattern bitmap");
+    return;
+  }
+  patW = patternBitmap->getWidth();
+  patH = patternBitmap->getHeight();
 
   // set up the arithmetic decoder
   if (!mmr) {
@@ -2981,150 +2992,150 @@ JBIG2Bitmap *JBIG2Stream::readGenericBitmap(GBool mmr, int w, int h,
 	code1 = mmrDecoder->get2DCode();
 	switch (code1) {
 	case twoDimPass:
-	  if (unlikely(b1i + 1 >= w + 2)) {
-	    break;
-	  }
-	  mmrAddPixels(refLine[b1i + 1], blackPixels, codingLine, &a0i, w);
-	  if (refLine[b1i + 1] < w) {
-	    b1i += 2;
-	  }
-	  break;
+          if (unlikely(b1i + 1 >= w + 2)) {
+            break;
+          }
+          mmrAddPixels(refLine[b1i + 1], blackPixels, codingLine, &a0i, w);
+          if (refLine[b1i + 1] < w) {
+            b1i += 2;
+          }
+          break;
 	case twoDimHoriz:
-	  code1 = code2 = 0;
-	  if (blackPixels) {
-	    do {
-	      code1 += code3 = mmrDecoder->getBlackCode();
-	    } while (code3 >= 64);
-	    do {
-	      code2 += code3 = mmrDecoder->getWhiteCode();
-	    } while (code3 >= 64);
-	  } else {
-	    do {
-	      code1 += code3 = mmrDecoder->getWhiteCode();
-	    } while (code3 >= 64);
-	    do {
-	      code2 += code3 = mmrDecoder->getBlackCode();
-	    } while (code3 >= 64);
-	  }
-	  mmrAddPixels(codingLine[a0i] + code1, blackPixels,
+          code1 = code2 = 0;
+          if (blackPixels) {
+            do {
+              code1 += code3 = mmrDecoder->getBlackCode();
+            } while (code3 >= 64);
+            do {
+              code2 += code3 = mmrDecoder->getWhiteCode();
+            } while (code3 >= 64);
+          } else {
+            do {
+              code1 += code3 = mmrDecoder->getWhiteCode();
+            } while (code3 >= 64);
+            do {
+              code2 += code3 = mmrDecoder->getBlackCode();
+            } while (code3 >= 64);
+          }
+          mmrAddPixels(codingLine[a0i] + code1, blackPixels,
 		       codingLine, &a0i, w);
-	  if (codingLine[a0i] < w) {
-	    mmrAddPixels(codingLine[a0i] + code2, blackPixels ^ 1,
+          if (codingLine[a0i] < w) {
+            mmrAddPixels(codingLine[a0i] + code2, blackPixels ^ 1,
 			 codingLine, &a0i, w);
-	  }
-	  while (likely(b1i < w + 2) && refLine[b1i] <= codingLine[a0i] && refLine[b1i] < w) {
-	    b1i += 2;
-	  }
-	  break;
+          }
+          while (likely(b1i < w + 2) && refLine[b1i] <= codingLine[a0i] && refLine[b1i] < w) {
+            b1i += 2;
+          }
+          break;
 	case twoDimVertR3:
-	  if (unlikely(b1i >= w + 2)) {
-	    break;
-	  }
-	  mmrAddPixels(refLine[b1i] + 3, blackPixels, codingLine, &a0i, w);
-	  blackPixels ^= 1;
-	  if (codingLine[a0i] < w) {
-	    ++b1i;
-	    while (likely(b1i < w + 2) && refLine[b1i] <= codingLine[a0i] && refLine[b1i] < w) {
-	      b1i += 2;
-	    }
-	  }
-	  break;
+          if (unlikely(b1i >= w + 2)) {
+            break;
+          }
+          mmrAddPixels(refLine[b1i] + 3, blackPixels, codingLine, &a0i, w);
+          blackPixels ^= 1;
+          if (codingLine[a0i] < w) {
+            ++b1i;
+            while (likely(b1i < w + 2) && refLine[b1i] <= codingLine[a0i] && refLine[b1i] < w) {
+              b1i += 2;
+            }
+          }
+          break;
 	case twoDimVertR2:
-	  if (unlikely(b1i >= w + 2)) {
-	    break;
-	  }
-	  mmrAddPixels(refLine[b1i] + 2, blackPixels, codingLine, &a0i, w);
-	  blackPixels ^= 1;
-	  if (codingLine[a0i] < w) {
-	    ++b1i;
-	    while (likely(b1i < w + 2) && refLine[b1i] <= codingLine[a0i] && refLine[b1i] < w) {
-	      b1i += 2;
-	    }
-	  }
-	  break;
+          if (unlikely(b1i >= w + 2)) {
+            break;
+          }
+          mmrAddPixels(refLine[b1i] + 2, blackPixels, codingLine, &a0i, w);
+          blackPixels ^= 1;
+          if (codingLine[a0i] < w) {
+            ++b1i;
+            while (likely(b1i < w + 2) && refLine[b1i] <= codingLine[a0i] && refLine[b1i] < w) {
+              b1i += 2;
+            }
+          }
+          break;
 	case twoDimVertR1:
-	  if (unlikely(b1i >= w + 2)) {
-	    break;
-	  }
-	  mmrAddPixels(refLine[b1i] + 1, blackPixels, codingLine, &a0i, w);
-	  blackPixels ^= 1;
-	  if (codingLine[a0i] < w) {
-	    ++b1i;
-	    while (likely(b1i < w + 2) && refLine[b1i] <= codingLine[a0i] && refLine[b1i] < w) {
-	      b1i += 2;
-	    }
-	  }
-	  break;
+          if (unlikely(b1i >= w + 2)) {
+            break;
+          }
+          mmrAddPixels(refLine[b1i] + 1, blackPixels, codingLine, &a0i, w);
+          blackPixels ^= 1;
+          if (codingLine[a0i] < w) {
+            ++b1i;
+            while (likely(b1i < w + 2) && refLine[b1i] <= codingLine[a0i] && refLine[b1i] < w) {
+              b1i += 2;
+            }
+          }
+          break;
 	case twoDimVert0:
-	  if (unlikely(b1i >= w + 2)) {
-	    break;
-	  }
-	  mmrAddPixels(refLine[b1i], blackPixels, codingLine, &a0i, w);
-	  blackPixels ^= 1;
-	  if (codingLine[a0i] < w) {
-	    ++b1i;
-	    while (likely(b1i < w + 2) && refLine[b1i] <= codingLine[a0i] && refLine[b1i] < w) {
-	      b1i += 2;
-	    }
-	  }
-	  break;
+          if (unlikely(b1i >= w + 2)) {
+            break;
+          }
+          mmrAddPixels(refLine[b1i], blackPixels, codingLine, &a0i, w);
+          blackPixels ^= 1;
+          if (codingLine[a0i] < w) {
+            ++b1i;
+            while (likely(b1i < w + 2) && refLine[b1i] <= codingLine[a0i] && refLine[b1i] < w) {
+              b1i += 2;
+            }
+          }
+          break;
 	case twoDimVertL3:
-	  if (unlikely(b1i >= w + 2)) {
-	    break;
-	  }
-	  mmrAddPixelsNeg(refLine[b1i] - 3, blackPixels, codingLine, &a0i, w);
-	  blackPixels ^= 1;
-	  if (codingLine[a0i] < w) {
-	    if (b1i > 0) {
-	      --b1i;
-	    } else {
-	      ++b1i;
-	    }
-	    while (likely(b1i < w + 2) && refLine[b1i] <= codingLine[a0i] && refLine[b1i] < w) {
-	      b1i += 2;
-	    }
-	  }
-	  break;
+          if (unlikely(b1i >= w + 2)) {
+            break;
+          }
+          mmrAddPixelsNeg(refLine[b1i] - 3, blackPixels, codingLine, &a0i, w);
+          blackPixels ^= 1;
+          if (codingLine[a0i] < w) {
+            if (b1i > 0) {
+              --b1i;
+            } else {
+              ++b1i;
+            }
+            while (likely(b1i < w + 2) && refLine[b1i] <= codingLine[a0i] && refLine[b1i] < w) {
+              b1i += 2;
+            }
+          }
+          break;
 	case twoDimVertL2:
-	  if (unlikely(b1i >= w + 2)) {
-	    break;
-	  }
-	  mmrAddPixelsNeg(refLine[b1i] - 2, blackPixels, codingLine, &a0i, w);
-	  blackPixels ^= 1;
-	  if (codingLine[a0i] < w) {
-	    if (b1i > 0) {
-	      --b1i;
-	    } else {
-	      ++b1i;
-	    }
-	    while (likely(b1i < w + 2) && refLine[b1i] <= codingLine[a0i] && refLine[b1i] < w) {
-	      b1i += 2;
-	    }
-	  }
-	  break;
+          if (unlikely(b1i >= w + 2)) {
+            break;
+          }
+          mmrAddPixelsNeg(refLine[b1i] - 2, blackPixels, codingLine, &a0i, w);
+          blackPixels ^= 1;
+          if (codingLine[a0i] < w) {
+            if (b1i > 0) {
+              --b1i;
+            } else {
+              ++b1i;
+            }
+            while (likely(b1i < w + 2) && refLine[b1i] <= codingLine[a0i] && refLine[b1i] < w) {
+              b1i += 2;
+            }
+          }
+          break;
 	case twoDimVertL1:
-	  if (unlikely(b1i >= w + 2)) {
-	    break;
-	  }
-	  mmrAddPixelsNeg(refLine[b1i] - 1, blackPixels, codingLine, &a0i, w);
-	  blackPixels ^= 1;
-	  if (codingLine[a0i] < w) {
-	    if (b1i > 0) {
-	      --b1i;
-	    } else {
-	      ++b1i;
-	    }
-	    while (likely(b1i < w + 2) && refLine[b1i] <= codingLine[a0i] && refLine[b1i] < w) {
-	      b1i += 2;
-	    }
-	  }
-	  break;
+          if (unlikely(b1i >= w + 2)) {
+            break;
+          }
+          mmrAddPixelsNeg(refLine[b1i] - 1, blackPixels, codingLine, &a0i, w);
+          blackPixels ^= 1;
+          if (codingLine[a0i] < w) {
+            if (b1i > 0) {
+              --b1i;
+            } else {
+              ++b1i;
+            }
+            while (likely(b1i < w + 2) && refLine[b1i] <= codingLine[a0i] && refLine[b1i] < w) {
+              b1i += 2;
+            }
+          }
+          break;
 	case EOF:
-	  mmrAddPixels(w, 0, codingLine, &a0i, w);
-	  break;
+          mmrAddPixels(w, 0, codingLine, &a0i, w);
+          break;
 	default:
 	  error(errSyntaxError, curStr->getPos(), "Illegal code in JBIG2 MMR bitmap data");
-	  mmrAddPixels(w, 0, codingLine, &a0i, w);
+          mmrAddPixels(w, 0, codingLine, &a0i, w);
 	  break;
 	}
       }
@@ -4006,7 +4017,7 @@ void JBIG2Stream::readPageInfoSeg(Guint length) {
     pageBitmap = NULL;
     return;
   }
-
+  
   // default pixel value
   if (pageDefPixel) {
     pageBitmap->clearToOne();
@@ -4058,14 +4069,14 @@ void JBIG2Stream::readCodeTableSeg(Guint segNum, Guint length) {
   huffDecoder->reset();
   huffTabSize = 8;
   huffTab = (JBIG2HuffmanTable *)
-		gmallocn(huffTabSize, sizeof(JBIG2HuffmanTable));
+                gmallocn(huffTabSize, sizeof(JBIG2HuffmanTable));
   i = 0;
   val = lowVal;
   while (val < highVal) {
     if (i == huffTabSize) {
       huffTabSize *= 2;
       huffTab = (JBIG2HuffmanTable *)
-		    greallocn(huffTab, huffTabSize, sizeof(JBIG2HuffmanTable));
+	            greallocn(huffTab, huffTabSize, sizeof(JBIG2HuffmanTable));
     }
     huffTab[i].val = val;
     huffTab[i].prefixLen = huffDecoder->readBits(prefixBits);
@@ -4076,7 +4087,7 @@ void JBIG2Stream::readCodeTableSeg(Guint segNum, Guint length) {
   if (i + oob + 3 > huffTabSize) {
     huffTabSize = i + oob + 3;
     huffTab = (JBIG2HuffmanTable *)
-		  greallocn(huffTab, huffTabSize, sizeof(JBIG2HuffmanTable));
+                  greallocn(huffTab, huffTabSize, sizeof(JBIG2HuffmanTable));
   }
   huffTab[i].val = lowVal - 1;
   huffTab[i].prefixLen = huffDecoder->readBits(prefixBits);

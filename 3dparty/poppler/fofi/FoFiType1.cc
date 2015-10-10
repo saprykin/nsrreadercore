@@ -15,7 +15,7 @@
 //
 // Copyright (C) 2005, 2008, 2010 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2005 Kristian Høgsberg <krh@redhat.com>
-// Copyright (C) 2010 Jakub Wilk <ubanus@users.sf.net>
+// Copyright (C) 2010 Jakub Wilk <jwilk@jwilk.net>
 // Copyright (C) 2014 Carlos Garcia Campos <carlosgc@gnome.org>
 //
 // To see a description of the changes please see the Changelog file that
@@ -76,7 +76,7 @@ FoFiType1::~FoFiType1() {
   if (name) {
     gfree(name);
   }
-  if (encoding && encoding != (char **) fofiType1StandardEncoding) {
+  if (encoding && (const char **) encoding != fofiType1StandardEncoding) {
     for (i = 0; i < 256; ++i) {
       gfree(encoding[i]);
     }

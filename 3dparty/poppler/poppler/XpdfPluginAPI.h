@@ -227,24 +227,6 @@ XpdfObject (*_xpdfGetInfoDict)(XpdfDoc doc);
  */
 XpdfObject (*_xpdfGetCatalog)(XpdfDoc doc);
 
-#ifdef _WIN32
-
-/*
- * Get the handle for the viewer window associated with the specified
- * document.  [Win32 only]
- */
-HWND (*_xpdfWin32GetWindow)(XpdfDoc doc);
-
-#else
-
-/*
- * Get the Motif widget for the viewer window associated with the
- * specified document.  [X only]
- */
-Widget (*_xpdfXGetWindow)(XpdfDoc doc);
-
-#endif
-
 /*------------------------------------------------------------------------
  * Object access functions
  *------------------------------------------------------------------------*/

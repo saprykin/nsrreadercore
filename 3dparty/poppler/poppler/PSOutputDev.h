@@ -15,12 +15,12 @@
 //
 // Copyright (C) 2005 Martin Kretzschmar <martink@gnome.org>
 // Copyright (C) 2005 Kristian Høgsberg <krh@redhat.com>
-// Copyright (C) 2006-2008, 2012, 2013 Albert Astals Cid <aacid@kde.org>
+// Copyright (C) 2006-2008, 2012, 2013, 2015 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2007 Brad Hards <bradh@kde.org>
 // Copyright (C) 2009-2013 Thomas Freitag <Thomas.Freitag@alfa.de>
 // Copyright (C) 2009 Till Kamppeter <till.kamppeter@gmail.com>
 // Copyright (C) 2009 Carlos Garcia Campos <carlosgc@gnome.org>
-// Copyright (C) 2009, 2011 William Bader <williambader@hotmail.com>
+// Copyright (C) 2009, 2011, 2015 William Bader <williambader@hotmail.com>
 // Copyright (C) 2010 Hib Eris <hib@hiberis.nl>
 // Copyright (C) 2011, 2014 Adrian Johnson <ajohnson@redneon.com>
 // Copyright (C) 2012 Fabio D'Urso <fabiodurso@hotmail.it>
@@ -45,6 +45,7 @@
 #include "OutputDev.h"
 #include <set>
 #include <map>
+#include <vector>
 
 class GHooash;
 class PDFDoc;
@@ -93,9 +94,10 @@ class PSOutputDev: public OutputDev {
 public:
 
   // Open a PostScript output file, and write the prolog.
+  // pages has to be sorted in increasing order
   PSOutputDev(const char *fileName, PDFDoc *docA,
-	      char *psTitle,
-	      int firstPage, int lastPage, PSOutMode modeA,
+	      char *psTitleA,
+	      const std::vector<int> &pages, PSOutMode modeA,
 	      int paperWidthA = -1, int paperHeightA = -1,
               GBool noCrop = gFalse,
 	      GBool duplexA = gTrue,
@@ -107,10 +109,11 @@ public:
 	      void *customCodeCbkDataA = NULL);
 
   // Open a PSOutputDev that will write to a generic stream.
+  // pages has to be sorted in increasing order
   PSOutputDev(PSOutputFunc outputFuncA, void *outputStreamA,
-	      char *psTitle,
+	      char *psTitleA,
 	      PDFDoc *docA,
-	      int firstPage, int lastPage, PSOutMode modeA,
+	      const std::vector<int> &pages, PSOutMode modeA,
 	      int paperWidthA = -1, int paperHeightA = -1,
               GBool noCrop = gFalse,
 	      GBool duplexA = gTrue,
@@ -149,7 +152,7 @@ public:
 
   // Does this device use drawForm()?  If this returns false,
   // form-type XObjects will be interpreted (i.e., unrolled).
-  virtual GBool useDrawForm() { return preload; }
+  virtual GBool useDrawForm() { return preloadImagesForms; }
 
   // Does this device use beginType3Char/endType3Char?  Otherwise,
   // text in Type 3 fonts will be drawn with drawChar/drawString.
@@ -160,7 +163,7 @@ public:
   //----- header/trailer (used only if manualCtrl is true)
 
   // Write the document-level header.
-  void writeHeader(int firstPage, int lastPage,
+  void writeHeader(const std::vector<int> &pages,
 		   PDFRectangle *mediaBox, PDFRectangle *cropBox,
 		   int pageRotate, char *pstitle);
 
@@ -306,14 +309,37 @@ public:
     { overlayCbk = cbk; overlayCbkData = data; }
   void setDisplayText(GBool display) { displayText = display; }
 
+  void setRasterAntialias(GBool a) { rasterAntialias = a; }
+  void setRasterResolution(double r) { rasterResolution = r; }
+  void setRasterMono(GBool b) { rasterMono = b; }
+  void setUncompressPreloadedImages(GBool b) { uncompressPreloadedImages = b; }
+
+  GBool getEmbedType1() const { return embedType1; }
+  GBool getEmbedTrueType() const { return embedTrueType; }
+  GBool getEmbedCIDPostScript() const { return embedCIDPostScript; }
+  GBool getEmbedCIDTrueType() const { return embedCIDTrueType; }
+  GBool getFontPassthrough() const { return fontPassthrough; }
+  GBool getOptimizeColorSpace() const { return optimizeColorSpace; }
+  void setEmbedType1(GBool b) { embedType1 = b; }
+  void setEmbedTrueType(GBool b) { embedTrueType = b; }
+  void setEmbedCIDPostScript(GBool b) { embedCIDPostScript = b; }
+  void setEmbedCIDTrueType(GBool b) { embedCIDTrueType = b; }
+  void setFontPassthrough(GBool b) { fontPassthrough = b; }
+  void setOptimizeColorSpace(GBool b) { optimizeColorSpace = b; }
+  void setPreloadImagesForms(GBool b) { preloadImagesForms = b; }
+  void setGenerateOPI(GBool b) { generateOPI = b; }
+  void setUseASCIIHex(GBool b) { useASCIIHex = b; }
+  void setUseBinary(GBool b) { useBinary = b; }
+
 private:
 
   void init(PSOutputFunc outputFuncA, void *outputStreamA,
-	    PSFileType fileTypeA, char *pstitle, PDFDoc *doc,
-	    int firstPage, int lastPage, PSOutMode modeA,
+	    PSFileType fileTypeA, char *psTitleA, PDFDoc *doc,
+	    const std::vector<int> &pages, PSOutMode modeA,
 	    int imgLLXA, int imgLLYA, int imgURXA, int imgURYA,
 	    GBool manualCtrlA, int paperWidthA, int paperHeightA,
             GBool noCropA, GBool duplexA);
+  void postInit();
   void setupResources(Dict *resDict);
   void setupFonts(Dict *resDict);
   void setupFont(GfxFont *font, Dict *parentResDict);
@@ -386,7 +412,7 @@ private:
   GooString *filterPSName(GooString *name);
 
   // Write the document-level setup.
-  void writeDocSetup(PDFDoc *doc, Catalog *catalog, int firstPage, int lastPage, GBool duplexA);
+  void writeDocSetup(PDFDoc *doc, Catalog *catalog, const std::vector<int> &pages, GBool duplexA);
 
   void writePSChar(char c);
   void writePS(const char *s);
@@ -408,9 +434,11 @@ private:
                                 // (only psModePSOrigPageSizes output mode)
   int imgLLX, imgLLY,		// imageable area, in pts
       imgURX, imgURY;
-  GBool preload;		// load all images into memory, and
-				//   predefine forms
   GBool noCrop;
+  GBool duplex;
+  std::vector<int> pages;
+  char *psTitle;
+  GBool postInitDone;		// true if postInit() was called
 
   PSOutputFunc outputFunc;
   void *outputStream;
@@ -486,6 +514,24 @@ private:
   GBool t3NeedsRestore;		// set if a 'q' operator was issued
   GBool forceRasterize;		// forces the page to be rasterized into a image before printing
   GBool displayText;		// displayText
+  GBool rasterAntialias;	// antialias on rasterize
+  GBool uncompressPreloadedImages;
+  double rasterResolution;	// PostScript rasterization resolution (dpi)
+  GBool rasterMono;		// true to do PostScript rasterization
+				//   in monochrome (gray); false to do it
+				//   in color (RGB/CMYK)
+  GBool embedType1;		// embed Type 1 fonts?
+  GBool embedTrueType;		// embed TrueType fonts?
+  GBool embedCIDPostScript;	// embed CID PostScript fonts?
+  GBool embedCIDTrueType;	// embed CID TrueType fonts?
+  GBool fontPassthrough;	// pass all fonts through as-is?
+  GBool optimizeColorSpace;	// false to keep gray RGB images in their original color space
+				// true to optimize gray images to DeviceGray color space
+  GBool preloadImagesForms;	// preload PostScript images and forms into
+				//   memory
+  GBool generateOPI;		// generate PostScript OPI comments?
+  GBool useASCIIHex;		// use ASCIIHex instead of ASCII85?
+  GBool useBinary;		// use binary instead of hex
 
 #if OPI_SUPPORT
   int opi13Nest;		// nesting level of OPI 1.3 objects

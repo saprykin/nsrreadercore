@@ -11,16 +11,17 @@
 // All changes made under the Poppler project to this file are licensed
 // under GPL version 2 or later
 //
-// Copyright (C) 2006, 2009, 2010, 2012 Albert Astals Cid <aacid@kde.org>
+// Copyright (C) 2006, 2009, 2010, 2012, 2015 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2007 Ilmari Heikkinen <ilmari.heikkinen@gmail.com>
 // Copyright (C) 2009 Shen Liang <shenzhuxi@gmail.com>
 // Copyright (C) 2009 Stefan Thomas <thomas@eload24.com>
 // Copyright (C) 2010, 2012 Adrian Johnson <ajohnson@redneon.com>
 // Copyright (C) 2010 Harry Roberts <harry.roberts@midnight-labs.org>
 // Copyright (C) 2010 Christian Feuersänger <cfeuersaenger@googlemail.com>
-// Copyright (C) 2010 William Bader <williambader@hotmail.com>
+// Copyright (C) 2010, 2015 William Bader <williambader@hotmail.com>
 // Copyright (C) 2011-2013 Thomas Freitag <Thomas.Freitag@alfa.de>
 // Copyright (C) 2012 Anthony Wesley <awesley@smartnetworks.com.au>
+// Copyright (C) 2015 Adam Reichold <adamreichold@myopera.com>
 //
 // To see a description of the changes please see the Changelog file that
 // came with your tarball or type make ChangeLog if you are building from git
@@ -275,7 +276,7 @@ SplashError SplashBitmap::writeAlphaPGMFile(char *fileName) {
 void SplashBitmap::getPixel(int x, int y, SplashColorPtr pixel) {
   SplashColorPtr p;
 
-  if (y < 0 || y >= height || x < 0 || x >= width) {
+  if (y < 0 || y >= height || x < 0 || x >= width || !data) {
     return;
   }
   switch (mode) {
@@ -361,7 +362,7 @@ SplashError SplashBitmap::writeImgFile(SplashImageFileFormat format, FILE *f, in
     #endif
 
     #ifdef ENABLE_LIBJPEG
-    #ifdef SPLASH_CMYK
+    #if SPLASH_CMYK
     case splashFormatJpegCMYK:
       writer = new JpegWriter(JpegWriter::CMYK);
       break;
@@ -460,7 +461,7 @@ void SplashBitmap::getRGBLine(int yl, SplashColorPtr line) {
   }
 }
 
-void SplashBitmap::getXBGRLine(int yl, SplashColorPtr line) {
+void SplashBitmap::getXBGRLine(int yl, SplashColorPtr line, ConversionMode conversionMode) {
   SplashColor col;
   double c, m, y, k, c1, m1, y1, k1, r, g, b;
 
@@ -500,23 +501,67 @@ void SplashBitmap::getXBGRLine(int yl, SplashColorPtr line) {
     y1 = 1 - y;
     k1 = 1 - k;
     cmykToRGBMatrixMultiplication(c, m, y, k, c1, m1, y1, k1, r, g, b);
-    *line++ = dblToByte(clip01(b));
-    *line++ = dblToByte(clip01(g));
-    *line++ = dblToByte(clip01(r));
-    *line++ = 255;
+
+    if (conversionMode == conversionAlphaPremultiplied) {
+        const double a = getAlpha(x, yl) / 255.0;
+
+        *line++ = dblToByte(clip01(b * a));
+        *line++ = dblToByte(clip01(g * a));
+        *line++ = dblToByte(clip01(r * a));
+    } else {
+        *line++ = dblToByte(clip01(b));
+        *line++ = dblToByte(clip01(g));
+        *line++ = dblToByte(clip01(r));
+    }
+
+    if (conversionMode != conversionOpaque) {
+        *line++ = getAlpha(x, yl);
+    } else {
+        *line++ = 255;
+    }
   }
 }
 
-GBool SplashBitmap::convertToXBGR() {
-  if (mode == splashModeXBGR8)
+static inline Guchar div255(int x) {
+  return (Guchar)((x + (x >> 8) + 0x80) >> 8);
+}
+
+GBool SplashBitmap::convertToXBGR(ConversionMode conversionMode) {
+  if (mode == splashModeXBGR8) {
+    if (conversionMode != conversionOpaque) {
+      // Copy the alpha channel into the fourth component so that XBGR becomes ABGR.
+      const SplashColorPtr dbegin = data;
+      const SplashColorPtr dend = data + rowSize * height;
+
+      Guchar *const abegin = alpha;
+      Guchar *const aend = alpha + width * height;
+
+      SplashColorPtr d = dbegin;
+      Guchar *a = abegin;
+
+      if (conversionMode == conversionAlphaPremultiplied) {
+          for (; d < dend && a < aend; d += 4, a += 1) {
+              d[0] = div255(d[0] * *a);
+              d[1] = div255(d[1] * *a);
+              d[2] = div255(d[2] * *a);
+              d[3] = *a;
+          }
+      } else {
+          for (d += 3; d < dend && a < aend; d += 4, a += 1) {
+              *d = *a;
+          }
+      }
+    }
+
     return gTrue;
+  }
   
   int newrowSize = width * 4;
   SplashColorPtr newdata = (SplashColorPtr)gmallocn_checkoverflow(newrowSize, height);
   if (newdata != NULL) {
     for (int y = 0; y < height; y++) {
       unsigned char *row = newdata + y * newrowSize;
-      getXBGRLine(y, row);
+      getXBGRLine(y, row, conversionMode);
     }
     if (rowSize < 0) {
       gfree(data + (height - 1) * rowSize);

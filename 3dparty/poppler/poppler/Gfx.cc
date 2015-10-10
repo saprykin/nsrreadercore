@@ -14,7 +14,7 @@
 // under GPL version 2 or later
 //
 // Copyright (C) 2005 Jonathan Blandford <jrb@redhat.com>
-// Copyright (C) 2005-2013 Albert Astals Cid <aacid@kde.org>
+// Copyright (C) 2005-2013, 2015 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2006 Thorkild Stray <thorkild@ifi.uio.no>
 // Copyright (C) 2006 Kristian Høgsberg <krh@redhat.com>
 // Copyright (C) 2006-2011 Carlos Garcia Campos <carlosgc@gnome.org>
@@ -37,6 +37,7 @@
 // Copyright (C) 2012 Even Rouault <even.rouault@mines-paris.org>
 // Copyright (C) 2012, 2013 Fabio D'Urso <fabiodurso@hotmail.it>
 // Copyright (C) 2012 Lu Wang <coolwanglu@gmail.com>
+// Copyright (C) 2014 Jason Crain <jason@aquaticape.us>
 //
 // To see a description of the changes please see the Changelog file that
 // came with your tarball or type make ChangeLog if you are building from git
@@ -3354,6 +3355,12 @@ void Gfx::doGouraudTriangleShFill(GfxGouraudTriangleShading *shading) {
   delete reusablePath;
 }
 
+static inline void checkTrue(bool b, const char *message) {
+  if (unlikely(!b)) {
+    error(errSyntaxError, -1, message);
+  }
+}
+
 void Gfx::gouraudFillTriangle(double x0, double y0, GfxColor *color0,
 			      double x1, double y1, GfxColor *color1,
 			      double x2, double y2, GfxColor *color2,
@@ -3372,11 +3379,11 @@ void Gfx::gouraudFillTriangle(double x0, double y0, GfxColor *color0,
     state->setFillColor(color0);
     out->updateFillColor(state);
 
-    path->reset();                         assert(!path->isEnd());
-    path->setCoord(x0,y0);  path->next();  assert(!path->isEnd());
-    path->setCoord(x1,y1);  path->next();  assert(!path->isEnd());
-    path->setCoord(x2,y2);  path->next();  assert(!path->isEnd());
-    path->setCoord(x0,y0);  path->next();  assert( path->isEnd());
+    path->reset();                         checkTrue(!path->isEnd(), "Path should not be at end");
+    path->setCoord(x0,y0);  path->next();  checkTrue(!path->isEnd(), "Path should not be at end");
+    path->setCoord(x1,y1);  path->next();  checkTrue(!path->isEnd(), "Path should not be at end");
+    path->setCoord(x2,y2);  path->next();  checkTrue(!path->isEnd(), "Path should not be at end");
+    path->setCoord(x0,y0);  path->next();  checkTrue( path->isEnd(), "Path should be at end");
     out->fill(state);
 
   } else {
@@ -3419,11 +3426,11 @@ void Gfx::gouraudFillTriangle(double x0, double y0, double color0,
     state->setFillColor(&color);
     out->updateFillColor(state);
 
-    path->reset();                         assert(!path->isEnd());
-    path->setCoord(x0,y0);  path->next();  assert(!path->isEnd());
-    path->setCoord(x1,y1);  path->next();  assert(!path->isEnd());
-    path->setCoord(x2,y2);  path->next();  assert(!path->isEnd());
-    path->setCoord(x0,y0);  path->next();  assert( path->isEnd());
+    path->reset();                         checkTrue(!path->isEnd(), "Path should not be at end");
+    path->setCoord(x0,y0);  path->next();  checkTrue(!path->isEnd(), "Path should not be at end");
+    path->setCoord(x1,y1);  path->next();  checkTrue(!path->isEnd(), "Path should not be at end");
+    path->setCoord(x2,y2);  path->next();  checkTrue(!path->isEnd(), "Path should not be at end");
+    path->setCoord(x0,y0);  path->next();  checkTrue( path->isEnd(), "Path should be at end");
     out->fill(state);
 
   } else {
@@ -5277,6 +5284,7 @@ void Gfx::drawAnnot(Object *str, AnnotBorder *border, AnnotColor *aColor,
         obj1.free();
       } else {
         obj1.free();
+        bboxObj.free();
         error(errSyntaxError, getPos(), "Bad form bounding box value");
         return;
       }
@@ -5288,8 +5296,15 @@ void Gfx::drawAnnot(Object *str, AnnotBorder *border, AnnotColor *aColor,
     if (matrixObj.isArray() && matrixObj.arrayGetLength() >= 6) {
       for (i = 0; i < 6; ++i) {
 	matrixObj.arrayGet(i, &obj1);
-	m[i] = obj1.getNum();
-	obj1.free();
+	if (likely(obj1.isNum())) {
+	  m[i] = obj1.getNum();
+	  obj1.free();
+	} else {
+	  obj1.free();
+	  matrixObj.free();
+	  error(errSyntaxError, getPos(), "Bad form matrix");
+	  return;
+	}
       }
     } else {
       m[0] = 1; m[1] = 0;

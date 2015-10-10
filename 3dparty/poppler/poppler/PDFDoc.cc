@@ -22,15 +22,16 @@
 // Copyright (C) 2009 Kovid Goyal <kovid@kovidgoyal.net>
 // Copyright (C) 2009, 2011 Axel Struebing <axel.struebing@freenet.de>
 // Copyright (C) 2010-2012, 2014 Hib Eris <hib@hiberis.nl>
-// Copyright (C) 2010 Jakub Wilk <ubanus@users.sf.net>
+// Copyright (C) 2010 Jakub Wilk <jwilk@jwilk.net>
 // Copyright (C) 2010 Ilya Gorenbein <igorenbein@finjan.com>
 // Copyright (C) 2010 Srinivas Adicherla <srinivas.adicherla@geodesic.com>
 // Copyright (C) 2010 Philip Lorenz <lorenzph+freedesktop@gmail.com>
-// Copyright (C) 2011-2014 Thomas Freitag <Thomas.Freitag@alfa.de>
+// Copyright (C) 2011-2015 Thomas Freitag <Thomas.Freitag@alfa.de>
 // Copyright (C) 2012, 2013 Fabio D'Urso <fabiodurso@hotmail.it>
 // Copyright (C) 2013, 2014 Adrian Johnson <ajohnson@redneon.com>
 // Copyright (C) 2013 Adam Reichold <adamreichold@myopera.com>
 // Copyright (C) 2014 Bogdan Cristea <cristeab@gmail.com>
+// Copyright (C) 2015 Li Junling <lijunling@sina.com>
 //
 // To see a description of the changes please see the Changelog file that
 // came with your tarball or type make ChangeLog if you are building from git
@@ -1560,7 +1561,6 @@ void PDFDoc::replacePageDict(int pageNo, int rotate,
 
 void PDFDoc::markPageObjects(Dict *pageDict, XRef *xRef, XRef *countRef, Guint numOffset, int oldRefNum, int newRefNum) 
 {
-  pageDict->remove("Names");
   pageDict->remove("OpenAction");
   pageDict->remove("Outlines");
   pageDict->remove("StructTreeRoot");
@@ -1611,10 +1611,27 @@ GBool PDFDoc::markAnnotations(Object *annotsObj, XRef *xRef, XRef *countRef, Gui
                 type.free();
                 continue;
               } else {
-                array->remove(i);
+                Object page;
+                getXRef()->fetch(obj2.getRef().num, obj2.getRef().gen, &page);
+                if (page.isDict()) {
+                  Object pagetype;
+                  Dict *dict = page.getDict();
+                  dict->lookup("Type", &pagetype);
+                  if (!pagetype.isName() || strcmp(pagetype.getName(), "Page") != 0) {
+                    obj1.free();
+                    obj2.free();
+                    type.free();
+                    page.free();
+                    pagetype.free();
+                    continue;
+                  }
+                  pagetype.free();
+                }
+                page.free();
                 obj1.free();
                 obj2.free();
                 type.free();
+                array->remove(i);
                 modified = gTrue;
                 continue;
               }
@@ -1820,26 +1837,32 @@ Goffset PDFDoc::getStartXRef(GBool tryingToReconstruct)
       int c, n, i;
 
       // read last xrefSearchSize bytes
-      str->setPos(xrefSearchSize, -1);
-      for (n = 0; n < xrefSearchSize; ++n) {
-        if ((c = str->getChar()) == EOF) {
-          break;
+      int segnum = 0;
+      int maxXRefSearch = 24576;
+      if (str->getLength() < maxXRefSearch) maxXRefSearch = str->getLength();
+      for (; (xrefSearchSize - 16) * segnum < maxXRefSearch; segnum++) {
+        str->setPos((xrefSearchSize - 16) * segnum + xrefSearchSize, -1);
+        for (n = 0; n < xrefSearchSize; ++n) {
+          if ((c = str->getChar()) == EOF) {
+            break;
+          }
+          buf[n] = c;
         }
-        buf[n] = c;
-      }
-      buf[n] = '\0';
+        buf[n] = '\0';
 
-      // find startxref
-      for (i = n - 9; i >= 0; --i) {
-        if (!strncmp(&buf[i], "startxref", 9)) {
+        // find startxref
+        for (i = n - 9; i >= 0; --i) {
+          if (!strncmp(&buf[i], "startxref", 9)) {
+            break;
+          }
+        }
+        if (i < 0) {
+          startXRefPos = 0;
+        } else {
+          for (p = &buf[i + 9]; isspace(*p); ++p);
+          startXRefPos = strToLongLong(p);
           break;
         }
-      }
-      if (i < 0) {
-        startXRefPos = 0;
-      } else {
-        for (p = &buf[i+9]; isspace(*p); ++p) ;
-        startXRefPos =  strToLongLong(p);
       }
     }
 

@@ -15,7 +15,7 @@
 //
 // Copyright (C) 2005 Martin Kretzschmar <martink@gnome.org>
 // Copyright (C) 2005, 2006 Kristian Høgsberg <krh@redhat.com>
-// Copyright (C) 2005, 2007-2010, 2012 Albert Astals Cid <aacid@kde.org>
+// Copyright (C) 2005, 2007-2010, 2012, 2015 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2005 Jonathan Blandford <jrb@redhat.com>
 // Copyright (C) 2006, 2007 Jeff Muizelaar <jeff@infidigm.net>
 // Copyright (C) 2006 Takashi Iwai <tiwai@suse.de>
@@ -23,11 +23,11 @@
 // Copyright (C) 2007 Krzysztof Kowalczyk <kkowalczyk@gmail.com>
 // Copyright (C) 2007, 2009 Jonathan Kew <jonathan_kew@sil.org>
 // Copyright (C) 2009 Petr Gajdos <pgajdos@novell.com>
-// Copyright (C) 2009, 2011, 2012 William Bader <williambader@hotmail.com>
+// Copyright (C) 2009, 2011, 2012, 2015 William Bader <williambader@hotmail.com>
 // Copyright (C) 2009 Kovid Goyal <kovid@kovidgoyal.net>
 // Copyright (C) 2010, 2012 Hib Eris <hib@hiberis.nl>
 // Copyright (C) 2010 Patrick Spendrin <ps_ml@gmx.de>
-// Copyright (C) 2010 Jakub Wilk <ubanus@users.sf.net>
+// Copyright (C) 2010 Jakub Wilk <jwilk@jwilk.net>
 // Copyright (C) 2011 Pino Toscano <pino@kde.org>
 // Copyright (C) 2011 Koji Otani <sho@bbr.jp>
 // Copyright (C) 2012 Yi Yang <ahyangyi@gmail.com>
@@ -132,7 +132,7 @@ GlobalParams *globalParams = NULL;
 //------------------------------------------------------------------------
 
 PSFontParam16::PSFontParam16(GooString *nameA, int wModeA,
-                             GooString *psFontNameA, GooString *encodingA) {
+			     GooString *psFontNameA, GooString *encodingA) {
   name = nameA;
   wMode = wModeA;
   psFontName = psFontNameA;
@@ -219,7 +219,7 @@ public:
   GooString *substituteName;
 
   SysFontInfo(GooString *nameA, GBool boldA, GBool italicA, GBool obliqueA, GBool fixedWidthA,
-              GooString *pathA, SysFontType typeA, int fontNumA, GooString *substituteNameA);
+	      GooString *pathA, SysFontType typeA, int fontNumA, GooString *substituteNameA);
   ~SysFontInfo();
   GBool match(SysFontInfo *fi);
   GBool match(GooString *nameA, GBool boldA, GBool italicA, GBool obliqueA, GBool fixedWidthA);
@@ -227,7 +227,7 @@ public:
 };
 
 SysFontInfo::SysFontInfo(GooString *nameA, GBool boldA, GBool italicA, GBool obliqueA, GBool fixedWidthA,
-                         GooString *pathA, SysFontType typeA, int fontNumA, GooString *substituteNameA) {
+			 GooString *pathA, SysFontType typeA, int fontNumA, GooString *substituteNameA) {
   name = nameA;
   bold = boldA;
   italic = italicA;
@@ -271,7 +271,7 @@ public:
   ~SysFontList();
   SysFontInfo *find(GooString *name, GBool isFixedWidth, GBool exact);
 
-#ifdef _WIN32
+#ifdef WIN32
   void scanWindowsFonts(GooString *winFontDir);
 #endif
 #ifdef WITH_FONTCONFIGURATION_FONTCONFIG
@@ -279,9 +279,9 @@ public:
 #endif
 private:
 
-#ifdef _WIN32
+#ifdef WIN32
   SysFontInfo *makeWindowsFont(char *name, int fontNum,
-                               char *path);
+			       char *path);
 #endif
 
   GooList *fonts;			// [SysFontInfo]
@@ -393,7 +393,7 @@ SysFontInfo *SysFontList::find(GooString *name, GBool fixedWidth, GBool exact) {
     for (i = 0; i < fonts->getLength(); ++i) {
       fi = (SysFontInfo *)fonts->get(i);
       if (fi->match(name2, gFalse, italic)) {
-        break;
+	break;
       }
       fi = NULL;
     }
@@ -403,7 +403,7 @@ SysFontInfo *SysFontList::find(GooString *name, GBool fixedWidth, GBool exact) {
     for (i = 0; i < fonts->getLength(); ++i) {
       fi = (SysFontInfo *)fonts->get(i);
       if (fi->match(name2, gFalse, gFalse)) {
-        break;
+	break;
       }
       fi = NULL;
     }
@@ -454,14 +454,14 @@ Plugin *Plugin::load(char *type, char *name) {
 
 #ifdef _WIN32
   path->append(".dll");
-  if (!(libA = LoadLibraryA(path->getCString()))) {
+  if (!(libA = LoadLibrary(path->getCString()))) {
     error(errIO, -1, "Failed to load plugin '{0:t}'", path);
     goto err1;
   }
   if (!(vt = (XpdfPluginVecTable *)
-                 GetProcAddress(libA, "xpdfPluginVecTable"))) {
+	         GetProcAddress(libA, "xpdfPluginVecTable"))) {
     error(errIO, -1, "Failed to find xpdfPluginVecTable in plugin '{0:t}'",
-          path);
+	  path);
     goto err2;
   }
 #else
@@ -469,12 +469,12 @@ Plugin *Plugin::load(char *type, char *name) {
   path->append(".so");
   if (!(dlA = dlopen(path->getCString(), RTLD_NOW))) {
     error(errIO, -1, "Failed to load plugin '{0:t}': {1:s}",
-          path, dlerror());
+	  path, dlerror());
     goto err1;
   }
   if (!(vt = (XpdfPluginVecTable *)dlsym(dlA, "xpdfPluginVecTable"))) {
     error(errIO, -1, "Failed to find xpdfPluginVecTable in plugin '{0:t}'",
-          path);
+	  path);
     goto err2;
   }
 #endif
@@ -487,15 +487,15 @@ Plugin *Plugin::load(char *type, char *name) {
 
 #ifdef _WIN32
   if (!(xpdfInitPlugin = (XpdfBool (*)(void))
-                             GetProcAddress(libA, "xpdfInitPlugin"))) {
+	                     GetProcAddress(libA, "xpdfInitPlugin"))) {
     error(errIO, -1, "Failed to find xpdfInitPlugin in plugin '{0:t}'",
-          path);
+	  path);
     goto err2;
   }
 #else
   if (!(xpdfInitPlugin = (XpdfBool (*)(void))dlsym(dlA, "xpdfInitPlugin"))) {
     error(errIO, -1, "Failed to find xpdfInitPlugin in plugin '{0:t}'",
-          path);
+	  path);
     goto err2;
   }
 #endif
@@ -604,18 +604,6 @@ GlobalParams::GlobalParams(const char *customPopplerDataDir)
   psResidentFonts = new GooHash(gTrue);
   psResidentFonts16 = new GooList();
   psResidentFontsCC = new GooList();
-  psEmbedType1 = gTrue;
-  psEmbedTrueType = gTrue;
-  psEmbedCIDPostScript = gTrue;
-  psEmbedCIDTrueType = gTrue;
-  psFontPassthrough = gFalse;
-  psPreload = gFalse;
-  psOPI = gFalse;
-  psASCIIHex = gFalse;
-  psBinary = gFalse;
-  psUncompressPreloadedImages = gFalse;
-  psRasterResolution = 300;
-  psRasterMono = gFalse;
   textEncoding = new GooString("UTF-8");
 #if defined(_WIN32)
   textEOL = eolDOS;
@@ -627,9 +615,6 @@ GlobalParams::GlobalParams(const char *customPopplerDataDir)
   textPageBreaks = gTrue;
   textKeepTinyChars = gFalse;
   enableFreeType = gTrue;
-  antialias = gTrue;
-  vectorAntialias = gTrue;
-  antialiasPrinting = gFalse;
   strokeAdjust = gTrue;
   screenType = screenUnset;
   screenSize = -1;
@@ -668,16 +653,16 @@ GlobalParams::GlobalParams(const char *customPopplerDataDir)
 
   // set up the residentUnicodeMaps table
   map = new UnicodeMap("Latin1", gFalse,
-                       latin1UnicodeMapRanges, latin1UnicodeMapLen);
+		       latin1UnicodeMapRanges, latin1UnicodeMapLen);
   residentUnicodeMaps->add(map->getEncodingName(), map);
   map = new UnicodeMap("ASCII7", gFalse,
-                       ascii7UnicodeMapRanges, ascii7UnicodeMapLen);
+		       ascii7UnicodeMapRanges, ascii7UnicodeMapLen);
   residentUnicodeMaps->add(map->getEncodingName(), map);
   map = new UnicodeMap("Symbol", gFalse,
-                       symbolUnicodeMapRanges, symbolUnicodeMapLen);
+		       symbolUnicodeMapRanges, symbolUnicodeMapLen);
   residentUnicodeMaps->add(map->getEncodingName(), map);
   map = new UnicodeMap("ZapfDingbats", gFalse, zapfDingbatsUnicodeMapRanges,
-                       zapfDingbatsUnicodeMapLen);
+		       zapfDingbatsUnicodeMapLen);
   residentUnicodeMaps->add(map->getEncodingName(), map);
   map = new UnicodeMap("UTF-8", gTrue, &mapUTF8);
   residentUnicodeMaps->add(map->getEncodingName(), map);
@@ -691,11 +676,11 @@ void GlobalParams::scanEncodingDirs() {
   GDir *dir;
   GDirEntry *entry;
   const char *dataRoot = popplerDataDir ? popplerDataDir : POPPLER_DATADIR;
-
+  
   // allocate buffer large enough to append "/nameToUnicode"
   size_t bufSize = strlen(dataRoot) + strlen("/nameToUnicode") + 1;
   char *dataPathBuffer = new char[bufSize];
-
+  
   snprintf(dataPathBuffer, bufSize, "%s/nameToUnicode", dataRoot);
   dir = new GDir(dataPathBuffer, gTrue);
   while (entry = dir->getNextEntry(), entry != NULL) {
@@ -730,7 +715,7 @@ void GlobalParams::scanEncodingDirs() {
     delete entry;
   }
   delete dir;
-
+  
   delete[] dataPathBuffer;
 }
 
@@ -744,7 +729,7 @@ void GlobalParams::parseNameToUnicode(GooString *name) {
 
   if (!(f = openFile(name->getCString(), "r"))) {
     error(errIO, -1, "Couldn't open 'nameToUnicode' file '{0:t}'",
-          name);
+	  name);
     return;
   }
   line = 1;
@@ -756,7 +741,7 @@ void GlobalParams::parseNameToUnicode(GooString *name) {
       nameToUnicodeText->add(tok2, u);
     } else {
       error(errConfig, -1, "Bad line in 'nameToUnicode' file ({0:t}:{1:d})",
-            name, line);
+	    name, line);
     }
     ++line;
   }
@@ -764,7 +749,7 @@ void GlobalParams::parseNameToUnicode(GooString *name) {
 }
 
 void GlobalParams::addCIDToUnicode(GooString *collection,
-                                   GooString *fileName) {
+				   GooString *fileName) {
   GooString *old;
 
   if ((old = (GooString *)cidToUnicodes->remove(collection))) {
@@ -1020,11 +1005,11 @@ static FcPattern *buildFcPattern(GfxFont *font, GooString *base14Name)
 
   // this is all heuristics will be overwritten if font had proper info
   name = (base14Name == NULL) ? font->getName()->getCString() : base14Name->getCString();
-
+  
   modifiers = strchr (name, ',');
   if (modifiers == NULL)
     modifiers = strchr (name, '-');
-
+  
   // remove the - from the names, for some reason, Fontconfig does not
   // understand "MS-Mincho" but does with "MS Mincho"
   int len = strlen(name);
@@ -1034,7 +1019,7 @@ static FcPattern *buildFcPattern(GfxFont *font, GooString *base14Name)
   start = NULL;
   findModifier(modifiers, "Regular", &start);
   findModifier(modifiers, "Roman", &start);
-
+  
   if (findModifier(modifiers, "Oblique", &start))
     slant = FC_SLANT_OBLIQUE;
   if (findModifier(modifiers, "Italic", &start))
@@ -1047,7 +1032,7 @@ static FcPattern *buildFcPattern(GfxFont *font, GooString *base14Name)
     weight = FC_WEIGHT_MEDIUM;
   if (findModifier(modifiers, "Condensed", &start))
     width = FC_WIDTH_CONDENSED;
-
+  
   if (start) {
     // There have been "modifiers" in the name, crop them to obtain
     // the family name
@@ -1060,7 +1045,7 @@ static FcPattern *buildFcPattern(GfxFont *font, GooString *base14Name)
   else {
     family = name;
   }
-
+  
   // use font flags
   if (font->isFixedWidth())
     spacing = FC_MONO;
@@ -1068,7 +1053,7 @@ static FcPattern *buildFcPattern(GfxFont *font, GooString *base14Name)
     weight = FC_WEIGHT_BOLD;
   if (font->isItalic())
     slant = FC_SLANT_ITALIC;
-
+  
   // if the FontDescriptor specified a family name use it
   if (font->getFamily()) {
     if (deleteFamily) {
@@ -1077,39 +1062,39 @@ static FcPattern *buildFcPattern(GfxFont *font, GooString *base14Name)
     }
     family = font->getFamily()->getCString();
   }
-
+  
   // if the FontDescriptor specified a weight use it
   switch (font -> getWeight())
   {
-    case GfxFont::W100: weight = FC_WEIGHT_EXTRALIGHT; break;
-    case GfxFont::W200: weight = FC_WEIGHT_LIGHT; break;
-    case GfxFont::W300: weight = FC_WEIGHT_BOOK; break;
-    case GfxFont::W400: weight = FC_WEIGHT_NORMAL; break;
-    case GfxFont::W500: weight = FC_WEIGHT_MEDIUM; break;
-    case GfxFont::W600: weight = FC_WEIGHT_DEMIBOLD; break;
-    case GfxFont::W700: weight = FC_WEIGHT_BOLD; break;
-    case GfxFont::W800: weight = FC_WEIGHT_EXTRABOLD; break;
-    case GfxFont::W900: weight = FC_WEIGHT_BLACK; break;
-    default: break;
+    case GfxFont::W100: weight = FC_WEIGHT_EXTRALIGHT; break; 
+    case GfxFont::W200: weight = FC_WEIGHT_LIGHT; break; 
+    case GfxFont::W300: weight = FC_WEIGHT_BOOK; break; 
+    case GfxFont::W400: weight = FC_WEIGHT_NORMAL; break; 
+    case GfxFont::W500: weight = FC_WEIGHT_MEDIUM; break; 
+    case GfxFont::W600: weight = FC_WEIGHT_DEMIBOLD; break; 
+    case GfxFont::W700: weight = FC_WEIGHT_BOLD; break; 
+    case GfxFont::W800: weight = FC_WEIGHT_EXTRABOLD; break; 
+    case GfxFont::W900: weight = FC_WEIGHT_BLACK; break; 
+    default: break; 
   }
-
+  
   // if the FontDescriptor specified a width use it
   switch (font -> getStretch())
   {
-    case GfxFont::UltraCondensed: width = FC_WIDTH_ULTRACONDENSED; break;
-    case GfxFont::ExtraCondensed: width = FC_WIDTH_EXTRACONDENSED; break;
-    case GfxFont::Condensed: width = FC_WIDTH_CONDENSED; break;
-    case GfxFont::SemiCondensed: width = FC_WIDTH_SEMICONDENSED; break;
-    case GfxFont::Normal: width = FC_WIDTH_NORMAL; break;
-    case GfxFont::SemiExpanded: width = FC_WIDTH_SEMIEXPANDED; break;
-    case GfxFont::Expanded: width = FC_WIDTH_EXPANDED; break;
-    case GfxFont::ExtraExpanded: width = FC_WIDTH_EXTRAEXPANDED; break;
-    case GfxFont::UltraExpanded: width = FC_WIDTH_ULTRAEXPANDED; break;
-    default: break;
+    case GfxFont::UltraCondensed: width = FC_WIDTH_ULTRACONDENSED; break; 
+    case GfxFont::ExtraCondensed: width = FC_WIDTH_EXTRACONDENSED; break; 
+    case GfxFont::Condensed: width = FC_WIDTH_CONDENSED; break; 
+    case GfxFont::SemiCondensed: width = FC_WIDTH_SEMICONDENSED; break; 
+    case GfxFont::Normal: width = FC_WIDTH_NORMAL; break; 
+    case GfxFont::SemiExpanded: width = FC_WIDTH_SEMIEXPANDED; break; 
+    case GfxFont::Expanded: width = FC_WIDTH_EXPANDED; break; 
+    case GfxFont::ExtraExpanded: width = FC_WIDTH_EXTRAEXPANDED; break; 
+    case GfxFont::UltraExpanded: width = FC_WIDTH_ULTRAEXPANDED; break; 
+    default: break; 
   }
-
+  
   const char *lang = getFontLang(font);
-
+  
   p = FcPatternBuild(NULL,
                     FC_FAMILY, FcTypeString, family,
                     FC_LANG, FcTypeString, lang,
@@ -1128,7 +1113,7 @@ static FcPattern *buildFcPattern(GfxFont *font, GooString *base14Name)
 GooString *GlobalParams::findFontFile(GooString *fontName) {
   static const char *exts[] = { ".pfa", ".pfb", ".ttf", ".ttc", ".otf" };
   GooString *path, *dir;
-#ifdef _WIN32
+#ifdef WIN32
   GooString *fontNameU;
 #endif
   const char *ext;
@@ -1146,7 +1131,7 @@ GooString *GlobalParams::findFontFile(GooString *fontName) {
     dir = (GooString *)fontDirs->get(i);
     for (j = 0; j < (int)(sizeof(exts) / sizeof(exts[0])); ++j) {
       ext = exts[j];
-#ifdef _WIN32
+#ifdef WIN32
       fontNameU = fileNameToUTF8(fontName->getCString());
       path = appendToPath(dir->copy(), fontNameU->getCString());
       delete fontNameU;
@@ -1155,9 +1140,9 @@ GooString *GlobalParams::findFontFile(GooString *fontName) {
 #endif
       path->append(ext);
       if ((f = openFile(path->getCString(), "rb"))) {
-        fclose(f);
-        unlockGlobalParams;
-        return path;
+	fclose(f);
+	unlockGlobalParams;
+	return path;
       }
       delete path;
     }
@@ -1177,7 +1162,7 @@ void GlobalParams::setupBaseFonts(char *dir) {
 GooString *GlobalParams::findBase14FontFile(GooString *base14Name, GfxFont *font) {
   SysFontType type;
   int fontNum;
-
+  
   return findSystemFontFile(font, &type, &fontNum, NULL, base14Name);
 }
 
@@ -1230,17 +1215,17 @@ GooString *GlobalParams::findSystemFontFile(GfxFont *font,
     {
       for (i = 0; i < set->nfont; ++i)
       {
-        res = FcPatternGetString(set->fonts[i], FC_FILE, 0, &s);
-        if (res != FcResultMatch || !s)
-          continue;
-        if (lb != NULL) {
-          FcLangSet *l;
-          res = FcPatternGetLangSet(set->fonts[i], FC_LANG, 0, &l);
-          if (res != FcResultMatch || !FcLangSetContains(l,lb)) {
-            continue;
-          }
-        }
-        FcChar8* s2;
+	res = FcPatternGetString(set->fonts[i], FC_FILE, 0, &s);
+	if (res != FcResultMatch || !s)
+	  continue;
+	if (lb != NULL) {
+	  FcLangSet *l;
+	  res = FcPatternGetLangSet(set->fonts[i], FC_LANG, 0, &l);
+	  if (res != FcResultMatch || !FcLangSetContains(l,lb)) {
+	    continue;
+	  }
+	}
+	FcChar8* s2;
         res = FcPatternGetString(set->fonts[i], FC_FULLNAME, 0, &s2);
         if (res == FcResultMatch && s2) {
           substituteName.Set((char*)s2);
@@ -1261,62 +1246,62 @@ GooString *GlobalParams::findSystemFontFile(GfxFont *font,
             }
           }
         }
-        ext = strrchr((char*)s,'.');
-        if (!ext)
-          continue;
-        if (!strncasecmp(ext,".ttf",4) || !strncasecmp(ext, ".ttc", 4) || !strncasecmp(ext, ".otf", 4))
-        {
-          int weight, slant;
-          GBool bold = font->isBold();
-          GBool italic = font->isItalic();
-          GBool oblique = gFalse;
-          FcPatternGetInteger(set->fonts[i], FC_WEIGHT, 0, &weight);
-          FcPatternGetInteger(set->fonts[i], FC_SLANT, 0, &slant);
-          if (weight == FC_WEIGHT_DEMIBOLD || weight == FC_WEIGHT_BOLD
-              || weight == FC_WEIGHT_EXTRABOLD || weight == FC_WEIGHT_BLACK)
-          {
-            bold = gTrue;
-          }
-          if (slant == FC_SLANT_ITALIC)
-            italic = gTrue;
-          if (slant == FC_SLANT_OBLIQUE)
-            oblique = gTrue;
-          *fontNum = 0;
-          *type = (!strncasecmp(ext,".ttc",4)) ? sysFontTTC : sysFontTTF;
-          FcPatternGetInteger(set->fonts[i], FC_INDEX, 0, fontNum);
-          fi = new SysFontInfo(fontName->copy(), bold, italic, oblique, font->isFixedWidth(),
-                               new GooString((char*)s), *type, *fontNum, substituteName.copy());
-          sysFonts->addFcFont(fi);
-          path = new GooString((char*)s);
-        }
-        else if (!strncasecmp(ext,".pfa",4) || !strncasecmp(ext,".pfb",4))
-        {
-          int weight, slant;
-          GBool bold = font->isBold();
-          GBool italic = font->isItalic();
-          GBool oblique = gFalse;
-          FcPatternGetInteger(set->fonts[i], FC_WEIGHT, 0, &weight);
-          FcPatternGetInteger(set->fonts[i], FC_SLANT, 0, &slant);
-          if (weight == FC_WEIGHT_DEMIBOLD || weight == FC_WEIGHT_BOLD
-              || weight == FC_WEIGHT_EXTRABOLD || weight == FC_WEIGHT_BLACK)
-          {
-                bold = gTrue;
-          }
-          if (slant == FC_SLANT_ITALIC)
-            italic = gTrue;
-          if (slant == FC_SLANT_OBLIQUE)
-            oblique = gTrue;
-          *fontNum = 0;
-          *type = (!strncasecmp(ext,".pfa",4)) ? sysFontPFA : sysFontPFB;
-          FcPatternGetInteger(set->fonts[i], FC_INDEX, 0, fontNum);
-          fi = new SysFontInfo(fontName->copy(), bold, italic, oblique, font->isFixedWidth(),
-                               new GooString((char*)s), *type, *fontNum, substituteName.copy());
-          sysFonts->addFcFont(fi);
-          path = new GooString((char*)s);
-        }
-        else
-          continue;
-        break;
+	ext = strrchr((char*)s,'.');
+	if (!ext)
+	  continue;
+	if (!strncasecmp(ext,".ttf",4) || !strncasecmp(ext, ".ttc", 4) || !strncasecmp(ext, ".otf", 4))
+	{
+	  int weight, slant;
+	  GBool bold = font->isBold();
+	  GBool italic = font->isItalic();
+	  GBool oblique = gFalse;
+	  FcPatternGetInteger(set->fonts[i], FC_WEIGHT, 0, &weight);
+	  FcPatternGetInteger(set->fonts[i], FC_SLANT, 0, &slant);
+	  if (weight == FC_WEIGHT_DEMIBOLD || weight == FC_WEIGHT_BOLD 
+	      || weight == FC_WEIGHT_EXTRABOLD || weight == FC_WEIGHT_BLACK)
+	  {
+	    bold = gTrue;
+	  }
+	  if (slant == FC_SLANT_ITALIC)
+	    italic = gTrue;
+	  if (slant == FC_SLANT_OBLIQUE)
+	    oblique = gTrue;
+	  *fontNum = 0;
+	  *type = (!strncasecmp(ext,".ttc",4)) ? sysFontTTC : sysFontTTF;
+	  FcPatternGetInteger(set->fonts[i], FC_INDEX, 0, fontNum);
+	  fi = new SysFontInfo(fontName->copy(), bold, italic, oblique, font->isFixedWidth(),
+			       new GooString((char*)s), *type, *fontNum, substituteName.copy());
+	  sysFonts->addFcFont(fi);
+	  path = new GooString((char*)s);
+	}
+	else if (!strncasecmp(ext,".pfa",4) || !strncasecmp(ext,".pfb",4)) 
+	{
+	  int weight, slant;
+	  GBool bold = font->isBold();
+	  GBool italic = font->isItalic();
+	  GBool oblique = gFalse;
+	  FcPatternGetInteger(set->fonts[i], FC_WEIGHT, 0, &weight);
+	  FcPatternGetInteger(set->fonts[i], FC_SLANT, 0, &slant);
+	  if (weight == FC_WEIGHT_DEMIBOLD || weight == FC_WEIGHT_BOLD 
+	      || weight == FC_WEIGHT_EXTRABOLD || weight == FC_WEIGHT_BLACK)
+	  {
+		bold = gTrue;
+	  }
+	  if (slant == FC_SLANT_ITALIC)
+	    italic = gTrue;
+	  if (slant == FC_SLANT_OBLIQUE)
+	    oblique = gTrue;
+	  *fontNum = 0;
+	  *type = (!strncasecmp(ext,".pfa",4)) ? sysFontPFA : sysFontPFB;
+	  FcPatternGetInteger(set->fonts[i], FC_INDEX, 0, fontNum);
+	  fi = new SysFontInfo(fontName->copy(), bold, italic, oblique, font->isFixedWidth(),
+			       new GooString((char*)s), *type, *fontNum, substituteName.copy());
+	  sysFonts->addFcFont(fi);
+	  path = new GooString((char*)s);
+	}
+	else
+	  continue;
+	break;
       }
       if (lb != NULL) {
         FcLangSetDestroy(lb);
@@ -1400,25 +1385,25 @@ void GlobalParams::setupBaseFonts(char *dir) {
     if (dir) {
       fileName = appendToPath(new GooString(dir), displayFontTab[i].t1FileName);
       if ((f = fopen(fileName->getCString(), "rb"))) {
-              fclose(f);
+	      fclose(f);
       } else {
-              delete fileName;
-              fileName = NULL;
+	      delete fileName;
+	      fileName = NULL;
       }
     }
     for (j = 0; !fileName && displayFontDirs[j]; ++j) {
       fileName = appendToPath(new GooString(displayFontDirs[j]),
-                              displayFontTab[i].t1FileName);
+			      displayFontTab[i].t1FileName);
       if ((f = fopen(fileName->getCString(), "rb"))) {
-              fclose(f);
+	      fclose(f);
       } else {
-              delete fileName;
-              fileName = NULL;
+	      delete fileName;
+	      fileName = NULL;
       }
     }
     if (!fileName) {
       error(errConfig, -1, "No display font for '{0:s}'",
-            displayFontTab[i].name);
+	    displayFontTab[i].name);
       delete fontName;
       continue;
     }
@@ -1441,7 +1426,7 @@ GooString *GlobalParams::findSystemFontFile(GfxFont *font,
     *type = fi->type;
     *fontNum = fi->fontNum;
   }
-  unlockGlobalParams;
+  unlockGlobalParams; 
   return path;
 }
 #endif
@@ -1520,7 +1505,7 @@ GooList *GlobalParams::getPSResidentFonts() {
 }
 
 PSFontParam16 *GlobalParams::getPSResidentFont16(GooString *fontName,
-                                                 int wMode) {
+						 int wMode) {
   PSFontParam16 *p;
   int i;
 
@@ -1538,7 +1523,7 @@ PSFontParam16 *GlobalParams::getPSResidentFont16(GooString *fontName,
 }
 
 PSFontParam16 *GlobalParams::getPSResidentFontCC(GooString *collection,
-                                                 int wMode) {
+						 int wMode) {
   PSFontParam16 *p;
   int i;
 
@@ -1553,114 +1538,6 @@ PSFontParam16 *GlobalParams::getPSResidentFontCC(GooString *collection,
   }
   unlockGlobalParams;
   return p;
-}
-
-GBool GlobalParams::getPSEmbedType1() {
-  GBool e;
-
-  lockGlobalParams;
-  e = psEmbedType1;
-  unlockGlobalParams;
-  return e;
-}
-
-GBool GlobalParams::getPSEmbedTrueType() {
-  GBool e;
-
-  lockGlobalParams;
-  e = psEmbedTrueType;
-  unlockGlobalParams;
-  return e;
-}
-
-GBool GlobalParams::getPSEmbedCIDPostScript() {
-  GBool e;
-
-  lockGlobalParams;
-  e = psEmbedCIDPostScript;
-  unlockGlobalParams;
-  return e;
-}
-
-GBool GlobalParams::getPSEmbedCIDTrueType() {
-  GBool e;
-
-  lockGlobalParams;
-  e = psEmbedCIDTrueType;
-  unlockGlobalParams;
-  return e;
-}
-
-GBool GlobalParams::getPSFontPassthrough() {
-  GBool e;
-
-  lockGlobalParams;
-  e = psFontPassthrough;
-  unlockGlobalParams;
-  return e;
-}
-
-GBool GlobalParams::getPSPreload() {
-  GBool preload;
-
-  lockGlobalParams;
-  preload = psPreload;
-  unlockGlobalParams;
-  return preload;
-}
-
-GBool GlobalParams::getPSOPI() {
-  GBool opi;
-
-  lockGlobalParams;
-  opi = psOPI;
-  unlockGlobalParams;
-  return opi;
-}
-
-GBool GlobalParams::getPSASCIIHex() {
-  GBool ah;
-
-  lockGlobalParams;
-  ah = psASCIIHex;
-  unlockGlobalParams;
-  return ah;
-}
-
-GBool GlobalParams::getPSBinary() {
-  GBool binary;
-
-  lockGlobalParams;
-  binary = psBinary;
-  unlockGlobalParams;
-  return binary;
-}
-
-GBool GlobalParams::getPSUncompressPreloadedImages() {
-  GBool ah;
-
-  lockGlobalParams;
-  ah = psUncompressPreloadedImages;
-  unlockGlobalParams;
-  return ah;
-}
-
-double GlobalParams::getPSRasterResolution() {
-  double res;
-
-  lockGlobalParams;
-  res = psRasterResolution;
-  unlockGlobalParams;
-  return res;
-}
-
-GBool GlobalParams::getPSRasterMono() {
-  GBool mono;
-
-  lockGlobalParams;
-  mono = psRasterMono;
-  unlockGlobalParams;
-  return mono;
 }
 
 GooString *GlobalParams::getTextEncodingName() {
@@ -1704,33 +1581,6 @@ GBool GlobalParams::getEnableFreeType() {
 
   lockGlobalParams;
   f = enableFreeType;
-  unlockGlobalParams;
-  return f;
-}
-
-GBool GlobalParams::getAntialias() {
-  GBool f;
-
-  lockGlobalParams;
-  f = antialias;
-  unlockGlobalParams;
-  return f;
-}
-
-GBool GlobalParams::getVectorAntialias() {
-  GBool f;
-
-  lockGlobalParams;
-  f = vectorAntialias;
-  unlockGlobalParams;
-  return f;
-}
-
-GBool GlobalParams::getAntialiasPrinting() {
-  GBool f;
-
-  lockGlobalParams;
-  f = antialiasPrinting;
   unlockGlobalParams;
   return f;
 }
@@ -1856,7 +1706,7 @@ CharCodeToUnicode *GlobalParams::getCIDToUnicode(GooString *collection) {
   lockGlobalParams;
   if (!(ctu = cidToUnicodeCache->getCharCodeToUnicode(collection))) {
     if ((fileName = (GooString *)cidToUnicodes->lookup(collection)) &&
-        (ctu = CharCodeToUnicode::parseCIDToUnicode(fileName, collection))) {
+	(ctu = CharCodeToUnicode::parseCIDToUnicode(fileName, collection))) {
       cidToUnicodeCache->add(ctu);
     }
   }
@@ -1980,78 +1830,6 @@ void GlobalParams::setPSLevel(PSLevel level) {
   unlockGlobalParams;
 }
 
-void GlobalParams::setPSEmbedType1(GBool embed) {
-  lockGlobalParams;
-  psEmbedType1 = embed;
-  unlockGlobalParams;
-}
-
-void GlobalParams::setPSEmbedTrueType(GBool embed) {
-  lockGlobalParams;
-  psEmbedTrueType = embed;
-  unlockGlobalParams;
-}
-
-void GlobalParams::setPSEmbedCIDPostScript(GBool embed) {
-  lockGlobalParams;
-  psEmbedCIDPostScript = embed;
-  unlockGlobalParams;
-}
-
-void GlobalParams::setPSEmbedCIDTrueType(GBool embed) {
-  lockGlobalParams;
-  psEmbedCIDTrueType = embed;
-  unlockGlobalParams;
-}
-
-void GlobalParams::setPSFontPassthrough(GBool passthrough) {
-  lockGlobalParams;
-  psFontPassthrough = passthrough;
-  unlockGlobalParams;
-}
-
-void GlobalParams::setPSPreload(GBool preload) {
-  lockGlobalParams;
-  psPreload = preload;
-  unlockGlobalParams;
-}
-
-void GlobalParams::setPSOPI(GBool opi) {
-  lockGlobalParams;
-  psOPI = opi;
-  unlockGlobalParams;
-}
-
-void GlobalParams::setPSASCIIHex(GBool hex) {
-  lockGlobalParams;
-  psASCIIHex = hex;
-  unlockGlobalParams;
-}
-
-void GlobalParams::setPSBinary(GBool binary) {
-  lockGlobalParams;
-  psBinary = binary;
-  unlockGlobalParams;
-}
-
-void GlobalParams::setPSUncompressPreloadedImages(GBool uncomp) {
-  lockGlobalParams;
-  psUncompressPreloadedImages = uncomp;
-  unlockGlobalParams;
-}
-
-void GlobalParams::setPSRasterResolution(double res) {
-  lockGlobalParams;
-  psRasterResolution = res;
-  unlockGlobalParams;
-}
-
-void GlobalParams::setPSRasterMono(GBool mono) {
-  lockGlobalParams;
-  psRasterMono = mono;
-  unlockGlobalParams;
-}
-
 void GlobalParams::setTextEncoding(char *encodingName) {
   lockGlobalParams;
   delete textEncoding;
@@ -2103,30 +1881,6 @@ GBool GlobalParams::setDisableFreeTypeHinting(char *s) {
   ok = parseYesNo2(s, &disableFreeTypeHinting);
   unlockGlobalParams;
   return ok;
-}
-
-GBool GlobalParams::setAntialias(char *s) {
-  GBool ok;
-
-  lockGlobalParams;
-  ok = parseYesNo2(s, &antialias);
-  unlockGlobalParams;
-  return ok;
-}
-
-GBool GlobalParams::setVectorAntialias(char *s) {
-  GBool ok;
-
-  lockGlobalParams;
-  ok = parseYesNo2(s, &vectorAntialias);
-  unlockGlobalParams;
-  return ok;
-}
-
-void GlobalParams::setAntialiasPrinting(GBool anti) {
-  lockGlobalParams;
-  antialiasPrinting = anti;
-  unlockGlobalParams;
 }
 
 void GlobalParams::setStrokeAdjust(GBool adjust)

@@ -14,7 +14,7 @@
 // under GPL version 2 or later
 //
 // Copyright (C) 2005 Kristian Høgsberg <krh@redhat.com>
-// Copyright (C) 2005-2013 Albert Astals Cid <aacid@kde.org>
+// Copyright (C) 2005-2013, 2015 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2005 Jeff Muizelaar <jrmuizel@nit.ca>
 // Copyright (C) 2005 Jonathan Blandford <jrb@redhat.com>
 // Copyright (C) 2005 Marco Pesenti Gritti <mpg@redhat.com>
@@ -31,6 +31,7 @@
 // Copyright (C) 2013 Adrian Johnson <ajohnson@redneon.com>
 // Copyright (C) 2013 José Aliste <jaliste@src.gnome.org>
 // Copyright (C) 2014 Ed Porras <ed@moto-research.com>
+// Copyright (C) 2015 Even Rouault <even.rouault@spatialys.com>
 //
 // To see a description of the changes please see the Changelog file that
 // came with your tarball or type make ChangeLog if you are building from git
@@ -171,8 +172,8 @@ Catalog::~Catalog() {
       }
     }
     gfree(pages);
-    gfree(pageRefs);
   }
+  gfree(pageRefs);
   names.free();
   dests.free();
   delete destNameTree;
@@ -305,8 +306,14 @@ GBool Catalog::cachePageTree(int page)
     }
 
     pagesSize = getNumPages();
-    pages = (Page **)gmallocn(pagesSize, sizeof(Page *));
-    pageRefs = (Ref *)gmallocn(pagesSize, sizeof(Ref));
+    pages = (Page **)gmallocn_checkoverflow(pagesSize, sizeof(Page *));
+    pageRefs = (Ref *)gmallocn_checkoverflow(pagesSize, sizeof(Ref));
+    if (pages == NULL || pageRefs == NULL ) {
+      error(errSyntaxError, -1, "Cannot allocate page cache");
+      pagesDict->decRef();
+      pagesSize = 0;
+      return gFalse;
+    }
     for (int i = 0; i < pagesSize; ++i) {
       pages[i] = NULL;
       pageRefs[i].num = -1;
@@ -807,7 +814,6 @@ int Catalog::getNumPages()
       return 0;
     }
     catDict.dictLookup("Pages", &pagesDict);
-    catDict.free();
 
     // This should really be isDict("Pages"), but I've seen at least one
     // PDF file where the /Type entry is missing.
@@ -815,19 +821,62 @@ int Catalog::getNumPages()
       error(errSyntaxError, -1, "Top-level pages object is wrong type ({0:s})",
           pagesDict.getTypeName());
       pagesDict.free();
+      catDict.free();
       return 0;
     }
 
     pagesDict.dictLookup("Count", &obj);
     // some PDF files actually use real numbers here ("/Count 9.0")
     if (!obj.isNum()) {
-      error(errSyntaxError, -1, "Page count in top-level pages object is wrong type ({0:s})",
-         obj.getTypeName());
-      numPages = 0;
+      if (pagesDict.dictIs("Page")) {
+	Object pageRootRef;
+	catDict.dictLookupNF("Pages", &pageRootRef);
+
+	error(errSyntaxError, -1, "Pages top-level is a single Page. The document is malformed, trying to recover...");
+
+	Dict *pageDict = pagesDict.getDict();
+	if (pageRootRef.isRef()) {
+	  const Ref pageRef = pageRootRef.getRef();
+	  Page *p = new Page(doc, 1, pageDict, pageRef, new PageAttrs(NULL, pageDict), form);
+	  if (p->isOk()) {
+	    pages = (Page **)gmallocn(1, sizeof(Page *));
+	    pageRefs = (Ref *)gmallocn(1, sizeof(Ref));
+
+	    pages[0] = p;
+	    pageRefs[0].num = pageRef.num;
+	    pageRefs[0].gen = pageRef.gen;
+
+	    numPages = 1;
+	    lastCachedPage = 1;
+	    pagesSize = 1;
+	  } else {
+	    delete p;
+	    numPages = 0;
+	  }
+	} else {
+	  numPages = 0;
+	}
+      } else {
+	error(errSyntaxError, -1, "Page count in top-level pages object is wrong type ({0:s})",
+	  obj.getTypeName());
+	numPages = 0;
+      }
     } else {
       numPages = (int)obj.getNum();
+      if (numPages <= 0) {
+        error(errSyntaxError, -1,
+              "Invalid page count {0:d}", numPages);
+        numPages = 0;
+      } else if (numPages > xref->getNumObjects()) {
+        error(errSyntaxError, -1,
+              "Page count ({0:d}) larger than number of objects ({1:d})",
+              numPages, xref->getNumObjects());
+        numPages = 0;
+      }
+
     }
 
+    catDict.free();
     obj.free();
     pagesDict.free();
   }

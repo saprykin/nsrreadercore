@@ -13,7 +13,7 @@
 // All changes made under the Poppler project to this file are licensed
 // under GPL version 2 or later
 //
-// Copyright (C) 2005, 2008 Albert Astals Cid <aacid@kde.org>
+// Copyright (C) 2005, 2008, 2015 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2006 Takashi Iwai <tiwai@suse.de>
 // Copyright (C) 2006 Kristian Høgsberg <krh@redhat.com>
 // Copyright (C) 2007 Julien Rebetez <julienr@svn.gnome.org>
@@ -21,6 +21,8 @@
 // Copyright (C) 2007 Koji Otani <sho@bbr.jp>
 // Copyright (C) 2011 Axel Strübing <axel.struebing@freenet.de>
 // Copyright (C) 2011, 2012, 2014 Adrian Johnson <ajohnson@redneon.com>
+// Copyright (C) 2015 Jason Crain <jason@aquaticape.us>
+// Copyright (C) 2015 Thomas Freitag <Thomas.Freitag@alfa.de>
 //
 // To see a description of the changes please see the Changelog file that
 // came with your tarball or type make ChangeLog if you are building from git
@@ -43,6 +45,7 @@ class Dict;
 class CMap;
 class CharCodeToUnicode;
 class FoFiTrueType;
+class PSOutputDev;
 struct GfxFontCIDWidths;
 struct Base14FontMapEntry;
 
@@ -137,8 +140,8 @@ public:
 #define fontFixedWidth (1 << 0)
 #define fontSerif      (1 << 1)
 #define fontSymbolic   (1 << 2)
-#define fontItalicSp     (1 << 6)
-#define fontBoldSp       (1 << 18)
+#define fontItalic     (1 << 6)
+#define fontBold       (1 << 18)
 
 class GfxFont {
 public:
@@ -209,6 +212,16 @@ public:
   GBool getEmbeddedFontID(Ref *embID)
     { *embID = embFontID; return embFontID.num >= 0; }
 
+  // Invalidate an embedded font
+  // Returns false if there is no embedded font.
+  GBool invalidateEmbeddedFont() {
+    if (embFontID.num >= 0) {
+      embFontID.num = -1;
+      return gTrue;
+    }
+    return gFalse;
+  }
+
   // Get the PostScript font name for the embedded font.  Returns
   // NULL if there is no embedded font.
   GooString *getEmbeddedFontName() { return embFontName; }
@@ -218,8 +231,8 @@ public:
   GBool isFixedWidth() { return flags & fontFixedWidth; }
   GBool isSerif() { return flags & fontSerif; }
   GBool isSymbolic() { return flags & fontSymbolic; }
-  GBool isItalic() { return flags & fontItalicSp; }
-  GBool isBold() { return flags & fontBoldSp; }
+  GBool isItalic() { return flags & fontItalic; }
+  GBool isBold() { return flags & fontBold; }
 
   // Return the Unicode map.
   virtual CharCodeToUnicode *getToUnicode() = 0;
@@ -237,9 +250,9 @@ public:
   // Return the writing mode (0=horizontal, 1=vertical).
   virtual int getWMode() { return 0; }
 
-  // Locate the font file for this font.  If <ps> is true, includes PS
+  // Locate the font file for this font.  If <ps> is not null, includes PS
   // printer-resident fonts.  Returns NULL on failure.
-  GfxFontLoc *locateFont(XRef *xref, GBool ps);
+  GfxFontLoc *locateFont(XRef *xref, PSOutputDev *ps);
 
   // Locate a Base-14 font file for a specified font name.
   static GfxFontLoc *locateBase14Font(GooString *base14Name);
@@ -400,6 +413,7 @@ private:
 
   int mapCodeToGID(FoFiTrueType *ff, int cmapi,
     Unicode unicode, GBool wmode);
+  double getWidth(CID cid);	// Get width of a character.
 
   GooString *collection;		// collection name
   CMap *cMap;			// char code --> CID

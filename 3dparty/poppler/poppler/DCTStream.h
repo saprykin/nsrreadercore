@@ -88,4 +88,4 @@ private:
   JSAMPARRAY row_buffer;
 };
 
-#endif
+#endif 

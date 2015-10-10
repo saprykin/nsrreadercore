@@ -4,7 +4,7 @@ include (CheckDIRSymbolExists)
 include (TestLargeFiles)
 include (TestBigEndian)
 
-set (POPPLER_VERSION 0.28.1)
+set (POPPLER_VERSION 0.37.0)
 
 string (TOLOWER ${CMAKE_SYSTEM_NAME} SYSTEM_NAME)
 

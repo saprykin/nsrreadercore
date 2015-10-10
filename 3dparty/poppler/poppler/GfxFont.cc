@@ -13,7 +13,7 @@
 // All changes made under the Poppler project to this file are licensed
 // under GPL version 2 or later
 //
-// Copyright (C) 2005, 2006, 2008-2010, 2012, 2014 Albert Astals Cid <aacid@kde.org>
+// Copyright (C) 2005, 2006, 2008-2010, 2012, 2014, 2015 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2005, 2006 Kristian Høgsberg <krh@redhat.com>
 // Copyright (C) 2006 Takashi Iwai <tiwai@suse.de>
 // Copyright (C) 2007 Julien Rebetez <julienr@svn.gnome.org>
@@ -30,7 +30,7 @@
 // Copyright (C) 2012 Yi Yang <ahyangyi@gmail.com>
 // Copyright (C) 2012 Suzuki Toshiya <mpsuzuki@hiroshima-u.ac.jp>
 // Copyright (C) 2012 Thomas Freitag <Thomas.Freitag@alfa.de>
-// Copyright (C) 2013, 2014 Jason Crain <jason@aquaticape.us>
+// Copyright (C) 2013-2015 Jason Crain <jason@aquaticape.us>
 // Copyright (C) 2014 Olly Betts <olly@survex.com>
 //
 // To see a description of the changes please see the Changelog file that
@@ -66,6 +66,7 @@
 #include <fofi/FoFiType1C.h>
 #include <fofi/FoFiTrueType.h>
 #include "GfxFont.h"
+#include "PSOutputDev.h"
 
 //------------------------------------------------------------------------
 
@@ -167,7 +168,7 @@ static const char *base14SubstFonts[14] = {
 //------------------------------------------------------------------------
 
 static int parseCharName(char *charName, Unicode *uBuf, int uLen,
-			 GBool names, GBool ligatures,
+			 GBool names, GBool ligatures, 
 			 GBool numeric, GBool hex, GBool variants);
 
 //------------------------------------------------------------------------
@@ -493,8 +494,8 @@ void GfxFont::readFontDescriptor(XRef *xref, Dict *fontDict) {
       // get name with typo
       obj1.dictLookup("Fontname", &obj2);
       if (obj2.isName()) {
-	embFontName = new GooString(obj2.getName());
-	error(errSyntaxWarning, -1, "The file uses Fontname instead of FontName please notify the creator that the file is broken");
+        embFontName = new GooString(obj2.getName());
+        error(errSyntaxWarning, -1, "The file uses Fontname instead of FontName please notify the creator that the file is broken");
       }
       obj2.free();
     }
@@ -519,7 +520,7 @@ void GfxFont::readFontDescriptor(XRef *xref, Dict *fontDict) {
       else error(errSyntaxWarning, -1, "Invalid Font Stretch");
     }
     obj2.free();
-
+    
     // get weight
     obj1.dictLookup("FontWeight", &obj2);
     if (obj2.isNum()) {
@@ -610,7 +611,7 @@ CharCodeToUnicode *GfxFont::readToUnicodeCMap(Dict *fontDict, int nBits,
   return ctu;
 }
 
-GfxFontLoc *GfxFont::locateFont(XRef *xref, GBool ps) {
+GfxFontLoc *GfxFont::locateFont(XRef *xref, PSOutputDev *ps) {
   GfxFontLoc *fontLoc;
   SysFontType sysFontType;
   GooString *path, *base14Name, *substName;
@@ -640,19 +641,19 @@ GfxFontLoc *GfxFont::locateFont(XRef *xref, GBool ps) {
 	case fontType1:
 	case fontType1C:
 	case fontType1COT:
-	  embed = globalParams->getPSEmbedType1();
+	  embed = ps->getEmbedType1();
 	  break;
 	case fontTrueType:
 	case fontTrueTypeOT:
-	  embed = globalParams->getPSEmbedTrueType();
+	  embed = ps->getEmbedTrueType();
 	  break;
 	case fontCIDType0C:
 	case fontCIDType0COT:
-	  embed = globalParams->getPSEmbedCIDPostScript();
+	  embed = ps->getEmbedCIDPostScript();
 	  break;
 	case fontCIDType2:
 	case fontCIDType2OT:
-	  embed = globalParams->getPSEmbedCIDTrueType();
+	  embed = ps->getEmbedCIDTrueType();
 	  break;
 	default:
 	  break;
@@ -669,7 +670,7 @@ GfxFontLoc *GfxFont::locateFont(XRef *xref, GBool ps) {
   }
 
   //----- PS passthrough
-  if (ps && !isCIDFont() && globalParams->getPSFontPassthrough()) {
+  if (ps && !isCIDFont() && ps->getFontPassthrough()) {
     fontLoc = new GfxFontLoc();
     fontLoc->locType = gfxFontLocResident;
     fontLoc->fontType = fontType1;
@@ -876,7 +877,7 @@ GfxFontLoc *GfxFont::getExternalFont(GooString *path, GBool cid) {
   }
   if (fontType == fontUnknownType ||
       (cid ? (fontType < fontCIDType0)
-	   : (fontType >= fontCIDType0))) {
+           : (fontType >= fontCIDType0))) {
     delete path;
     return NULL;
   }
@@ -1379,7 +1380,7 @@ Gfx8BitFont::Gfx8BitFont(XRef *xref, const char *tagA, Ref idA, GooString *nameA
     if (unicodeIsAlphabeticPresentationForm(toUnicode[code])) {
       Unicode *normalized = unicodeNormalizeNFKC(&toUnicode[code], 1, &len, NULL);
       if (len > 1)
-	ctu->setMapping((CharCode)code, normalized, len);
+        ctu->setMapping((CharCode)code, normalized, len);
       gfree(normalized);
     }
   }
@@ -1390,7 +1391,7 @@ Gfx8BitFont::Gfx8BitFont(XRef *xref, const char *tagA, Ref idA, GooString *nameA
     for (code = 0; code < 256; ++code) {
       if (!toUnicode[code]) {
 	if ((charName = enc[code]) && strcmp(charName, ".notdef")
-	    && (n = parseCharName(charName, uBuf, sizeof(uBuf)/sizeof(*uBuf),
+	    && (n = parseCharName(charName, uBuf, sizeof(uBuf)/sizeof(*uBuf), 
 				  gFalse, // don't check simple names (pass 1)
 				  gTrue, // do check ligatures
 				  numeric,
@@ -1488,7 +1489,7 @@ Gfx8BitFont::Gfx8BitFont(XRef *xref, const char *tagA, Ref idA, GooString *nameA
       }
     }
 
-  // couldn't find widths -- use defaults
+  // couldn't find widths -- use defaults 
   } else {
     // this is technically an error -- the Widths entry is required
     // for all but the Base-14 fonts -- but certain PDF generators
@@ -1619,7 +1620,7 @@ static int parseCharName(char *charName, Unicode *uBuf, int uLen,
       int i;
       unsigned int m;
       for (i = 0, m = 3; i < uLen && m < n; m += 4) {
-	if (isxdigit(charName[m]) && isxdigit(charName[m + 1]) &&
+	if (isxdigit(charName[m]) && isxdigit(charName[m + 1]) && 
 	    isxdigit(charName[m + 2]) && isxdigit(charName[m + 3])) {
 	  unsigned int u;
 	  sscanf(charName + m, "%4x", &u);
@@ -2206,30 +2207,14 @@ int GfxCIDFont::getNextChar(char *s, int len, CharCode *code,
 
   // horizontal
   if (cMap->getWMode() == 0) {
-    w = widths.defWidth;
+    w = getWidth(cid);
     h = vx = vy = 0;
-    if (widths.nExceps > 0 && cid >= widths.exceps[0].first) {
-      a = 0;
-      b = widths.nExceps;
-      // invariant: widths.exceps[a].first <= cid < widths.exceps[b].first
-      while (b - a > 1) {
-	m = (a + b) / 2;
-	if (widths.exceps[m].first <= cid) {
-	  a = m;
-	} else {
-	  b = m;
-	}
-      }
-      if (cid <= widths.exceps[a].last) {
-	w = widths.exceps[a].width;
-      }
-    }
 
   // vertical
   } else {
     w = 0;
     h = widths.defHeight;
-    vx = widths.defWidth / 2;
+    vx = getWidth(cid) / 2;
     vy = widths.defVY;
     if (widths.nExcepsV > 0 && cid >= widths.excepsV[0].first) {
       a = 0;
@@ -2287,7 +2272,7 @@ int GfxCIDFont::mapCodeToGID(FoFiTrueType *ff, int cmapi,
 int *GfxCIDFont::getCodeToGIDMap(FoFiTrueType *ff, int *mapsizep) {
 #define N_UCS_CANDIDATES 2
   /* space characters */
-  static const unsigned long spaces[] = {
+  static const unsigned long spaces[] = { 
     0x2000,0x2001,0x2002,0x2003,0x2004,0x2005,0x2006,0x2007,
     0x2008,0x2009,0x200A,0x00A0,0x200B,0x2060,0x3000,0xFEFF,
     0
@@ -2385,7 +2370,7 @@ int *GfxCIDFont::getCodeToGIDMap(FoFiTrueType *ff, int *mapsizep) {
   if (!ctu) return NULL;
   if (getCollection()->cmp("Adobe-Identity") == 0) return NULL;
   if (getEmbeddedFontID(&embID)) {
-   /* if this font is embedded font,
+   /* if this font is embedded font, 
     * CIDToGIDMap should be embedded in PDF file
     * and already set. So return it.
     */
@@ -2533,13 +2518,9 @@ int *GfxCIDFont::getCodeToGIDMap(FoFiTrueType *ff, int *mapsizep) {
   return codeToGID;
 }
 
-double GfxCIDFont::getWidth (char* s, int len) {
-  int nUsed;
+double GfxCIDFont::getWidth(CID cid) {
   double w;
   int a, b, m;
-  CharCode c;
-
-  CID cid = cMap->getCID(s, len, &c, &nUsed);
 
   w = widths.defWidth;
   if (widths.nExceps > 0 && cid >= widths.exceps[0].first) {
@@ -2549,9 +2530,9 @@ double GfxCIDFont::getWidth (char* s, int len) {
     while (b - a > 1) {
       m = (a + b) / 2;
       if (widths.exceps[m].first <= cid) {
-	a = m;
+        a = m;
       } else {
-	b = m;
+        b = m;
       }
     }
     if (cid <= widths.exceps[a].last) {
@@ -2559,6 +2540,14 @@ double GfxCIDFont::getWidth (char* s, int len) {
     }
   }
   return w;
+}
+
+double GfxCIDFont::getWidth (char* s, int len) {
+  int nUsed;
+  CharCode c;
+
+  CID cid = cMap->getCID(s, len, &c, &nUsed);
+  return getWidth(cid);
 }
 
 //------------------------------------------------------------------------

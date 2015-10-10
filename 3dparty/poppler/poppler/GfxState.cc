@@ -16,7 +16,7 @@
 // Copyright (C) 2005 Kristian Høgsberg <krh@redhat.com>
 // Copyright (C) 2006, 2007 Jeff Muizelaar <jeff@infidigm.net>
 // Copyright (C) 2006, 2010 Carlos Garcia Campos <carlosgc@gnome.org>
-// Copyright (C) 2006-2014 Albert Astals Cid <aacid@kde.org>
+// Copyright (C) 2006-2015 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2009, 2012 Koji Otani <sho@bbr.jp>
 // Copyright (C) 2009, 2011-2014 Thomas Freitag <Thomas.Freitag@alfa.de>
 // Copyright (C) 2009 Christian Persch <chpe@gnome.org>
@@ -3048,8 +3048,12 @@ GfxColorSpace *GfxDeviceNColorSpace::copy() {
   int *mappingA = NULL;
 
   GooList *sepsCSA = new GooList(sepsCS->getLength());
-  for (i = 0; i < sepsCS->getLength(); i++)
-    sepsCSA->append(((GfxSeparationColorSpace *) sepsCS->get(i))->copy());
+  for (i = 0; i < sepsCS->getLength(); i++) {
+    GfxSeparationColorSpace *scs = (GfxSeparationColorSpace *) sepsCS->get(i);
+    if (likely(scs != NULL)) {
+      sepsCSA->append(scs->copy());
+    }
+  }
   if (mapping != NULL) {
     mappingA = (int *)gmalloc(sizeof(int) * nComps);
     for (i = 0; i < nComps; i++)
@@ -5023,7 +5027,7 @@ GfxGouraudTriangleShading *GfxGouraudTriangleShading::parse(GfxResources *res, i
     }
   }
   delete bitBuf;
-  if (typeA == 5) {
+  if (typeA == 5 && nVerticesA > 0) {
     nRows = nVerticesA / vertsPerRow;
     nTrianglesA = (nRows - 1) * 2 * (vertsPerRow - 1);
     trianglesA = (int (*)[3])gmallocn(nTrianglesA * 3, sizeof(int));
@@ -5136,17 +5140,23 @@ void GfxGouraudTriangleShading::getTriangle(int i,
   assert(isParameterized()); 
 
   v = triangles[i][0];
-  *x0 = vertices[v].x;
-  *y0 = vertices[v].y;
-  *color0 = colToDbl(vertices[v].color.c[0]);
+  if (likely(v >= 0 && v < nVertices)) {
+    *x0 = vertices[v].x;
+    *y0 = vertices[v].y;
+    *color0 = colToDbl(vertices[v].color.c[0]);
+  }
   v = triangles[i][1];
-  *x1 = vertices[v].x;
-  *y1 = vertices[v].y;
-  *color1 = colToDbl(vertices[v].color.c[0]);
+  if (likely(v >= 0 && v < nVertices)) {
+    *x1 = vertices[v].x;
+    *y1 = vertices[v].y;
+    *color1 = colToDbl(vertices[v].color.c[0]);
+  }
   v = triangles[i][2];
-  *x2 = vertices[v].x;
-  *y2 = vertices[v].y;
-  *color2 = colToDbl(vertices[v].color.c[0]);
+  if (likely(v >= 0 && v < nVertices)) {
+    *x2 = vertices[v].x;
+    *y2 = vertices[v].y;
+    *color2 = colToDbl(vertices[v].color.c[0]);
+  }
 }
 
 //------------------------------------------------------------------------
@@ -6829,14 +6839,12 @@ GfxColorTransform *GfxState::getXYZ2DisplayTransform() {
   GfxColorTransform *transform;
 
   transform = XYZ2DisplayTransformRelCol;
-  if (renderingIntent != NULL) {
-    if (strcmp(renderingIntent, "AbsoluteColorimetric") == 0) {
-      transform = XYZ2DisplayTransformAbsCol;
-    } else if (strcmp(renderingIntent, "Saturation") == 0) {
-      transform = XYZ2DisplayTransformSat;
-    } else if (strcmp(renderingIntent, "Perceptual") == 0) {
-      transform = XYZ2DisplayTransformPerc;
-    }
+  if (strcmp(renderingIntent, "AbsoluteColorimetric") == 0) {
+    transform = XYZ2DisplayTransformAbsCol;
+  } else if (strcmp(renderingIntent, "Saturation") == 0) {
+    transform = XYZ2DisplayTransformSat;
+  } else if (strcmp(renderingIntent, "Perceptual") == 0) {
+    transform = XYZ2DisplayTransformPerc;
   }
   if (transform == NULL) {
     transform = XYZ2DisplayTransform;
