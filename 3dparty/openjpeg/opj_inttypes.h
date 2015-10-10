@@ -4,11 +4,7 @@
  * party and contributor rights, including patent rights, and no such rights
  * are granted under this license.
  *
- * Copyright (c) 2002-2014, Universite catholique de Louvain (UCL), Belgium
- * Copyright (c) 2002-2014, Professor Benoit Macq
- * Copyright (c) 2003-2007, Francois-Olivier Devaux 
- * Copyright (c) 2003-2014, Antonin Descampe
- * Copyright (c) 2005, Herve Drolon, FreeImage Team
+ * Copyright (c) 2012, Mathieu Malaterre <mathieu.malaterre@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,64 +28,21 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef OPJ_INTTYPES_H
+#define OPJ_INTTYPES_H
 
-#include "opj_includes.h"
+#include "opj_config_private.h"
+#ifdef OPJ_HAVE_INTTYPES_H
+#include <inttypes.h>
+#else
+#if defined(_WIN32)
+#define PRId64 "I64d"
+#define PRIi64 "I64i"
+#define PRIu64 "I64u"
+#define PRIx64 "I64x"
+#else
+#error unsupported platform
+#endif
+#endif
 
-/* 
-==========================================================
-   local functions
-==========================================================
-*/
-
-
-/* 
-==========================================================
-   RAW encoding interface
-==========================================================
-*/
-
-opj_raw_t* opj_raw_create(void) {
-	opj_raw_t *raw = (opj_raw_t*)opj_malloc(sizeof(opj_raw_t));
-	return raw;
-}
-
-void opj_raw_destroy(opj_raw_t *raw) {
-	if(raw) {
-		opj_free(raw);
-	}
-}
-
-OPJ_UINT32 opj_raw_numbytes(opj_raw_t *raw) {
-	const ptrdiff_t diff = raw->bp - raw->start;
-  assert( diff <= (ptrdiff_t)0xffffffff && diff >= 0 ); /* UINT32_MAX */
-	return (OPJ_UINT32)diff;
-}
-
-void opj_raw_init_dec(opj_raw_t *raw, OPJ_BYTE *bp, OPJ_UINT32 len) {
-	raw->start = bp;
-	raw->lenmax = len;
-	raw->len = 0;
-	raw->c = 0;
-	raw->ct = 0;
-}
-
-OPJ_UINT32 opj_raw_decode(opj_raw_t *raw) {
-	OPJ_UINT32 d;
-	if (raw->ct == 0) {
-		raw->ct = 8;
-		if (raw->len == raw->lenmax) {
-			raw->c = 0xff;
-		} else {
-			if (raw->c == 0xff) {
-				raw->ct = 7;
-			}
-			raw->c = *(raw->start + raw->len);
-			raw->len++;
-		}
-	}
-	raw->ct--;
-	d = (raw->c >> raw->ct) & 0x01;
-	
-	return d;
-}
-
+#endif /* OPJ_INTTYPES_H */

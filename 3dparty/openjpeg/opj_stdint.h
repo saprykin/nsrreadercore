@@ -4,10 +4,7 @@
  * party and contributor rights, including patent rights, and no such rights
  * are granted under this license.
  *
- * Copyright (c) 2002-2014, Universite catholique de Louvain (UCL), Belgium
- * Copyright (c) 2002-2014, Professor Benoit Macq
- * Copyright (c) 2002-2003, Yannick Verschueren
- * Copyright (c) 2005, Herve Drolon, FreeImage Team
+ * Copyright (c) 2012, Mathieu Malaterre <mathieu.malaterre@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,50 +28,25 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef OPJ_STDINT_H
+#define OPJ_STDINT_H
 
-#ifndef __JPT_H
-#define __JPT_H
-/**
-@file jpt.h
-@brief JPT-stream reader (JPEG 2000, JPIP)
-
-JPT-stream functions are implemented in J2K.C. 
-*/
-
-/**
-Message Header JPT stream structure
-*/
-typedef struct opj_jpt_msg_header {
-	/** In-class Identifier */
-	unsigned int Id;
-	/** Last byte information */
-	unsigned int last_byte;	
-	/** Class Identifier */
-	unsigned int Class_Id;	
-	/** CSn : index identifier */
-	unsigned int CSn_Id;
-	/** Message offset */
-	unsigned int Msg_offset;
-	/** Message length */
-	unsigned int Msg_length;
-	/** Auxiliary for JPP case */
-	unsigned int Layer_nb;
-} opj_jpt_msg_header_t;
-
-/* ----------------------------------------------------------------------- */
-
-/**
-Initialize the value of the message header structure 
-@param header Message header structure
-*/
-void jpt_init_msg_header(opj_jpt_msg_header_t * header);
-
-/**
-Read the message header for a JPP/JPT - stream
-@param cinfo Codec context info
-@param cio CIO handle
-@param header Message header structure
-*/
-void jpt_read_msg_header(opj_common_ptr cinfo, opj_cio_t *cio, opj_jpt_msg_header_t *header);
-
+#include "opj_config.h"
+#ifdef OPJ_HAVE_STDINT_H
+#include <stdint.h>
+#else
+#if defined(_WIN32)
+typedef   signed __int8   int8_t;
+typedef unsigned __int8   uint8_t;
+typedef   signed __int16  int16_t;
+typedef unsigned __int16  uint16_t;
+typedef   signed __int32  int32_t;
+typedef unsigned __int32  uint32_t;
+typedef   signed __int64  int64_t;
+typedef unsigned __int64  uint64_t;
+#else
+#error unsupported platform
 #endif
+#endif
+
+#endif /* OPJ_STDINT_H */

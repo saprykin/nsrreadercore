@@ -71,14 +71,15 @@ set (SOURCES
 	cio.c
 	dwt.c
 	event.c
+	function_list.c
 	image.c
-	j2k_lib.c
+	invert.c
 	j2k.c
 	jp2.c
-	jpt.c
 	mct.c
 	mqc.c
 	openjpeg.c
+	opj_clock.c
 	pi.c
 	raw.c
 	t1.c
@@ -92,24 +93,25 @@ set (HEADERS
 	cio.h
 	dwt.h
 	event.h
-	fix.h
+	function_list.h
 	image.h
-	int.h
-	j2k_lib.h
+	invert.h
 	j2k.h
 	jp2.h
-	jpt.h
 	mct.h
-	mj2_convert.h
-	mj2.h
 	mqc.h
 	openjpeg.h
+	opj_clock.h
+	opj_codec.h
 	opj_includes.h
+	opj_intmath.h
+	opj_inttypes.h
 	opj_malloc.h
+	opj_stdint.h
 	pi.h
 	raw.h
-	t1_luts.h
 	t1.h
+	t1_luts.h
 	t2.h
 	tcd.h
 	tgt.h
